@@ -16,6 +16,7 @@
 
 ## News
 
+- **2026-02-26**: **Zotero MCP Web API mode** — remote access, import papers via DOI/arXiv ID/URL, collection management, item updates, safe deletion; config guides for [Claude Code](./MCP_SETUP.md), [Codex CLI](./MCP_SETUP.md#codex-cli), [OpenCode](./MCP_SETUP.md#opencode)
 - **2026-02-25**: **Codex CLI** support — added `codex` branch supporting [OpenAI Codex CLI](https://github.com/openai/codex) with config.toml, 40 skills, 14 agents, and sandbox security
 - **2026-02-23**: Added `setup.sh` installer — safe merge into existing `~/.claude`, auto-backup `settings.json`, smart hooks/mcpServers/plugins merge
 - **2026-02-21**: **OpenCode** support — Claude Scholar now supports [OpenCode](https://github.com/opencode-ai/opencode) as an alternative CLI; switch to the `opencode` branch for OpenCode-compatible configuration
@@ -48,7 +49,7 @@ Claude Scholar is a personal configuration system for Claude Code CLI, providing
 | 📚 [Core Workflows](#core-workflows) | Paper writing, code organization, skill evolution |
 | 🛠️ [What's Included](#whats-included) | Skills, commands, agents overview |
 | 📖 [Installation Guide](#installation-options) | Full, minimal, or selective setup |
-| 📦 [MCP Setup](#mcp-server-setup-optional) | Zotero MCP for research workflows |
+| 📦 [MCP Setup](#mcp-setup) | Zotero MCP for research workflows |
 | 🔧 [Project Rules](#project-rules) | Coding style and agent orchestration |
 
 ## Core Workflows
@@ -532,19 +533,16 @@ cp rules/agents.md ~/.claude/rules/
 - Claude Code CLI
 - Git
 - Node.js (required for hooks)
-- (Optional) uv, Python (for Python development)
-- **Zotero desktop app** (for Zotero MCP features)
+- uv, Python (for Python development)
+- **Zotero** (for Zotero MCP features)
 
-### MCP Setup (Optional)
+### MCP Setup
 
 For Zotero-integrated research workflows, install the MCP server:
 
 ```bash
-# Install Zotero MCP server
-uv tool install zotero-mcp-server
-
-# Enable Local API in Zotero desktop app:
-# Edit → Settings → Advanced → Check "Allow other applications on this computer to communicate with Zotero"
+# Install from Galaxy-Dawn fork (Web API mode)
+uv tool install git+https://github.com/Galaxy-Dawn/zotero-mcp.git
 ```
 
 Then add to your `~/.claude/settings.json`:
@@ -556,8 +554,11 @@ Then add to your `~/.claude/settings.json`:
       "command": "zotero-mcp",
       "args": ["serve"],
       "env": {
-        "ZOTERO_LOCAL": "true",
-        "NO_PROXY": "localhost,127.0.0.1"
+        "ZOTERO_API_KEY": "your-api-key",
+        "ZOTERO_LIBRARY_ID": "your-library-id",
+        "ZOTERO_LIBRARY_TYPE": "user",
+        "UNPAYWALL_EMAIL": "your-email@example.com",
+        "UNSAFE_OPERATIONS": "all"
       }
     }
   }

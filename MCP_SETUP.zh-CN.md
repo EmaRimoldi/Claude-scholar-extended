@@ -6,28 +6,39 @@ Claude Scholar 依赖 MCP（Model Context Protocol）服务器提供扩展能力
 
 ### 1. Zotero MCP（研究工作流）
 
-使用场景：`literature-reviewer` agent、`/research-init`、`/zotero-review`、`/zotero-notes` 命令
+**使用场景**: `literature-reviewer` agent、`/research-init`、`/zotero-review`、`/zotero-notes` 命令
 
-**安装包**：[54yyyu/zotero-mcp](https://github.com/54yyyu/zotero-mcp) — 功能完整，支持 PDF 管理、全文阅读、语义搜索、引用导出。
+**安装包**: [Galaxy-Dawn/zotero-mcp](https://github.com/Galaxy-Dawn/zotero-mcp) — Web API 模式，支持无需 Zotero 桌面客户端的远程访问。
+
+#### 功能
+
+| 类别 | 工具 |
+|------|------|
+| **导入** | `zotero_add_items_by_doi`, `zotero_add_items_by_arxiv`, `zotero_add_item_by_url` |
+| **读取** | `zotero_get_collections`, `zotero_get_collection_items`, `zotero_search_items`, `zotero_semantic_search` |
+| **更新** | `zotero_update_item`, `zotero_update_note`, `zotero_create_collection`, `zotero_move_items_to_collection` |
+| **删除** | `zotero_delete_items`（移至回收站）, `zotero_delete_collection` |
+| **PDF** | `zotero_find_and_attach_pdfs`（通过 Unpaywall）, `zotero_add_linked_url_attachment` |
 
 #### 前置条件
 
-1. 安装 [Zotero](https://www.zotero.org/) 桌面客户端
-2. **启用本地 API**（必需）：
-   - 打开 Zotero → 编辑 → 设置（macOS 上为 Zotero → 设置）
-   - 转到**高级**选项卡
-   - 勾选**"允许其他应用程序与 Zotero 通信"**
+1. 安装 [Zotero](https://www.zotero.org/)（可选，用于本地模式）
+2. 从 [zotero.org/settings/keys](https://www.zotero.org/settings/keys) 获取 API 密钥和库 ID
 
 #### 安装
 
 ```bash
 # 通过 uv 安装（推荐）
-uv tool install zotero-mcp-server
+uv tool install git+https://github.com/Galaxy-Dawn/zotero-mcp.git
 ```
 
 #### 配置
 
-在 `~/.claude/settings.json` 的 `mcpServers` 中添加：
+选择您的平台：
+
+##### Claude Code
+
+在 `~/.claude/settings.json` 中添加：
 
 ```json
 {
@@ -36,15 +47,73 @@ uv tool install zotero-mcp-server
       "command": "zotero-mcp",
       "args": ["serve"],
       "env": {
-        "ZOTERO_LOCAL": "true",
-        "NO_PROXY": "localhost,127.0.0.1"
+        "ZOTERO_API_KEY": "your-api-key",
+        "ZOTERO_LIBRARY_ID": "your-library-id",
+        "ZOTERO_LIBRARY_TYPE": "user",
+        "UNPAYWALL_EMAIL": "your-email@example.com",
+        "UNSAFE_OPERATIONS": "all"
       }
     }
   }
 }
 ```
 
-**注意**：此配置使用**本地模式**——直接连接 Zotero 桌面客户端，无需 API key。
+##### Codex CLI
+
+在 `~/.codex/config.toml` 中添加：
+
+```toml
+[mcp_servers.zotero]
+command = "zotero-mcp"
+args = ["serve"]
+enabled = true
+
+[mcp_servers.zotero.env]
+ZOTERO_API_KEY = "your-api-key"
+ZOTERO_LIBRARY_ID = "your-library-id"
+ZOTERO_LIBRARY_TYPE = "user"
+UNPAYWALL_EMAIL = "your-email@example.com"
+UNSAFE_OPERATIONS = "all"
+NO_PROXY = "localhost,127.0.0.1"
+```
+
+##### OpenCode
+
+在 `~/.opencode/opencode.jsonc` 中添加：
+
+```jsonc
+{
+  "mcp": {
+    "zotero": {
+      "type": "local",
+      "command": ["zotero-mcp", "serve"],
+      "enabled": true
+    }
+  }
+}
+```
+
+然后在 `~/.zshrc` 中设置环境变量：
+
+```bash
+# Zotero MCP
+export ZOTERO_API_KEY="your-api-key"
+export ZOTERO_LIBRARY_ID="your-library-id"
+export ZOTERO_LIBRARY_TYPE="user"
+export UNPAYWALL_EMAIL="your-email@example.com"
+export UNSAFE_OPERATIONS="all"
+```
+
+#### 环境变量
+
+| 变量 | 必需 | 说明 |
+|------|------|------|
+| `ZOTERO_API_KEY` | 是 | 您的 Zotero API 密钥 |
+| `ZOTERO_LIBRARY_ID` | 是 | 您的库 ID（数字） |
+| `ZOTERO_LIBRARY_TYPE` | 是 | `user` 或 `group` |
+| `UNPAYWALL_EMAIL` | 否 | 用于 Unpaywall PDF 搜索的邮箱 |
+| `UNSAFE_OPERATIONS` | 否 | `items`（delete_items）, `all`（delete_collection） |
+| `NO_PROXY` | 否 | 绕过本地代理 |
 
 #### 可用工具
 
@@ -60,12 +129,22 @@ uv tool install zotero-mcp-server
 | `zotero_get_notes` | 获取笔记 |
 | `zotero_semantic_search` | 语义搜索（使用嵌入向量） |
 | `zotero_advanced_search` | 高级搜索 |
+| `zotero_add_items_by_doi` | 通过 DOI 导入论文 |
+| `zotero_add_items_by_arxiv` | 通过 arXiv ID 导入预印本 |
+| `zotero_add_item_by_url` | 将网页保存为条目 |
+| `zotero_update_item` | 更新条目字段 |
+| `zotero_update_note` | 更新笔记内容 |
+| `zotero_create_collection` | 创建集合 |
+| `zotero_move_items_to_collection` | 在集合间移动条目 |
+| `zotero_update_collection` | 重命名集合 |
+| `zotero_delete_collection` | 删除集合 |
+| `zotero_delete_items` | 将条目移至回收站 |
+| `zotero_find_and_attach_pdfs` | 查找并附加开放获取 PDF |
+| `zotero_add_linked_url_attachment` | 添加链接 URL 附件 |
 
 ### 2. 浏览器自动化 MCP（可选）
 
-用途：Chrome 浏览器控制、网页交互。
-
-此项为可选配置，仅在需要浏览器自动化时安装。
+用途: Chrome 浏览器控制、网页交互。
 
 #### 配置
 
@@ -82,21 +161,21 @@ uv tool install zotero-mcp-server
 
 ## 验证
 
-配置完成后，重启 Claude Code 并验证 MCP 服务是否连接：
+配置完成后，重启您的 CLI 并验证 MCP 服务是否连接：
 
 ```
-# 在 Claude Code 中尝试调用 Zotero 工具：
+# 在您的 CLI 中尝试调用 Zotero 工具：
 > 列出我的 Zotero 集合
 ```
 
-如果工具返回了你的集合列表，说明配置成功。
+如果工具返回了您的集合列表，说明配置成功。
 
 ## 常见问题
 
 | 问题 | 解决方案 |
 |------|---------|
-| Zotero 工具返回 502 错误 | 确保 Zotero 桌面客户端正在运行且本地 API 已启用 |
-| 工具不可用 | 检查 `zotero-mcp` 命令是否在 PATH 中 |
-| localhost 返回 HTTP 502 | 添加 `NO_PROXY` 环境变量（见上方配置） |
-| macOS SSL 错误 | 本地模式不需要 |
+| 工具返回错误 | 检查 API 密钥和库 ID 是否正确 |
+| PDF 附加失败 | 确保已设置 `UNPAYWALL_EMAIL` |
+| 删除操作被阻止 | 设置 `UNSAFE_OPERATIONS=items` 或 `all` |
+| HTTP 错误 | 检查 `NO_PROXY` 是否包含 localhost |
 | API 速率限制 (429) | 每批 ≤10 篇论文，批次间添加延迟 |

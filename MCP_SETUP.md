@@ -6,28 +6,39 @@ Claude Scholar relies on MCP (Model Context Protocol) servers for extended capab
 
 ### 1. Zotero MCP (Research Workflow)
 
-Used by: `literature-reviewer` agent, `/research-init`, `/zotero-review`, `/zotero-notes` commands
+**Used by**: `literature-reviewer` agent, `/research-init`, `/zotero-review`, `/zotero-notes` commands
 
-**Package**: [54yyyu/zotero-mcp](https://github.com/54yyyu/zotero-mcp) — full-featured with PDF management, full-text reading, semantic search, and citation export.
+**Package**: [Galaxy-Dawn/zotero-mcp](https://github.com/Galaxy-Dawn/zotero-mcp) — Web API mode, supports remote access without Zotero desktop app.
+
+#### Features
+
+| Category | Tools |
+|----------|-------|
+| **Import** | `zotero_add_items_by_doi`, `zotero_add_items_by_arxiv`, `zotero_add_item_by_url` |
+| **Read** | `zotero_get_collections`, `zotero_get_collection_items`, `zotero_search_items`, `zotero_semantic_search` |
+| **Update** | `zotero_update_item`, `zotero_update_note`, `zotero_create_collection`, `zotero_move_items_to_collection` |
+| **Delete** | `zotero_delete_items` (to trash), `zotero_delete_collection` |
+| **PDF** | `zotero_find_and_attach_pdfs` (via Unpaywall), `zotero_add_linked_url_attachment` |
 
 #### Prerequisites
 
-1. Install [Zotero](https://www.zotero.org/) desktop app
-2. **Enable Local API** (required):
-   - Open Zotero → Edit → Settings (or Zotero → Settings on macOS)
-   - Go to **Advanced** tab
-   - Check **"Allow other applications on this computer to communicate with Zotero"**
+1. Install [Zotero](https://www.zotero.org/) (optional, for local mode)
+2. Get Zotero API key and library ID from [zotero.org/settings/keys](https://www.zotero.org/settings/keys)
 
 #### Installation
 
 ```bash
 # Install via uv (recommended)
-uv tool install zotero-mcp-server
+uv tool install git+https://github.com/Galaxy-Dawn/zotero-mcp.git
 ```
 
 #### Configuration
 
-Add to your `~/.claude/settings.json` under `mcpServers`:
+Choose your platform below:
+
+##### Claude Code
+
+Add to your `~/.claude/settings.json`:
 
 ```json
 {
@@ -36,15 +47,73 @@ Add to your `~/.claude/settings.json` under `mcpServers`:
       "command": "zotero-mcp",
       "args": ["serve"],
       "env": {
-        "ZOTERO_LOCAL": "true",
-        "NO_PROXY": "localhost,127.0.0.1"
+        "ZOTERO_API_KEY": "your-api-key",
+        "ZOTERO_LIBRARY_ID": "your-library-id",
+        "ZOTERO_LIBRARY_TYPE": "user",
+        "UNPAYWALL_EMAIL": "your-email@example.com",
+        "UNSAFE_OPERATIONS": "all"
       }
     }
   }
 }
 ```
 
-**Note**: This configuration uses **local mode** — connects to Zotero desktop app directly. No API key required.
+##### Codex CLI
+
+Add to your `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.zotero]
+command = "zotero-mcp"
+args = ["serve"]
+enabled = true
+
+[mcp_servers.zotero.env]
+ZOTERO_API_KEY = "your-api-key"
+ZOTERO_LIBRARY_ID = "your-library-id"
+ZOTERO_LIBRARY_TYPE = "user"
+UNPAYWALL_EMAIL = "your-email@example.com"
+UNSAFE_OPERATIONS = "all"
+NO_PROXY = "localhost,127.0.0.1"
+```
+
+##### OpenCode
+
+Add to your `~/.opencode/opencode.jsonc`:
+
+```jsonc
+{
+  "mcp": {
+    "zotero": {
+      "type": "local",
+      "command": ["zotero-mcp", "serve"],
+      "enabled": true
+    }
+  }
+}
+```
+
+Then set environment variables in `~/.zshrc`:
+
+```bash
+# Zotero MCP
+export ZOTERO_API_KEY="your-api-key"
+export ZOTERO_LIBRARY_ID="your-library-id"
+export ZOTERO_LIBRARY_TYPE="user"
+export UNPAYWALL_EMAIL="your-email@example.com"
+export UNSAFE_OPERATIONS="all"
+```
+
+#### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ZOTERO_API_KEY` | Yes | Your Zotero API key |
+| `ZOTERO_LIBRARY_ID` | Yes | Your library ID (numeric) |
+| `ZOTERO_LIBRARY_TYPE` | Yes | `user` or `group` |
+| `UNPAYWALL_EMAIL` | No | Email for Unpaywall PDF search |
+| `UNSAFE_OPERATIONS` | No | `items` (delete_items), `all` (delete_collection) |
+| `NO_PROXY` | No | Bypass proxy for localhost |
 
 #### Available Tools
 
@@ -60,12 +129,22 @@ Add to your `~/.claude/settings.json` under `mcpServers`:
 | `zotero_get_notes` | Get notes |
 | `zotero_semantic_search` | Semantic search (uses embeddings) |
 | `zotero_advanced_search` | Advanced search |
+| `zotero_add_items_by_doi` | Import papers by DOI |
+| `zotero_add_items_by_arxiv` | Import preprints by arXiv ID |
+| `zotero_add_item_by_url` | Save webpage as item |
+| `zotero_update_item` | Update item fields |
+| `zotero_update_note` | Update note content |
+| `zotero_create_collection` | Create collection |
+| `zotero_move_items_to_collection` | Move items between collections |
+| `zotero_update_collection` | Rename collection |
+| `zotero_delete_collection` | Delete collection |
+| `zotero_delete_items` | Move items to trash |
+| `zotero_find_and_attach_pdfs` | Find and attach OA PDFs |
+| `zotero_add_linked_url_attachment` | Add linked URL attachment |
 
 ### 2. Browser Automation MCP (Optional)
 
 Used for: Chrome browser control, web page interaction.
-
-This is optional and only needed if you want browser automation capabilities.
 
 #### Configuration
 
@@ -82,10 +161,10 @@ This is optional and only needed if you want browser automation capabilities.
 
 ## Verification
 
-After configuration, restart Claude Code and verify MCP servers are connected:
+After configuration, restart your CLI and verify MCP servers are connected:
 
 ```
-# In Claude Code, try calling a Zotero tool:
+# In your CLI, try calling a Zotero tool:
 > List my Zotero collections
 ```
 
@@ -95,8 +174,8 @@ If the tool responds with your collections, the setup is complete.
 
 | Issue | Solution |
 |-------|----------|
-| Zotero tools return 502 error | Ensure Zotero desktop app is running and Local API is enabled |
-| Tools not available | Check that `zotero-mcp` command is in your PATH |
-| HTTP 502 from localhost | Add `NO_PROXY` environment variable (see config above) |
-| SSL errors on macOS | Not needed for local mode |
+| Tools return error | Check API key and library ID are correct |
+| PDF attach fails | Ensure `UNPAYWALL_EMAIL` is set |
+| Delete operations blocked | Set `UNSAFE_OPERATIONS=items` or `all` |
+| HTTP errors | Check `NO_PROXY` includes localhost |
 | API rate limit (429) | Batch ≤10 papers at a time, add delays between batches |

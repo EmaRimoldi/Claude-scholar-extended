@@ -16,6 +16,7 @@
 
 ## News
 
+- **2026-02-26**: **Zotero MCP Web API 模式** — 支持远程访问，可通过 DOI/arXiv ID/URL 导入论文，进行集合管理、条目更新，安全删除；附 [Claude Code](./MCP_SETUP.zh-CN.md)、[Codex CLI](./MCP_SETUP.zh-CN.md#codex-cli)、[OpenCode](./MCP_SETUP.zh-CN.md#opencode) 三平台配置指南
 - **2026-02-25**: **Codex CLI** 支持 — 新增 `codex` 分支，支持 [OpenAI Codex CLI](https://github.com/openai/codex)，包含 config.toml、40 个 skills、14 个 agents 和 sandbox 安全机制
 - **2026-02-23**: 新增 `setup.sh` 安装脚本 — 安全合并到已有 `~/.claude`，自动备份 `settings.json`，智能合并 hooks/mcpServers/plugins
 - **2026-02-21**: **OpenCode** 支持 — Claude Scholar 现已支持 [OpenCode](https://github.com/opencode-ai/opencode) 作为替代 CLI；切换到 `opencode` 分支获取兼容配置
@@ -48,7 +49,7 @@ Claude Scholar 是一个面向 Claude Code CLI 的个人配置系统，提供丰
 | 📚 [核心工作流](#核心工作流) | 论文写作、代码组织、技能进化 |
 | 🛠️ [功能亮点](#功能亮点) | 技能、命令、代理概览 |
 | 📖 [安装指南](#安装选项) | 完整、最小化或选择性安装 |
-| 📦 [MCP 配置](#mcp-服务配置可选) | Zotero MCP 研究工作流集成 |
+| 📦 [MCP 配置](#mcp-服务配置) | Zotero MCP 研究工作流集成 |
 | 🔧 [项目规则](#项目规则) | 代码风格和代理编排 |
 
 ## 核心工作流
@@ -534,19 +535,16 @@ cp rules/agents.md ~/.claude/rules/
 - Claude Code CLI
 - Git
 - Node.js（钩子依赖，必需）
-- （可选）uv、Python（用于 Python 开发）
-- **Zotero 桌面客户端**（用于 Zotero MCP 功能）
+- uv、Python（用于 Python 开发）
+- **Zotero**（用于 Zotero MCP 功能）
 
-### MCP 服务配置（可选）
+### MCP 服务配置
 
 如需使用 Zotero 集成的研究工作流，请安装 MCP 服务器：
 
 ```bash
-# 安装 Zotero MCP 服务器
-uv tool install zotero-mcp-server
-
-# 在 Zotero 桌面客户端中启用本地 API：
-# 编辑 → 设置 → 高级 → 勾选"允许其他应用程序与 Zotero 通信"
+# 从 Galaxy-Dawn fork 安装（Web API 模式）
+uv tool install git+https://github.com/Galaxy-Dawn/zotero-mcp.git
 ```
 
 然后在 `~/.claude/settings.json` 中添加：
@@ -558,8 +556,11 @@ uv tool install zotero-mcp-server
       "command": "zotero-mcp",
       "args": ["serve"],
       "env": {
-        "ZOTERO_LOCAL": "true",
-        "NO_PROXY": "localhost,127.0.0.1"
+        "ZOTERO_API_KEY": "your-api-key",
+        "ZOTERO_LIBRARY_ID": "your-library-id",
+        "ZOTERO_LIBRARY_TYPE": "user",
+        "UNPAYWALL_EMAIL": "your-email@example.com",
+        "UNSAFE_OPERATIONS": "all"
       }
     }
   }
