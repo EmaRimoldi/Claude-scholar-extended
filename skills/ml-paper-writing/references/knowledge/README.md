@@ -1,36 +1,58 @@
 # Academic Writing Knowledge Base
 
-This knowledge base contains actionable writing patterns, techniques, and strategies extracted from ML conference papers and academic publications.
+This knowledge base contains reusable academic writing knowledge mined from papers.
 
-## Organization
+## Canonical maintained memory
 
-The knowledge is organized into 4 categories:
+The canonical paper-miner memory is:
 
-1. **structure.md** - Paper organization and IMRaD patterns
-2. **writing-techniques.md** - Sentence patterns and transition phrases
-3. **submission-guides.md** - Venue-specific requirements
-4. **review-response.md** - Rebuttal and reviewer response strategies
+- `paper-miner-writing-memory.md`
 
-## Knowledge Sources
+This is the **only maintained paper-miner writing memory**.
 
-Knowledge is extracted from:
-- Top ML conferences (NeurIPS, ICML, ICLR, ACL, AAAI, COLM)
-- High-impact journals
-- Award-winning papers
-- Well-regarded citations
+It stores:
+- writing patterns mined,
+- structure signals,
+- reusable phrasing,
+- venue-specific signals,
+- how those signals help future writing,
+- and a source index.
 
-## Contributing
+## Maintenance rule
 
-This knowledge base is maintained by the paper-miner agent. When new papers are analyzed:
-1. Extract actionable writing patterns
-2. Categorize into appropriate files
-3. Check for duplicates
-4. Add with source attribution
+`paper-miner` always writes mined writing knowledge into `paper-miner-writing-memory.md`.
+
+This memory is:
+- **global**,
+- **cross-project**,
+- **not project-specific**.
+
+If `paper-miner` is invoked inside a project, it may use project context to understand relevance, but it still writes only to the global memory.
+
+## Legacy files
+
+Older files such as:
+- `structure.md`
+- `writing-techniques.md`
+- `submission-guides.md`
+- `review-response.md`
+
+may still exist as historical material, but new paper-miner updates should treat `paper-miner-writing-memory.md` as the canonical maintained memory.
 
 ## Usage
 
 Use this knowledge base when:
-- **Writing papers**: Apply proven patterns from successful papers
-- **Analyzing venue requirements**: Understand submission-specific conventions
-- **Responding to reviews**: Use effective rebuttal strategies
-- **Studying writing techniques**: Learn from exemplary papers
+- drafting papers,
+- improving section structure,
+- borrowing reusable phrasing patterns,
+- preparing rebuttals,
+- studying venue-facing writing signals.
+
+## Contributing
+
+When `paper-miner` analyzes a new paper:
+1. extract actionable writing knowledge,
+2. merge it into `paper-miner-writing-memory.md`,
+3. preserve source attribution,
+4. avoid duplicate patterns,
+5. keep the memory compact and reusable.

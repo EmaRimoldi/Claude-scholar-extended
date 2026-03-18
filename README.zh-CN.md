@@ -18,7 +18,7 @@
 
 ## 最新动态
 
-- **2026-03-18**: **实验结果报告工作流** — `results-analysis` 现在专注于严格统计、真实科研绘图、`stats-appendix` 与 `figure-catalog`；新增 `results-report` skill 负责实验后总结报告，并将内部实验报告写入 Obsidian `Results/Reports/`，采用稳定命名规范。
+- **2026-03-18**: **实验结果报告与工作流整理** — 将实验后处理明确拆成两层：`results-analysis` 负责严格统计、真实科研图、`analysis-report` / `stats-appendix` / `figure-catalog`，`results-report` 负责面向决策的实验总结报告与 Obsidian 写回；移除了冗余的 `data-analyst` 入口，把 `/analyze-results` 调整为默认的一键分析 + 成稿命令，同时重写 README 的定位为以人类决策为中心的 semi-automated research assistant，并更新了项目 logo。
 - **2026-03-17**: **Obsidian 项目知识库** — 基于 filesystem-first 的项目知识库工作流，支持项目导入、已绑定仓库自动同步、`Papers / Experiments / Results / Results/Reports / Writing` 路由，且不依赖 MCP。
 - **2026-02-26**: **Zotero MCP Web API 模式** — 支持远程 Zotero 访问、DOI/arXiv/URL 导入、集合管理、条目更新，并补充了 Claude Code、Codex CLI、OpenCode 的配置说明。
 
@@ -260,6 +260,7 @@ Claude Scholar 目前面向以下 CLI 工作流：
 | Skill | `writing-anti-ai` | 减少机械化表述，提升清晰度、节奏和更自然的学术语气。 |
 | Skill | `latex-conference-template-organizer` | 把混乱的会议模板整理成 Overleaf-ready 写作结构。 |
 | Agent | `paper-miner` | 从高质量论文中提炼可复用的写作模式、结构和 venue 经验。 |
+| Command | `/mine-writing-patterns` | 读取论文并把可复用写作知识合并进全局 paper-miner writing memory。 |
 
 **How it works**
 - **Template Preparation**：把会议模板清理成 Overleaf-ready 结构。

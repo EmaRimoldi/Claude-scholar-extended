@@ -18,7 +18,7 @@
 
 ## Recent News
 
-- **2026-03-18**: **Results reporting workflow** — `results-analysis` now focuses on strict statistics, real scientific figures, `stats-appendix`, and `figure-catalog`; the new `results-report` skill handles post-experiment summary reports and writes internal reports into Obsidian `Results/Reports/` with stable naming.
+- **2026-03-18**: **Results reporting + workflow cleanup** — split post-experiment work into `results-analysis` for strict statistics, real scientific figures, `analysis-report` / `stats-appendix` / `figure-catalog`, and `results-report` for decision-oriented post-experiment reports with Obsidian write-back; removed the redundant `data-analyst` entrypoint, made `/analyze-results` the default one-shot command for analysis + report generation, refreshed the README around human-centered semi-automation, and updated the project logo.
 - **2026-03-17**: **Obsidian project knowledge base** — filesystem-first project knowledge base with project import, repo-bound auto-sync, `Papers / Experiments / Results / Results/Reports / Writing` routing, and no MCP requirement.
 - **2026-02-26**: **Zotero MCP Web API mode** — remote Zotero access, DOI/arXiv/URL import, collection management, item updates, and safer setup guidance across Claude Code, Codex CLI, and OpenCode.
 
@@ -260,6 +260,7 @@ Systematic academic writing from structure setup to draft refinement.
 | Skill | `writing-anti-ai` | Reduce robotic phrasing and improve clarity, rhythm, and human academic tone. |
 | Skill | `latex-conference-template-organizer` | Clean messy conference templates into an Overleaf-ready writing structure. |
 | Agent | `paper-miner` | Mine strong papers for reusable writing patterns, structure, and venue expectations. |
+| Command | `/mine-writing-patterns` | Read a paper and merge reusable writing knowledge into the global paper-miner writing memory. |
 
 **How it works**
 - **Template Preparation**: clean conference templates into an Overleaf-ready structure.

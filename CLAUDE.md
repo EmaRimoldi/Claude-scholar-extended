@@ -73,7 +73,7 @@ Ideation → ML Development → Experiment Analysis → Paper Writing → Self-R
 | 1. Research Ideation | `research-ideation` skill + `literature-reviewer` agent + Zotero MCP | `/research-init`, `/zotero-review`, `/zotero-notes` |
 | 2. ML Project Dev | `architecture-design` skill + `code-reviewer` agent | `/plan`, `/commit`, `/tdd` |
 | 3. Experiment Analysis | `results-analysis` skill + `results-report` skill | `/analyze-results` |
-| 4. Paper Writing | `ml-paper-writing` skill + `paper-miner` agent | - |
+| 4. Paper Writing | `ml-paper-writing` skill + `paper-miner` agent | `/mine-writing-patterns` |
 | 5. Self-Review | `paper-self-review` skill | - |
 | 6. Submission & Rebuttal | `review-response` skill + `rebuttal-writer` agent | `/rebuttal` |
 | 7. Post-Acceptance | `post-acceptance` skill | `/presentation`, `/poster`, `/promote` |

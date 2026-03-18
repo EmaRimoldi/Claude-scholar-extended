@@ -290,84 +290,85 @@ For detailed literature research guidance:
 
 ---
 
-## Knowledge Base: Writing Patterns from ML Papers
+## Knowledge Base: Paper-Miner Global Writing Memory
 
-This skill maintains a curated knowledge base of writing patterns, techniques, and requirements extracted from successful ML conference papers. The knowledge base grows as you analyze more papers.
+This skill consumes a **single canonical writing memory** maintained by `paper-miner`:
 
-### Knowledge Organization
+- `references/knowledge/paper-miner-writing-memory.md`
 
-The knowledge base is organized into 4 categories at `references/knowledge/`:
+This memory is **global**, not project-specific.
 
-| Category | File | Contents |
-|----------|------|----------|
-| **Structure** | `structure.md` | Paper organization, IMRaD patterns, transitions, section flow |
-| **Writing Techniques** | `writing-techniques.md` | Sentence patterns, transition phrases, clarity techniques |
-| **Submission Guides** | `submission-guides.md` | Venue requirements (NeurIPS, ICML, ICLR, ACL, AAAI, COLM) |
-| **Review Response** | `review-response.md` | Rebuttal strategies, addressing reviewer comments |
+Even when `paper-miner` is invoked while working inside a specific repository, it still writes mined writing knowledge only into this one global memory. It does **not** maintain project-local writing memory.
 
-### How the Knowledge Base is Maintained
+### Canonical memory structure
 
-The **paper-miner agent** automatically extracts and categorizes writing knowledge from papers you provide:
+The maintained memory contains these sections:
 
-```
-You: "Learn writing techniques from this NeurIPS paper: path/to/paper.pdf"
+| Section | Purpose |
+|----------|---------|
+| `Writing patterns mined` | Reusable rhetorical and claim-evidence patterns |
+| `Structure signals` | Section flow, paragraph progression, and paper organization signals |
+| `Reusable phrasing` | Transition phrases, framing templates, and concise wording |
+| `Venue-specific signals` | Visible venue-facing style and convention cues |
+| `How this helps our writing` | Practical guidance for future drafts, reports, and rebuttals |
+| `Source index` | Source attribution for mined papers |
+
+### How the memory is maintained
+
+The **paper-miner agent** reads papers and merges reusable writing knowledge into this one file:
+
+```text
+You: "Learn writing patterns from this paper: path/to/paper.pdf"
 ↓
 paper-miner analyzes the paper
 ↓
-Extracts patterns → Categorizes into 4 types → Updates knowledge files
+Extracts reusable writing signals
 ↓
-Knowledge grows with each paper analyzed
+Updates paper-miner-writing-memory.md
+↓
+ml-paper-writing reuses that memory later
 ```
 
-**What gets extracted:**
-- **Structure patterns**: How successful papers organize sections, transition between topics
-- **Writing techniques**: Sentence templates, transition phrases, clarity methods
-- **Venue requirements**: Page limits, required sections, formatting rules
-- **Rebuttal strategies**: How to respond to specific reviewer concerns
+### When to use this memory
 
-### When to Use the Knowledge Base
+Use the global paper-miner memory when you need:
+- structure inspiration for intros, methods, results, or discussion,
+- reusable transition phrases or framing templates,
+- venue-facing writing signals,
+- rebuttal phrasing and response structure ideas,
+- examples of how strong papers support and sequence claims.
 
-**For writing patterns:**
-- Stuck on how to phrase a transition? Check `writing-techniques.md`
-- Need structure inspiration? Browse `structure.md`
-- Writing rebuttal? Consult `review-response.md`
+### Default read order
 
-**For venue requirements:**
-- Submitting to NeurIPS? See `submission-guides.md` for checklist
-- Converting between venues? Compare page limits and requirements
-- Unsure about required sections? Each venue has specific requirements
+When drafting or revising with `ml-paper-writing`, read this memory **before** writing if the task involves:
+- introduction framing,
+- related work organization,
+- method exposition style,
+- results narration,
+- discussion framing,
+- venue-facing polishing.
 
-### Contributing to the Knowledge Base
+Use this read order:
+1. `references/knowledge/paper-miner-writing-memory.md`
+2. repo-local evidence and experiment artifacts
+3. cited papers or notes if needed
+4. venue template and formatting constraints
 
-Every paper you analyze makes the knowledge base richer for future use:
+Read narrowly, not exhaustively:
+- first scan `How this helps our writing`,
+- then check `Writing patterns mined` and `Structure signals`,
+- then inspect `Reusable phrasing` only for concrete wording help,
+- use `Venue-specific signals` when targeting a known venue.
 
-```bash
-# Trigger paper-miner from any context
-"Extract writing patterns from this paper: path/to/paper.pdf"
-"Analyze structure of https://arxiv.org/abs/2301.xxxxx"
-"What writing techniques does this ICLR paper use?"
-```
+### Contribution rule
 
-The paper-miner agent:
-1. Extracts paper content (PDF, DOCX, or arXiv link)
-2. Analyzes IMRaD structure and writing patterns
-3. Identifies venue-specific requirements
-4. Updates appropriate knowledge files with new patterns
-5. Reports what was added with source attribution
+Every paper mined by `paper-miner` should improve the same global memory.
 
-### Knowledge Base Principles
+Do not scatter newly mined knowledge across multiple maintained files.
+Do not create project-specific paper-miner memory.
+Do not duplicate near-identical patterns from the same source.
 
-**Actionable patterns only**: Each entry provides reusable techniques with examples.
-
-**Source attribution**: Every pattern cites the paper it came from for traceability.
-
-**No duplicates**: Checks existing content before adding new patterns.
-
-**Quality over quantity**: Focus on techniques that work, not comprehensive lists.
-
-See `references/knowledge/README.md` for complete knowledge base documentation.
-
----
+See `references/knowledge/README.md` for the detailed knowledge-base contract.
 
 ## Balancing Proactivity and Collaboration
 
