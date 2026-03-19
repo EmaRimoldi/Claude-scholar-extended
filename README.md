@@ -81,6 +81,13 @@ In other words, Claude Scholar is a **semi-automated research assistant**, not a
 
 ## Quick Start
 
+### Requirements
+
+- Git
+- (Optional) Python + [uv](https://docs.astral.sh/uv/) for Python development
+- (Optional) [Zotero](https://www.zotero.org/) + [Galaxy-Dawn/zotero-mcp](https://github.com/Galaxy-Dawn/zotero-mcp) for literature workflows
+- (Optional) [Obsidian](https://obsidian.md/) for project knowledge-base workflows
+
 ### Option 1: Full Installation (Recommended)
 
 ```bash
