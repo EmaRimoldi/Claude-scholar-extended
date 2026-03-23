@@ -107,7 +107,7 @@ function categorizeSkills(skills) {
   const categories = {
     'Research & Writing': /research|paper|writing|citation|review-response|rebuttal|post-acceptance|doc-coauthoring|latex|daily-paper|ml-paper|results-analysis|results-report|brainstorm/,
     'Development': /coding|git|code-review|bug|architecture|verification|tdd|uv-package|webapp-testing|kaggle|driven-development|development-branch|planning|dispatching|executing|using-superpowers/,
-    'Plugin Dev': /skill-|command-|hook-|mcp-|agent-identifier|command-name/,
+    'Plugin Dev': /skill-|command-|hook-|mcp-|agent-identifier|plugin-structure/,
     'Design & UI': /frontend|ui-ux|web-design|canvas|brand|theme|algorithmic-art|slack-gif|figma/,
     'Documents': /docx|xlsx|pptx|pdf|internal-comms|web-artifacts/,
   };

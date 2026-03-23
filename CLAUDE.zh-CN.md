@@ -132,7 +132,7 @@
 - **skill-improver**: Skill 改进工具
 - **skill-quality-reviewer**: Skill 质量审查
 - **command-development**: Slash 命令开发
-- **command-name**: 插件结构指南
+- **plugin-structure**: 插件结构指南
 - **agent-identifier**: Agent 开发配置
 - **hook-development**: Hook 开发和事件处理
 - **mcp-integration**: MCP 服务器集成

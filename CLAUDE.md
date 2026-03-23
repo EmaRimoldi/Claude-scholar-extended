@@ -132,7 +132,7 @@ Ideation → ML Development → Experiment Analysis → Paper Writing → Self-R
 - **skill-improver**: Skill improvement tool
 - **skill-quality-reviewer**: Skill quality review
 - **command-development**: Slash command development
-- **command-name**: Plugin structure guide
+- **plugin-structure**: Plugin structure guide
 - **agent-identifier**: Agent development configuration
 - **hook-development**: Hook development and event handling
 - **mcp-integration**: MCP server integration
