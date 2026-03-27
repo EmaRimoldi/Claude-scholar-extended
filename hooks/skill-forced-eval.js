@@ -165,6 +165,8 @@ const KEYWORD_SKILL_MAP = [
   { keywords: /\b(self.?review)\b|自审|论文检查/i, skills: ['paper-self-review'] },
   { keywords: /\b(anti.?ai|humanize)\b|去.*ai.*痕迹|AI写作/i, skills: ['writing-anti-ai'] },
   { keywords: /\b(implement|write code|add feature|modify|refactor)\b|写代码|改代码|实现|添加功能|修改|重构/i, skills: ['daily-coding'] },
+  { keywords: /\b(hypothes[ie]s|falsifiable|success.?criteria|testable|make.*testable|what.*should.*test)\b|假设|可证伪|成功标准/i, skills: ['hypothesis-formulation'] },
+  { keywords: /\b(experiment.?design|design.?experiment|baseline.?selection|ablation.?plan|power.?analysis|how.?many.?seeds|how.?many.?runs|sample.?size)\b|实验设计|基线选择|消融计划|样本量/i, skills: ['experiment-design'] },
 ];
 
 // Pre-match user prompt against keyword map
