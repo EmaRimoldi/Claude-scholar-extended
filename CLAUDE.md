@@ -65,20 +65,22 @@
 ### Research Lifecycle (7 Stages)
 
 ```
-Ideation → ML Development → Experiment Analysis → Paper Writing → Self-Review → Submission/Rebuttal → Post-Acceptance
+Ideation → Validation → Design → Execute → Analyze → [Iterate] → Pre-Write → Write → Review → Submit → Post
 ```
 
 | Stage | Core Tools | Commands |
 |-------|-----------|----------|
 | 1. Research Ideation | `research-ideation` skill + `literature-reviewer` agent + Zotero MCP | `/research-init`, `/zotero-review`, `/zotero-notes` |
-| 1b. Research Validation | `hypothesis-formulation` skill | (skill-triggered) |
+| 1b. Research Validation | `novelty-assessment` + `hypothesis-formulation` + `competitive-check` | `/check-competition` |
 | 1c. Experiment Design | `experiment-design` skill | `/design-experiments` |
 | 2. ML Project Dev | `architecture-design` skill + `code-reviewer` agent | `/plan`, `/commit`, `/tdd` |
 | 3. Experiment Analysis | `results-analysis` skill + `results-report` skill | `/analyze-results` |
-| 4. Paper Writing | `ml-paper-writing` skill + `paper-miner` agent | `/mine-writing-patterns` |
-| 5. Self-Review | `paper-self-review` skill | - |
-| 6. Submission & Rebuttal | `review-response` skill + `rebuttal-writer` agent | `/rebuttal` |
-| 7. Post-Acceptance | `post-acceptance` skill | `/presentation`, `/poster`, `/promote` |
+| 3b. Iteration Loop | `failure-diagnosis` + `hypothesis-revision` + `experiment-state.json` | (skill-triggered) |
+| 4. Pre-Writing | `claim-evidence-bridge` skill | `/map-claims` |
+| 5. Paper Writing | `ml-paper-writing` skill + `paper-miner` agent | `/mine-writing-patterns` |
+| 6. Self-Review | `paper-self-review` skill | - |
+| 7. Submission & Rebuttal | `review-response` skill + `rebuttal-writer` agent | `/rebuttal` |
+| 8. Post-Acceptance | `post-acceptance` skill | `/presentation`, `/poster`, `/promote` |
 
 ### Supporting Workflows
 
@@ -97,7 +99,7 @@ Ideation → ML Development → Experiment Analysis → Paper Writing → Self-R
 
 ---
 
-## Skills Directory (49 skills)
+## Skills Directory (54 skills)
 
 ### 🔬 Research & Analysis (5 skills)
 
@@ -107,10 +109,15 @@ Ideation → ML Development → Experiment Analysis → Paper Writing → Self-R
 - **citation-verification**: Citation verification (multi-layer: format→API→info→content)
 - **daily-paper-generator**: Daily paper generator for research tracking
 
-### 🧪 Research Validation & Design (2 skills)
+### 🧪 Research Validation, Design & Iteration (7 skills)
 
+- **novelty-assessment**: Compare proposed contribution against closest prior works, flag incremental contributions
 - **hypothesis-formulation**: Convert research gaps into falsifiable hypotheses with success/failure criteria
+- **competitive-check**: Generate structured search queries for competitive landscape checks, analyze user-provided results
 - **experiment-design**: Pre-experiment planning: baselines, ablations, sample size, resource estimation
+- **failure-diagnosis**: Systematic diagnosis of research-level experiment failures (not code bugs)
+- **hypothesis-revision**: Iterative hypothesis refinement with pivot/persevere/abandon decisions, Obsidian write-back
+- **claim-evidence-bridge**: Map paper claims to experimental evidence, manage paper scope
 
 ### 📝 Paper Writing & Publication (7 skills)
 
@@ -193,6 +200,8 @@ Ideation → ML Development → Experiment Analysis → Paper Writing → Self-R
 | `/obsidian-project` | Detach, archive, purge, or rebuild a project knowledge base |
 | `/obsidian-views` | Explicitly generate optional `.base` views and extra canvases |
 | `/design-experiments` | Generate full experiment plan from hypotheses (baselines, ablations, sample size, resource estimation) |
+| `/check-competition` | Generate search queries for competitive landscape check, analyze pasted results |
+| `/map-claims` | Map paper claims to experimental evidence, manage paper scope before writing |
 | `/analyze-results` | Analyze experiment results (statistical tests, visualization, ablation) |
 | `/rebuttal` | Generate systematic rebuttal document |
 | `/presentation` | Create conference presentation outline |

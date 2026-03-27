@@ -105,7 +105,7 @@ function collectSkills() {
 // Categorize skills into groups
 function categorizeSkills(skills) {
   const categories = {
-    'Research & Writing': /research|paper|writing|citation|review-response|rebuttal|post-acceptance|doc-coauthoring|latex|daily-paper|ml-paper|results-analysis|results-report|brainstorm/,
+    'Research & Writing': /research|paper|writing|citation|review-response|rebuttal|post-acceptance|doc-coauthoring|latex|daily-paper|ml-paper|results-analysis|results-report|brainstorm|novelty|hypothesis|competitive|experiment-design|failure-diagnosis|hypothesis-revision|claim-evidence/,
     'Development': /coding|git|code-review|bug|architecture|verification|tdd|uv-package|webapp-testing|kaggle|driven-development|development-branch|planning|dispatching|executing|using-superpowers/,
     'Plugin Dev': /skill-|command-|hook-|mcp-|agent-identifier|plugin-structure/,
     'Design & UI': /frontend|ui-ux|web-design|canvas|brand|theme|algorithmic-art|slack-gif|figma/,
@@ -167,6 +167,9 @@ const KEYWORD_SKILL_MAP = [
   { keywords: /\b(implement|write code|add feature|modify|refactor)\b|写代码|改代码|实现|添加功能|修改|重构/i, skills: ['daily-coding'] },
   { keywords: /\b(hypothes[ie]s|falsifiable|success.?criteria|testable|make.*testable|what.*should.*test)\b|假设|可证伪|成功标准/i, skills: ['hypothesis-formulation'] },
   { keywords: /\b(experiment.?design|design.?experiment|baseline.?selection|ablation.?plan|power.?analysis|how.?many.?seeds|how.?many.?runs|sample.?size)\b|实验设计|基线选择|消融计划|样本量/i, skills: ['experiment-design'] },
+  { keywords: /\b(novelty|incremental|contribution.*compare|prior.*work.*compare)\b|新颖性|增量.*贡献|贡献.*比较/i, skills: ['novelty-assessment'] },
+  { keywords: /\b(competing|scoop|concurrent.*work|someone.*published|check.*competition)\b|竞争|被抢发|并发.*工作/i, skills: ['competitive-check'] },
+  { keywords: /\b(claim.*evidence|evidence.*map|what.*can.*I.*claim|scope.*paper|include.*paper|over.?claim)\b|证据.*映射|论文.*范围|过度.*声称/i, skills: ['claim-evidence-bridge'] },
 ];
 
 // Pre-match user prompt against keyword map
@@ -180,10 +183,41 @@ function suggestSkills(prompt) {
   return [...suggested];
 }
 
+// Context-aware skill activation for research iteration loop
+// Must run BEFORE the standard KEYWORD_SKILL_MAP loop to handle disambiguation
+function contextAwareSkillSuggestions(prompt, projectRoot) {
+  const suggestions = [];
+
+  const hasResearchContext = ['hypotheses.md', 'experiment-plan.md', 'experiment-state.json']
+    .some(f => fs.existsSync(path.join(projectRoot, f)));
+
+  // 1. failure-diagnosis vs bug-detective
+  //    Research failure keywords overlap with code debugging keywords.
+  //    Route to failure-diagnosis ONLY in research projects.
+  const failureDiagnosisPattern = /\b(experiment.*fail|results.*worse|hypothesis.*wrong|not.*learning|underperform|why.*didn.?t.*work)\b|实验.*失败|结果.*差|假设.*错/i;
+  if (failureDiagnosisPattern.test(prompt) && hasResearchContext) {
+    suggestions.push('failure-diagnosis');
+  }
+
+  // 2. hypothesis-revision — only meaningful with existing hypotheses
+  const hypothesisRevisionPattern = /\b(pivot|persevere|revise.*hypothes|update.*hypothes|what.*next.*experiment|should.*I.*continue)\b|修订.*假设|是否.*继续/i;
+  if (hypothesisRevisionPattern.test(prompt) && hasResearchContext) {
+    suggestions.push('hypothesis-revision');
+  }
+
+  return suggestions;
+}
+
 // Generate skill list
 const SKILL_LIST = collectSkills();
 const SKILL_GROUPS = categorizeSkills(SKILL_LIST);
 const suggestedSkills = suggestSkills(userPrompt);
+
+// Add context-aware suggestions
+const contextSuggestions = contextAwareSkillSuggestions(userPrompt, cwd);
+for (const s of contextSuggestions) {
+  suggestedSkills.push(s);
+}
 const binding = common.getProjectMemoryBinding(cwd);
 const isResearchPrompt = common.promptLooksResearchRelated(userPrompt);
 
