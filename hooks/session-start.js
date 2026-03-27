@@ -94,6 +94,44 @@ if (binding.bound) {
   output += '  - Suggested command: /obsidian-init\n\n';
 }
 
+// Experiment iteration loop state detection
+const stateFile = path.join(cwd, 'experiment-state.json');
+if (fs.existsSync(stateFile)) {
+  try {
+    const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+    output += '🔬 Experiment iteration loop: active\n';
+    output += `  - Project: ${state.project}\n`;
+    output += `  - Iteration: ${state.iteration}/${state.max_iterations}\n`;
+    output += `  - Hypothesis: ${state.active_hypothesis?.summary || 'unknown'}\n`;
+    output += `  - Status: ${state.status}\n`;
+
+    // Status-specific nudge
+    const nudges = {
+      'planned': '  → Ready to run experiments. Execute the plan in experiment-plan.md.',
+      'running': '  → Experiments in progress. Run /analyze-results when done.',
+      'analyzing': '  → Analysis in progress. Check analysis-output/ for results.',
+      'diagnosing': '  → Diagnosis in progress. Review failure-diagnosis.md, then activate hypothesis-revision.',
+      'revising': '  → Revision pending. Review hypotheses.md, then run /design-experiments for the next iteration.',
+      'confirmed': '  → Hypothesis confirmed! Run /map-claims to prepare for writing.',
+      'abandoned': '  → Research line abandoned. Consider running novelty-assessment for a new direction.'
+    };
+    output += (nudges[state.status] || '') + '\n';
+
+    if (state.latest_analysis?.primary_result) {
+      output += `  - Latest result: ${state.latest_analysis.primary_result}\n`;
+    }
+    if (state.resource_budget?.remaining_gpu_hours !== undefined) {
+      output += `  - GPU budget remaining: ${state.resource_budget.remaining_gpu_hours}h\n`;
+    }
+    if (state.deadline) {
+      output += `  - Deadline: ${state.deadline}\n`;
+    }
+    output += '\n';
+  } catch {
+    output += '🔬 Experiment state file found but unreadable\n\n';
+  }
+}
+
 // Package manager detection
 try {
   const pm = getPackageManager();

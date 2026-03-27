@@ -71,6 +71,8 @@ Ideation → ML Development → Experiment Analysis → Paper Writing → Self-R
 | Stage | Core Tools | Commands |
 |-------|-----------|----------|
 | 1. Research Ideation | `research-ideation` skill + `literature-reviewer` agent + Zotero MCP | `/research-init`, `/zotero-review`, `/zotero-notes` |
+| 1b. Research Validation | `hypothesis-formulation` skill | (skill-triggered) |
+| 1c. Experiment Design | `experiment-design` skill | `/design-experiments` |
 | 2. ML Project Dev | `architecture-design` skill + `code-reviewer` agent | `/plan`, `/commit`, `/tdd` |
 | 3. Experiment Analysis | `results-analysis` skill + `results-report` skill | `/analyze-results` |
 | 4. Paper Writing | `ml-paper-writing` skill + `paper-miner` agent | `/mine-writing-patterns` |
@@ -95,7 +97,7 @@ Ideation → ML Development → Experiment Analysis → Paper Writing → Self-R
 
 ---
 
-## Skills Directory (47 skills)
+## Skills Directory (49 skills)
 
 ### 🔬 Research & Analysis (5 skills)
 
@@ -104,6 +106,11 @@ Ideation → ML Development → Experiment Analysis → Paper Writing → Self-R
 - **results-report**: Complete post-experiment summary reporting (retrospection, decision support, Obsidian results reports)
 - **citation-verification**: Citation verification (multi-layer: format→API→info→content)
 - **daily-paper-generator**: Daily paper generator for research tracking
+
+### 🧪 Research Validation & Design (2 skills)
+
+- **hypothesis-formulation**: Convert research gaps into falsifiable hypotheses with success/failure criteria
+- **experiment-design**: Pre-experiment planning: baselines, ablations, sample size, resource estimation
 
 ### 📝 Paper Writing & Publication (7 skills)
 
@@ -185,6 +192,7 @@ Ideation → ML Development → Experiment Analysis → Paper Writing → Self-R
 | `/obsidian-note` | Archive, purge, or rename a single canonical note |
 | `/obsidian-project` | Detach, archive, purge, or rebuild a project knowledge base |
 | `/obsidian-views` | Explicitly generate optional `.base` views and extra canvases |
+| `/design-experiments` | Generate full experiment plan from hypotheses (baselines, ablations, sample size, resource estimation) |
 | `/analyze-results` | Analyze experiment results (statistical tests, visualization, ablation) |
 | `/rebuttal` | Generate systematic rebuttal document |
 | `/presentation` | Create conference presentation outline |
