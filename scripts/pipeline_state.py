@@ -147,6 +147,13 @@ PIPELINE_STEPS = [
         False,
     ),
     (
+        "compile-manuscript",
+        "/compile-manuscript",
+        "Compile LaTeX to PDF and create Overleaf package",
+        [],
+        False,
+    ),
+    (
         "rebuttal",
         "/rebuttal",
         "Systematic reviewer response",

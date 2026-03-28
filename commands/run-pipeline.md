@@ -68,7 +68,8 @@ Execute the following steps **in this exact order**. This is the canonical seque
 | 14 | position | `/position` | Contribution positioning | — | No |
 | 15 | story | `/story` | Narrative arc, paper blueprint | — | No |
 | 16 | produce-manuscript | `/produce-manuscript` | Figures, prose, LaTeX, package | — | No |
-| 17 | rebuttal | `/rebuttal` | Reviewer response document | — | No |
+| 17 | compile-manuscript | `/compile-manuscript` | Compile LaTeX to PDF, Overleaf ZIP | — | No |
+| 18 | rebuttal | `/rebuttal` | Reviewer response document | — | No |
 
 ## Execution Loop
 
@@ -99,7 +100,7 @@ If mode is **interactive** (not `--auto`), display:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Step N/17: <command>
+  Step N/18: <command>
   <description>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
@@ -148,7 +149,7 @@ Use the AskUserQuestion tool for this confirmation.
 After each step completes, display a brief status line:
 
 ```
-[OK] Step N/17: <command> — completed
+[OK] Step N/18: <command> — completed
      Next: <next_command> — <next_description>
 ```
 
