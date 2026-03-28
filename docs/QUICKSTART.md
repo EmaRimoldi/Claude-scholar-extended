@@ -27,7 +27,9 @@ initial idea to camera-ready submission.
    claude
    ```
 
-3. **Bootstrap the Obsidian knowledge base** (recommended). If your repo does
+3. **Configure credentials** (see [Credential Setup](#credential-setup) below).
+
+4. **Bootstrap the Obsidian knowledge base** (recommended). If your repo does
    not yet have a `.claude/project-memory/registry.yaml`, Claude Scholar will
    offer to create one automatically, or you can run:
    ```
@@ -36,9 +38,48 @@ initial idea to camera-ready submission.
    This binds the repo to a structured knowledge base that tracks literature,
    experiments, results, and writing across sessions.
 
-4. **Verify the session-start hook fires.** When Claude Code starts, a hook
+5. **Verify the session-start hook fires.** When Claude Code starts, a hook
    displays Git status, open TODOs, available commands, and the bound Obsidian
    project status. If you see this summary, the system is ready.
+
+### Credential Setup
+
+Claude Scholar accesses several external services. Credentials are stored in
+`.claude/settings.local.json` (gitignored --- never committed).
+
+Copy the template and fill in your values:
+
+```bash
+cp settings.json.template .claude/settings.local.json
+```
+
+Then edit `.claude/settings.local.json` and replace the placeholders:
+
+| Credential | Where to get it | Required? |
+|---|---|---|
+| **ZOTERO_API_KEY** | [zotero.org/settings/keys](https://www.zotero.org/settings/keys) --- create a new key with read/write access | Required for Phase 1 (literature review) |
+| **ZOTERO_LIBRARY_ID** | Same page --- your numeric "User ID" shown at the top | Required with above |
+| **ZOTERO_LIBRARY_TYPE** | `user` for personal libraries, `group` for shared | Default: `user` |
+| **UNPAYWALL_EMAIL** | Any valid email address | Optional --- enables open-access PDF auto-attachment |
+| **GITHUB_PERSONAL_ACCESS_TOKEN** | [github.com/settings/tokens](https://github.com/settings/tokens) | Optional --- for GitHub plugin operations |
+
+**APIs that do NOT require keys** (public access):
+- Semantic Scholar (100 req/5 min)
+- CrossRef (50 req/min)
+- arXiv (20 req/min recommended)
+
+**Optional: Chrome browser automation.** The `daily-paper-generator` skill can
+use a Chrome MCP server at `http://127.0.0.1:12306/mcp` for browser-based
+arXiv navigation. Uncomment the `streamable-mcp-server` block in settings if
+you need this.
+
+**Verify your setup:**
+
+```bash
+# In a Claude Code session, test Zotero connection:
+# Ask Claude to run: mcp__zotero__get_collections
+# If it returns your library collections, credentials are working.
+```
 
 ---
 
@@ -498,6 +539,96 @@ hypothesis-revision  -->  Decision: PIVOT / PERSEVERE / ABANDON
 
 8. **Use `/obsidian-sync` when switching between long sessions.** This forces a
    full sync between the repo, project memory, and Obsidian vault.
+
+---
+
+## Pipeline Orchestrator
+
+Instead of running each phase command individually, you can use the
+`/run-pipeline` command to execute the full research pipeline with built-in
+state tracking and checkpoints.
+
+### Basic usage
+
+```bash
+# Interactive mode (default) --- asks before each step
+/run-pipeline
+
+# Full auto --- runs all steps without confirmation
+/run-pipeline --auto
+
+# Resume from where you left off (after closing a session)
+/run-pipeline --resume
+
+# Start from a specific step
+/run-pipeline --from scaffold
+
+# Check current pipeline progress
+/run-pipeline --status
+
+# Reset all steps to pending
+/run-pipeline --reset
+
+# Skip steps that need internet (offline mode)
+/run-pipeline --skip-online
+```
+
+### How it works
+
+The orchestrator runs the 17 pipeline steps in canonical order:
+
+```
+ 1. /research-init        9. /plan-compute
+ 2. /check-competition   10. /run-experiment
+ 3. /design-experiments   11. /collect-results
+ 4. /scaffold             12. /analyze-results
+ 5. /build-data           13. /map-claims
+ 6. /setup-model          14. /position
+ 7. /implement-metrics    15. /story
+ 8. /validate-setup       16. /produce-manuscript
+                          17. /rebuttal
+```
+
+**In interactive mode** (default), between each step the orchestrator:
+
+1. Shows what completed and what is coming next.
+2. Asks: **Continue**, **Skip**, or **Abort**.
+3. Checks that prerequisite files exist before running a step.
+4. Saves progress to `pipeline-state.json` so you can resume later.
+
+**In auto mode** (`--auto`), all steps run sequentially without prompts. Failed
+steps are logged and skipped.
+
+### State tracking
+
+Pipeline progress persists in `pipeline-state.json` (gitignored) at the project
+root. Each step records:
+
+- Status: `pending`, `running`, `completed`, `skipped`, `failed`
+- Timestamps for start and completion
+- Failure reason (if applicable)
+
+You can also check state directly:
+
+```bash
+python3 scripts/pipeline_state.py status
+python3 scripts/pipeline_state.py next
+```
+
+### Logs
+
+Each step logs output to `logs/pipeline-YYYY-MM-DD/step-NN-<name>.log`.
+
+### Session-start integration
+
+When `pipeline-state.json` exists, the session-start hook automatically shows
+pipeline progress and suggests the next step:
+
+```
+🔄 Pipeline: 7/17 completed, 1 skipped
+  → Next: /plan-compute — GPU estimation and SLURM script generation
+  → Run /run-pipeline --resume to continue
+```
 
 ---
 
