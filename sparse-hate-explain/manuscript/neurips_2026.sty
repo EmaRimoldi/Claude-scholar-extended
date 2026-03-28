@@ -31,10 +31,12 @@
 \DeclareOption{preprint}{}
 \ProcessOptions\relax
 
-\if@neurips@final\else
-  \RequirePackage{lineno}
-  \linenumbers
-\fi
+% Line numbers disabled for clean output
+% Pass [final] option or uncomment lineno for review mode
+% \if@neurips@final\else
+%   \RequirePackage{lineno}
+%   \linenumbers
+% \fi
 
 % Footnote for equal contribution
 \newcommand{\equalcontrib}{\footnotemark[1]}
