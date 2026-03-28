@@ -82,7 +82,7 @@ supervision:
   lambda_attn: 1.0
   rationale_aggregation: majority_vote  # from 3 annotators
 
-seeds: [42, 123, 456]
+seeds: [42, 123, 456, 789, 1024]
 ```
 
 ## Evaluation Metrics

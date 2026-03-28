@@ -1,0 +1,44 @@
+{
+  "best_val_f1": 0.6959845501294604,
+  "test_loss": 0.7051208117776666,
+  "test_metrics": {
+    "macro_f1": 0.682070559137261,
+    "per_class_f1": [
+      0.7650085763293311,
+      0.5407882676443629,
+      0.7404148334380892
+    ],
+    "accuracy": 0.6912681912681913
+  },
+  "config": {
+    "data": {
+      "dataset_name": "hatexplain",
+      "max_length": 128,
+      "batch_size": 16,
+      "num_workers": 4,
+      "model_name": "bert-base-uncased",
+      "cache_dir": "data/cache"
+    },
+    "model": {
+      "model_name": "bert-base-uncased",
+      "num_labels": 3,
+      "attention_transform": "softmax",
+      "supervised_heads": "all",
+      "lambda_attn": 0.0,
+      "top_k": 24,
+      "head_importance_path": "/home/erimoldi/projects/Claude-scholar-extended/sparse-hate-explain/results/head_importance/head_importance.json"
+    },
+    "training": {
+      "num_epochs": 10,
+      "learning_rate": 2e-05,
+      "weight_decay": 0.01,
+      "warmup_ratio": 0.1,
+      "max_grad_norm": 1.0,
+      "patience": 3
+    },
+    "seed": 789,
+    "mode": "train",
+    "checkpoint": null,
+    "output_dir": "/home/erimoldi/projects/Claude-scholar-extended/sparse-hate-explain/results/vanilla_s789"
+  }
+}
