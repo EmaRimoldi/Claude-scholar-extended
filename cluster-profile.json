@@ -62,6 +62,18 @@
       "preemptable": true,
       "notes": "Preemptable, 48h limit, most GPU variety and availability"
     },
+    "pi_tpoggio": {
+      "max_time": "7-00:00:00",
+      "max_mem_mb": 1031620,
+      "max_cpus": 192,
+      "gpu_types": [
+        {"type": "a100", "count": 8, "vram_gb": 80, "nodes": 1}
+      ],
+      "max_submit": null,
+      "default": false,
+      "preemptable": false,
+      "notes": "PI partition, A100 80GB x8, 7-day limit, priority access"
+    },
     "sched_mit_hill": {
       "max_time": "12:00:00",
       "max_mem_mb": 128000,
@@ -94,30 +106,30 @@
     },
     "gpu-single": {
       "description": "Single GPU inference/training (7-8B models)",
-      "partition": "mit_normal_gpu",
+      "partition": "pi_tpoggio",
       "cpus": 8,
       "mem_gb": 64,
       "time": "04:00:00",
       "gpus": 1,
-      "gpu_type": "l40s"
+      "gpu_type": "a100"
     },
     "gpu-multi": {
       "description": "Multi-GPU training (2-4 GPUs)",
-      "partition": "mit_normal_gpu",
-      "cpus": 16,
-      "mem_gb": 128,
-      "time": "06:00:00",
+      "partition": "pi_tpoggio",
+      "cpus": 32,
+      "mem_gb": 256,
+      "time": "12:00:00",
       "gpus": 4,
-      "gpu_type": "l40s"
+      "gpu_type": "a100"
     },
     "gpu-large": {
       "description": "Large model training (8 GPUs, long jobs)",
-      "partition": "mit_preemptable",
-      "cpus": 32,
-      "mem_gb": 256,
-      "time": "1-00:00:00",
+      "partition": "pi_tpoggio",
+      "cpus": 64,
+      "mem_gb": 512,
+      "time": "2-00:00:00",
       "gpus": 8,
-      "gpu_type": "h200"
+      "gpu_type": "a100"
     }
   }
 }
