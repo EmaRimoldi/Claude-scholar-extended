@@ -51,7 +51,7 @@ sbatch --job-name=p1_contrastive_bci4 \
        --gres=gpu:a100:1 \
        --time=02:00:00 \
        --output=outputs/p1_contrastive_bci4_s%a/slurm-%A_%a.out \
-       scripts/run_experiment.sh --method contrastive --dataset bci4 --seed_index $SLURM_ARRAY_TASK_ID
+       cluster/jobs/run_experiment.sh --method contrastive --dataset bci4 --seed_index $SLURM_ARRAY_TASK_ID
 ```
 
 ### 3. Progress Monitoring
@@ -117,14 +117,50 @@ Phase 1 Gate Evaluation:
 
 ### 6. State Management
 
-Maintain `experiment-state.json` throughout the execution lifecycle:
+Maintain `experiment-state.json` throughout the execution lifecycle. This file is shared with `experiment-design`, `hypothesis-revision`, `failure-diagnosis`, and `hooks/session-start.js` — preserve all top-level fields when updating.
 
-- **Status transitions**: `planned` -> `running` -> `analyzing` | `diagnosing`
-  - `planned`: Initial state from `experiment-design`
-  - `running`: At least one job submitted
-  - `analyzing`: All phases complete, ready for `results-analysis`
-  - `diagnosing`: Phase gate failed, needs `failure-diagnosis`
-- **Per-phase records**: Added to `experiment-state.json` as phases complete
+**Full schema** (top-level fields set by upstream skills, preserved by the runner):
+
+```jsonc
+{
+  "$schema": "experiment-state-v1",
+  "project": "<project-name>",              // set by experiment-design
+  "created": "<ISO-8601>",                  // set by experiment-design
+  "updated": "<ISO-8601>",                  // updated by runner on every change
+  "iteration": 0,                           // incremented by hypothesis-revision
+  "max_iterations": 3,                      // set by experiment-design
+  "active_hypothesis": {                    // set by hypothesis-formulation/revision
+    "id": "H1",
+    "summary": "<one-line>",
+    "source_file": "hypotheses.md"
+  },
+  "status": "running",                      // updated by runner (see below)
+  "latest_analysis": null,                  // set by results-analysis
+  "resource_budget": {                      // updated by runner after each phase
+    "total_gpu_hours": null,
+    "used_gpu_hours": 0,
+    "remaining_gpu_hours": null
+  },
+  "deadline": null,                         // set by experiment-design
+  "history": [],                            // appended by hypothesis-revision
+  "phases": { ... },                        // managed by runner (see below)
+  "failures": [ ... ]                       // managed by runner (see below)
+}
+```
+
+**Status values** (full lifecycle — runner manages transitions marked with →):
+
+- `planned` — Initial state from `experiment-design`
+- → `running` — Runner sets this when first job is submitted
+- → `analyzing` — Runner sets this when all phases complete successfully
+- → `diagnosing` — Runner sets this when a phase gate fails
+- `revising` — Set by `hypothesis-revision` (runner preserves, never overwrites)
+- `confirmed` — Set by the research loop when hypothesis is confirmed (runner preserves)
+- `abandoned` — Set by `hypothesis-revision` when direction is abandoned (runner preserves)
+
+**Rule**: The runner only writes `running`, `analyzing`, or `diagnosing`. It NEVER overwrites `revising`, `confirmed`, or `abandoned` — those are set by other skills in the iteration loop.
+
+**Per-phase records**: Added to `phases` sub-object as phases complete:
 
 ```jsonc
 {
@@ -145,7 +181,7 @@ Maintain `experiment-state.json` throughout the execution lifecycle:
 }
 ```
 
-- **Resource tracking**: Update `used_gpu_hours` and `remaining_gpu_hours` after each phase
+- **Resource tracking**: Update `resource_budget.used_gpu_hours` and `resource_budget.remaining_gpu_hours` after each phase
 - **Failure records**: Append to `failures` array with run ID, error type, retry count, resolution
 
 ```jsonc
@@ -194,7 +230,7 @@ outputs/
 ### Mode A: Pipeline (from predecessor)
 
 1. **`experiment-plan.md`** -- from `experiment-design`, containing phases, baselines, ablations, gate criteria, resource estimates
-2. **SLURM scripts** -- from `compute-planner` or user-prepared `scripts/` directory
+2. **Compute plan and SLURM scripts** -- `compute-plan.md` and `cluster/` directory from `compute-planner` (contains `launch.sh`, `monitor.sh`, `jobs/*.sh`), or user-prepared scripts
 3. **Implemented experiment code** -- training scripts referenced by SLURM jobs
 4. **`experiment-state.json`** -- existing state file from `experiment-design`
 
