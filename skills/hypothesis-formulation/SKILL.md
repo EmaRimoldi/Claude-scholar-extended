@@ -63,6 +63,7 @@ When running in Mode B, state: "No research-proposal.md or novelty-assessment.md
   - Success/failure criteria for each hypothesis
   - Minimum experiment specification to test each hypothesis
   - Risk assessment: what if H1 fails? (fallback hypotheses)
+  - **Mathematical framework** section: what analytical formulas, derivations, or reference algorithms are needed to compute the predictions. If the hypothesis compares model behavior to a known algorithm (e.g., gradient descent, Bayes-optimal, kernel regression), identify the formula here. If the hypothesis is purely empirical (method A vs. method B), note "no analytical reference needed." This section feeds directly into the `measurement-implementation` skill.
 
 ## When to Use
 
