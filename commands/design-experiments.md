@@ -63,3 +63,45 @@ If no `hypotheses.md` is found, the skill will:
 - **Primary skill**: `experiment-design`
 - **Feeds into**: Experiment execution by the researcher
 - **State tracking**: `experiment-state.json` enables session-start reminders
+
+---
+
+## Statistical Rigor Requirements
+
+These rules are **mandatory** for every experiment plan produced by this command.
+
+- **Minimum seeds**: 5 seeds per condition for the main experiment, 10 for the primary comparison. 3 seeds is ONLY acceptable for a quick smoke test, never for publishable results.
+- **Statistical tests**: Every experiment plan MUST specify which statistical test will be used (paired bootstrap, Wilcoxon signed-rank, or permutation test). P-values or confidence intervals are mandatory.
+- **Effect size**: Cohen's d or equivalent must be computed for every comparison. If expected effect size < 0.5, require minimum 10 seeds.
+- **Power analysis**: If prior effect sizes are unknown, default to d=0.3 (small effect) and compute required seeds accordingly.
+
+## Baseline Completeness Checklist
+
+Before finalizing any experiment plan, the following checklist **must** be completed. Every unchecked item requires explicit justification.
+
+- [ ] For each proposed method, identify at least ONE alternative method that could explain the results
+- [ ] If using attention as explanation → must compare with gradient-based methods (IG, SHAP) as baselines
+- [ ] If claiming faithfulness → must include adversarial tests (attention swap, counterfactual)
+- [ ] If claiming improvement → must include ablation isolating EACH component
+- [ ] Multi-dataset: require at least 2 datasets/settings. If only 1 dataset, explicitly document this as a limitation and justify
+
+## Metric-Claim Alignment Check
+
+A mandatory cross-reference step that **blocks** the experiment plan if any key term has zero corresponding metrics.
+
+1. Extract every key term from the research question and hypotheses.
+2. For each key term, verify at least one metric operationalizes it:
+   - "faithfulness" → REQUIRE at least one of: comprehensiveness, sufficiency, AOPC, attention-IG correlation
+   - "accuracy" → REQUIRE F1, accuracy, or AUC
+   - "plausibility" → REQUIRE token-F1, AUPRC, IoU vs human rationales
+3. If any key term has zero corresponding metrics, **BLOCK** the experiment plan and request the user to add appropriate metrics before proceeding.
+
+## Threat-to-Validity Analysis
+
+For **each hypothesis** in the experiment plan, the following three questions must be answered explicitly:
+
+1. **Falsification test**: What experiment would DISPROVE this hypothesis?
+2. **Confound identification**: What confound could explain the result without the proposed mechanism?
+3. **Adversarial validation**: What adversarial test validates the causal claim?
+
+The plan must document these answers alongside each hypothesis. If any hypothesis lacks all three answers, the plan is considered incomplete.

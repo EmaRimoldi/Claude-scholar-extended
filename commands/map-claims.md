@@ -49,6 +49,16 @@ This command activates the `claim-evidence-bridge` skill to produce a structured
    - `claim-evidence-map.md` in project root
    - If Obsidian-bound: `Writing/claim-evidence-map.md`
 
+## Claim-Evidence Consistency Gate
+
+Before finalizing the claim-evidence map, apply these mandatory consistency checks:
+
+- **Dual-sided evidence listing**: For each claim, explicitly list BOTH supporting AND contradicting evidence from results. Never present only the favorable side.
+- **Ambiguity flag**: Flag claims where evidence is ambiguous or contradictory — these must be reframed honestly before proceeding.
+- **Statistical significance downgrade**: If a claim says "method X improves Y" but the evidence shows no statistically significant improvement, the claim MUST be downgraded to "method X maintains Y" or "method X does not significantly degrade Y".
+- **Title keyword audit**: Extract every substantive keyword from the planned title, verify each has at least one metric and one significant result supporting it. If any keyword lacks evidence, flag for title revision.
+- **Hard block**: BLOCK manuscript generation if any core claim has zero supporting evidence. The map must be revised and all core claims must have at least one piece of supporting evidence before downstream steps proceed.
+
 ## Integration
 
 - **Primary skill**: `claim-evidence-bridge`

@@ -32,6 +32,36 @@ Activates the `measurement-implementation` skill to produce metric functions, an
 4. Implement analytical references if needed (OLS, GD, ridge, etc.)
 5. Implement statistical tests appropriate for the experimental design
 
+## Metric Coverage Validation
+
+Before finalizing metric implementations, cross-reference every key term in the research question (from `hypotheses.md`) with the implemented metrics. **BLOCK and warn** if any research question keyword has zero corresponding metric.
+
+### Keyword-to-Metric Requirements
+
+| Research Question Keyword | Required Metrics |
+|---------------------------|-----------------|
+| **faithfulness** | comprehensiveness (confidence drop when rationale removed), sufficiency (confidence using only rationale), attention-IG correlation |
+| **plausibility** | token-level F1 vs human rationales, AUPRC |
+| **accuracy** | macro-F1, per-class F1, accuracy |
+| **sparsity** | attention entropy, sparsity ratio (% zero weights) |
+
+### Procedure
+
+1. Load `hypotheses.md` and extract all research questions
+2. Tokenize each research question into key terms
+3. For each key term, look up the keyword-to-metric table above
+4. Verify that every required metric has a corresponding `@register_metric` implementation in `src/metrics/`
+5. If any required metric is missing, **BLOCK** the workflow and emit a clear warning listing the missing metrics and the research question keyword that triggered them
+6. Produce a coverage matrix showing: keyword → required metrics → implemented (yes/no)
+
+### Faithfulness Metrics in the Catalog
+
+The following faithfulness metrics are part of the known metric catalog and must be available for registration:
+
+- **Comprehensiveness**: Measures the drop in model confidence when the rationale is removed from the input. Higher drop = more faithful rationale.
+- **Sufficiency**: Measures model confidence when only the rationale is provided as input. Higher confidence = rationale is sufficient to reproduce the prediction.
+- **AOPC (Area Over the Perturbation Curve)**: Aggregates comprehensiveness over incremental token removals, providing a curve-level faithfulness score.
+
 ## Integration
 
 - **Primary skill**: `measurement-implementation`

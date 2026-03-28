@@ -136,6 +136,60 @@ Results/Reports/
 {Experiment Line} / Round {N} / {Purpose} / {YYYY-MM-DD}
 ```
 
+## Statistical Tests (mandatory)
+
+Every pairwise comparison in the analysis MUST include the following:
+
+1. **Paired bootstrap test** with 10,000 resamples to compute p-values
+2. **95% confidence intervals** for all reported metrics
+3. **Cohen's d effect size** for every comparison
+
+### Rules
+
+- Flag comparisons where confidence intervals overlap as **"not statistically distinguishable"**
+- If `n_seeds < 5`, emit a **WARNING** in the analysis output: `"⚠ Only {n} seeds — statistical power is limited; interpret with caution."`
+- Include a **Statistical Summary** table with the following columns:
+
+| Condition | Mean | Std | 95% CI | p-value vs baseline | Cohen's d |
+|-----------|------|-----|--------|---------------------|-----------|
+
+## Contradiction Detection (mandatory)
+
+After computing results, systematically check alignment with stated hypotheses:
+
+1. Load `hypotheses.md` and enumerate each hypothesis
+2. For each hypothesis, determine whether the results **support**, **partially support**, **contradict**, or are **inconclusive**
+3. If a stated contribution is contradicted by results (e.g., "selective head supervision improves X" but results show no improvement or degradation), **flag it explicitly** with a prominent warning
+4. Generate a **Hypothesis Verdict** table:
+
+| Hypothesis | Verdict | Evidence |
+|------------|---------|----------|
+| H1: ... | supported / partially / contradicted / inconclusive | Key metric values and statistical test results |
+
+## Error Analysis (mandatory)
+
+Go beyond aggregate metrics to understand failure modes:
+
+1. **Stratify results by at least 2 dimensions** (e.g., per-class and by sample difficulty, or per-class and by sequence length)
+2. Include a **per-class F1 breakdown** table
+3. **Analyze failure cases**: identify what the worst-performing samples have in common (e.g., class imbalance, short sequences, ambiguous labels, domain shift)
+4. Report at minimum:
+   - Which classes or strata have the largest performance gap vs baseline
+   - Whether errors are systematic (concentrated in specific strata) or random
+
+## Results Health Check
+
+Before proceeding to Phase 2 (report generation), run the following health check and output a **pass/fail summary**:
+
+| Check | Criterion | Status |
+|-------|-----------|--------|
+| Equal seed counts | All conditions have the same number of seeds/runs | pass/fail |
+| No missing results | All expected result files are present | pass/fail |
+| Statistical tests complete | All pairwise comparisons have bootstrap p-values, CIs, and Cohen's d | pass/fail |
+| Hypothesis verdicts assigned | Every hypothesis in hypotheses.md has a verdict | pass/fail |
+
+If any check **fails**, the health check must be reported as a blocker before generating the final report.
+
 ## 执行规则
 
 ### 统计与图表

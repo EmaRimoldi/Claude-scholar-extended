@@ -147,6 +147,13 @@ PIPELINE_STEPS = [
         False,
     ),
     (
+        "quality-review",
+        "/quality-review",
+        "Quality gate: claim-evidence, statistical rigor, baselines",
+        [],
+        False,
+    ),
+    (
         "compile-manuscript",
         "/compile-manuscript",
         "Compile LaTeX to PDF and create Overleaf package",
