@@ -119,10 +119,24 @@ Collect per-run plots into a canonical figures directory:
 
 ## Standard workflow
 
+### 0. Reconcile output paths
+
+Before scanning, detect and warn about output path mismatches that cause silent empty-collection failures:
+
+1. **Check SLURM scripts**: If `cluster/jobs/` exists, scan `*.sh` files for `--output_dir`, `output_dir=`, or `rsync` targets. Extract the actual output paths used by submitted jobs.
+2. **Check Hydra overrides**: If `.hydra/overrides.yaml` or Hydra config files exist, extract `hydra.run.dir` or `output_dir` overrides.
+3. **Compare paths**: If SLURM scripts or Hydra configs write to a path different from the `outputs_dir` parameter (e.g., `/scratch/$USER/...` vs. `outputs/`):
+   - Warn: "SLURM scripts write to {slurm_path} but collector is scanning {outputs_dir}. Either adjust the outputs_dir parameter or ensure results have been copied (e.g., via rsync) to {outputs_dir}."
+   - Suggest: the correct path to pass as `outputs_dir` argument.
+4. **Check experiment-state.json**: If it exists, read `phases.*.output_dir` or similar fields for recorded output locations.
+5. **Check /scratch/ convention**: On HPC clusters, if `outputs/` is empty but `/scratch/$USER/` contains directories matching the project or run naming pattern, warn: "outputs/ is empty but matching run directories found under /scratch/$USER/. Results may not have been synced back."
+
+Only proceed to Step 1 after path reconciliation. If a mismatch is detected and no runs are found at `outputs_dir`, this is a **blocking warning** — do not produce an empty results.csv without explicitly stating the path mismatch as the likely cause.
+
 ### 1. Locate and validate inputs
 
 Confirm the following exist:
-- `outputs/` directory with at least one run subdirectory
+- `outputs/` directory (or reconciled output path from Step 0) with at least one run subdirectory
 - `experiment-plan.md` (optional but strongly recommended for gap detection)
 
 If `experiment-plan.md` is missing, state: "No experiment-plan.md found. Gap detection will be skipped. Only discovered runs will be collected."

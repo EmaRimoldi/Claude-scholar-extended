@@ -62,13 +62,26 @@ If the experiment extends prior work, verify the pipeline reproduces published r
 - **Pass/fail**: within tolerance = pass; outside = investigate before proceeding
 - If no published baseline to replicate, run a trivial baseline (random, majority class) and verify it produces the expected floor
 
-### 6. End-to-End Smoke Test
+### 6. Compute Environment Check
+
+Before running the smoke test, verify the execution environment provides GPU access:
+
+- **GPU availability**: Run `torch.cuda.is_available()`. If `False`:
+  - "BLOCKING: No GPU detected. You are likely on a login node. Smoke test timing on CPU is invalid for GPU wall-time estimation. Run validation from a GPU-equipped session: `salloc --gres=gpu:1 --time=01:00:00 --partition=<partition>`"
+  - Do NOT proceed with timing-dependent checks until GPU is available.
+- **GPU model**: Record `torch.cuda.get_device_name(0)` in the validation report. This is needed by `compute-planner` to match wall-time estimates to hardware.
+- **CUDA version**: Record `torch.version.cuda` for reproducibility.
+- **Device consistency**: Verify model and data are placed on the same device (catch silent CPU fallback).
+
+If the user explicitly requests a CPU-only validation (e.g., for testing pipeline logic without GPU), allow it but mark timing data as: "CPU-only — not valid for GPU wall-time estimation" in the validation report.
+
+### 7. End-to-End Smoke Test
 
 Run the complete pipeline on a single configuration:
 
 - 1 model, 1 dataset, 1 seed, no ablations
 - Verify: data loads → model runs → metric computes → result saves → output has expected format
-- Time this run — it provides the per-run estimate for `compute-planner`
+- Time this run — it provides the per-run estimate for `compute-planner` (only valid if Section 6 GPU check passed)
 - Verify output directory structure matches what `result-collector` expects
 
 ## Input Modes
@@ -91,7 +104,7 @@ When running in Mode B, state: "Running validation against existing project. Che
 ## Outputs
 
 - `validation-report.md` containing:
-  - Pass/fail status for each check (6 categories, ~20 individual checks)
+  - Pass/fail status for each check (7 categories, ~23 individual checks)
   - For failures: error message, expected vs. observed, suggested fix
   - Smoke test timing (used by `compute-planner` for per-run estimates)
   - Overall verdict: READY / NOT READY with blocking issues listed
@@ -145,7 +158,7 @@ measurement-implementation┘
 
 ### Key Configuration
 
-- **Checks**: 6 categories, ~20 individual checks
+- **Checks**: 7 categories, ~23 individual checks
 - **Baseline tolerance**: configurable per metric (default ±1% for accuracy, ±0.05 for similarity)
 - **Smoke test**: always runs 1 full configuration as the final check
 - **Output format**: Markdown checklist for human review

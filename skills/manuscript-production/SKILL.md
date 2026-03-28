@@ -166,10 +166,16 @@ Structure:
 
 #### 2.7 Discussion
 
-- **Implications**: What do these results mean for the field?
-- **Limitations**: Be honest. Reviewers respect candor.
-- **Alternative explanations**: Could something other than the proposed mechanism explain the results?
-- **Future work**: Concrete next steps, not vague gestures.
+Structure the Discussion as argument, not decoration. Each item below is a paragraph or paragraph group, not a bullet in a list.
+
+1. **Key insight paragraph**: State the main takeaway and what it changes for the field. Connect back to the narrative arc's "Implication" from the paper blueprint.
+2. **Limitations paragraph(s)** (minimum 1 substantive paragraph, not a bullet list):
+   - For each major limitation: state it, explain how it could affect the conclusions, and describe what experiment would resolve the concern.
+   - Do not enumerate limitations as a list — discuss each one with reasoning about its impact on the claims.
+3. **Alternative explanations paragraph**: For each primary result, state at least one plausible alternative explanation. Explain why the proposed interpretation is preferred, or acknowledge that the evidence does not distinguish between explanations.
+4. **What would make this conclusion false?** (MANDATORY paragraph): Explicitly state what evidence, result, or experimental outcome would falsify the main claim. This paragraph forces intellectual honesty and demonstrates scientific maturity to reviewers.
+5. **Empirical vs. causal claims**: If the paper demonstrates correlation or association, do not use causal language ("causes", "leads to", "results in") in the Discussion or Conclusion unless a causal mechanism is experimentally demonstrated. Use observational language ("is associated with", "co-occurs with", "predicts") and state the limitation explicitly.
+6. **Future work**: Concrete experiments that would address the limitations above — not vague gestures like "future work could explore..." but specific experimental designs.
 
 #### 2.8 Notation Consistency
 
@@ -292,8 +298,21 @@ This skill expects the following inputs to be available:
 | Experiment data (CSV, JSON, logs) | analysis-input/ directory | Yes |
 | Figure plan | Embedded in paper-blueprint.md | Yes |
 | Target venue | User-specified or from blueprint | Yes |
+| `experiment-state.json` | experiment-runner skill | Recommended |
 
 If any required input is missing, state the gap explicitly and ask the user to provide it or run the upstream skill.
+
+### Experiment Completion Verification
+
+Before producing manuscript content, check whether experiments actually completed:
+
+1. **If `experiment-state.json` exists**: Read its `status` field.
+   - `"analyzing"` or `"confirmed"`: Experiments complete. Proceed normally.
+   - `"running"`: "WARNING: experiment-state.json shows status 'running'. Experiments may still be in progress. Any claims based on current data may be invalidated by pending results. Proceed only if the user explicitly confirms the current data is sufficient."
+   - `"diagnosing"` or `"revising"`: "WARNING: experiment-state.json shows status '{status}'. The research is in an iteration loop — experiments did not confirm the hypothesis. Proceed with extreme caution and ensure all claims use appropriately hedged language."
+   - `"planned"`: "BLOCKING: experiment-state.json shows status 'planned'. No experiments have been executed. Cannot produce a manuscript without experimental evidence."
+2. **If `experiment-state.json` does not exist**: Check whether `analysis-input/results.csv` or `analysis-input/run-manifest.json` exist and contain data. If both are missing or empty, warn: "No experiment state file or collected results found. Verify that experiments have been executed and results collected before manuscript production."
+3. **If `analysis-input/gap-report.md` exists**: Check for missing runs. If more than 20% of expected runs are missing or failed, warn: "Gap report shows {N}% of expected runs are missing or failed. The manuscript will be based on incomplete data — flag this in the Limitations section."
 
 ## Output
 
@@ -327,6 +346,39 @@ paper/
 - **Extends**: `ml-paper-writing` (uses its section-by-section writing guidance, citation workflow, and LaTeX templates)
 - **Does NOT replace**: `ml-paper-writing` -- that skill provides writing methodology; this skill produces the actual deliverables
 - **Feeds into**: `paper-self-review` (self-review of the completed manuscript), `post-acceptance` (camera-ready revisions)
+
+## Additional Resources
+
+### Reference Files
+
+Detailed methodology guides, loaded on demand:
+
+- **`references/figure-style-guide.md`** -- Figure Style Guide
+  - Venue-specific figure dimensions and font sizes
+  - Colorblind-safe palettes with hex codes
+  - Export standards (DPI, font embedding, whitespace)
+  - Unified rcParams for matplotlib
+
+- **`references/latex-patterns.md`** -- LaTeX Patterns
+  - Document structure and section organization
+  - Figure and table inclusion patterns
+  - Algorithm and equation formatting
+  - Common LaTeX pitfalls and fixes
+
+- **`references/venue-formatting.md`** -- Venue Formatting Reference
+  - Pre-submission 10-item formatting checklist
+  - Page limits, anonymization rules, supplementary requirements per venue
+  - Common formatting errors that cause desk rejection
+
+### Example Files
+
+Complete working examples:
+
+- **`examples/example-figure-manifest.md`** -- Figure Manifest Example
+  - Demonstrates figure-to-location mapping table
+
+- **`examples/example-rcparams.py`** -- Matplotlib rcParams Example
+  - Complete working venue-specific style configuration
 
 ## Trigger Conditions
 

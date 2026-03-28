@@ -119,14 +119,42 @@ Use the quality checklist for final verification.
 - Figures/tables lack clear titles and captions
 - Inconsistent citation formatting
 
-## Summary
+## Integration with Other Systems
 
-The Paper Self-Review skill provides a systematic paper quality checking process, helping researchers identify and resolve issues before submission, improving paper quality and acceptance rates.
+### Pre-Submission Pipeline
 
+```
+manuscript-production (Complete paper draft)
+    |
+paper-self-review (Systematic quality check)  <-- THIS SKILL
+    |
+    ├── ready with minor edits → post-acceptance
+    └── needs revision → iterate with manuscript-production
+```
+
+### Data Flow
+
+- **Depends on**: `manuscript-production` (completed paper draft in `paper/` directory)
+- **Also requires**: `claim-evidence-bridge` output (`claim-evidence-map.md`) for claim-conclusion audit
+- **Also uses**: `results-analysis` output (`analysis-report.md`, `stats-appendix.md`) for verifying claims against evidence
+- **Feeds into**: `post-acceptance` (if ready), or revision loop back to `manuscript-production`
+- **Hook activation**: Keyword trigger in `skill-forced-eval.js` — "self-review", "review paper", "check paper quality"
+- **No dedicated command**: Triggered manually or as part of the manuscript production workflow
+
+### Upstream Input Requirements
+
+| Input | Source | Required |
+|-------|--------|----------|
+| Paper draft (`paper/main.tex` or equivalent) | manuscript-production | Yes |
+| `claim-evidence-map.md` | claim-evidence-bridge | Required for Claim-Conclusion Audit |
+| `analysis-report.md` | results-analysis | Recommended for evidence verification |
+| `stats-appendix.md` | results-analysis | Recommended for statistical claim checking |
+
+If `claim-evidence-map.md` is missing, the Claim-Conclusion Audit section of the checklist cannot be completed. State: "claim-evidence-map.md not found. Claim-Conclusion Audit will be skipped. Run `/map-claims` to enable this check."
 
 ## Reference Files
 
 Load only what is needed:
-- `references/SECTION-CHECKLIST.md` - section-by-section review questions
+- `references/SECTION-CHECKLIST.md` - section-by-section review questions and claim-conclusion audit
 - `references/FINAL-VERDICT.md` - how to summarize submission readiness and blocking issues
 - `examples/example-self-review.md` - example review output

@@ -66,7 +66,20 @@ For each differentiator in the matrix, identify the most likely reviewer objecti
 
 For each objection-response pair, draft a 2-3 sentence rebuttal paragraph that can be directly used in a reviewer response.
 
-### 5. Related Work Paragraph Drafts
+### 5. Pre-Writing Novelty Staleness Check
+
+Before finalizing the contribution statement, verify that the novelty assessment is still current:
+
+1. **Check novelty-assessment.md date**: If the file exists, check its creation or last-modified date.
+   - If older than 8 weeks: "WARNING: Novelty assessment is {N} weeks old. The competitive landscape may have changed. Run `/check-competition` before finalizing the contribution statement to verify no competing work has appeared."
+   - If older than 16 weeks: "STRONGLY RECOMMENDED: Novelty assessment is over 4 months old. Re-run `/check-competition` and consider re-running novelty-assessment with the current contribution statement."
+2. **Check competitive-alert.md date**: If it exists and is more recent than novelty-assessment.md, use its date instead.
+3. **Check contribution drift**: Compare the contribution statement being drafted against the one in `novelty-assessment.md`. If the contribution has shifted significantly (different method, different primary finding, different positioning angle), warn: "The contribution has evolved since the last novelty assessment. The original assessment may not cover the current claims. Consider re-running novelty-assessment with the updated contribution statement."
+4. **If neither novelty file exists**: State: "No novelty-assessment.md or competitive-alert.md found. Contribution positioning will proceed without prior-art verification. Run `/check-competition` before submission to verify novelty."
+
+This check does NOT block manuscript production — it produces warnings that the user can act on or dismiss. But the warnings must be explicit and recorded in `contribution-positioning.md`.
+
+### 6. Related Work Paragraph Drafts
 
 For each closest work, draft a 2-3 sentence paragraph suitable for the related work section:
 
