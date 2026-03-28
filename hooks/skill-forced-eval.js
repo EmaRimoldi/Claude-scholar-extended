@@ -105,8 +105,8 @@ function collectSkills() {
 // Categorize skills into groups
 function categorizeSkills(skills) {
   const categories = {
-    'Research & Writing': /research|paper|writing|citation|review-response|rebuttal|post-acceptance|doc-coauthoring|latex|daily-paper|ml-paper|results-analysis|results-report|brainstorm|novelty|hypothesis|competitive|experiment-design|failure-diagnosis|hypothesis-revision|claim-evidence/,
-    'Development': /coding|git|code-review|bug|architecture|verification|tdd|uv-package|webapp-testing|kaggle|driven-development|development-branch|planning|dispatching|executing|using-superpowers/,
+    'Research & Writing': /research|paper|writing|citation|review-response|rebuttal|post-acceptance|doc-coauthoring|latex|daily-paper|ml-paper|results-analysis|results-report|brainstorm|novelty|hypothesis|competitive|experiment-design|failure-diagnosis|hypothesis-revision|claim-evidence|contribution-positioning|story-construction|manuscript-production|result-collector|compute-planner|experiment-runner/,
+    'Development': /coding|git|code-review|bug|architecture|verification|tdd|uv-package|webapp-testing|kaggle|driven-development|development-branch|planning|dispatching|executing|using-superpowers|project-scaffold|experiment-data|model-setup|measurement-implementation|setup-validation/,
     'Plugin Dev': /skill-|command-|hook-|mcp-|agent-identifier|plugin-structure/,
     'Design & UI': /frontend|ui-ux|web-design|canvas|brand|theme|algorithmic-art|slack-gif|figma/,
     'Documents': /docx|xlsx|pptx|pdf|internal-comms|web-artifacts/,
@@ -170,6 +170,17 @@ const KEYWORD_SKILL_MAP = [
   { keywords: /\b(novelty|incremental|contribution.*compare|prior.*work.*compare)\b|新颖性|增量.*贡献|贡献.*比较/i, skills: ['novelty-assessment'] },
   { keywords: /\b(competing|scoop|concurrent.*work|someone.*published|check.*competition)\b|竞争|被抢发|并发.*工作/i, skills: ['competitive-check'] },
   { keywords: /\b(claim.*evidence|evidence.*map|what.*can.*I.*claim|scope.*paper|include.*paper|over.?claim)\b|证据.*映射|论文.*范围|过度.*声称/i, skills: ['claim-evidence-bridge'] },
+  { keywords: /\b(scaffold|project.*structure|pyproject|init.*project|create.*project.*structure)\b|项目.*脚手架|项目.*结构/i, skills: ['project-scaffold'] },
+  { keywords: /\b(data.*generat|synthetic.*data|build.*data|dataset.*construct|data.*loader)\b|数据.*生成|合成.*数据/i, skills: ['experiment-data-builder'] },
+  { keywords: /\b(model.*load|hook|model.*surgery|activation.*extract|attention.*head|introspect)\b|模型.*加载|激活.*提取/i, skills: ['model-setup'] },
+  { keywords: /\b(metric.*implement|analytical.*reference|measurement|cosine.*similar|statistical.*test|significance)\b|度量.*实现|分析.*参考/i, skills: ['measurement-implementation'] },
+  { keywords: /\b(sanity.*check|pre.?flight|validate.*setup|baseline.*replic|smoke.*test)\b|健全.*检查|基线.*复现/i, skills: ['setup-validation'] },
+  { keywords: /\b(slurm|sbatch|gpu.*hours?|cluster|engaging|partition|compute.*plan)\b|集群|计算.*计划/i, skills: ['compute-planner'] },
+  { keywords: /\b(run.*matrix|experiment.*sweep|phase.*gate|submit.*jobs?|monitor.*experiment)\b|运行.*矩阵|实验.*扫描/i, skills: ['experiment-runner'] },
+  { keywords: /\b(aggregate.*results?|collect.*metrics?|collect.*results?|gather.*outputs?)\b|汇总.*结果|收集.*指标/i, skills: ['result-collector'] },
+  { keywords: /\b(contribution.*position|differentiat|reviewer.*objection|articulate.*contribution)\b|贡献.*定位|审稿人.*反对/i, skills: ['contribution-positioning'] },
+  { keywords: /\b(narrative|story.*construct|figure.*plan|paper.*blueprint|section.*outline)\b|叙事|故事.*构建|论文.*蓝图/i, skills: ['story-construction'] },
+  { keywords: /\b(figure.*produc|latex.*source|submission.*package|manuscript.*produc|camera.*ready|compile.*paper)\b|图.*制作|手稿.*生产|投稿.*包/i, skills: ['manuscript-production'] },
 ];
 
 // Pre-match user prompt against keyword map

@@ -73,11 +73,15 @@ Ideation → Validation → Design → Execute → Analyze → [Iterate] → Pre
 | 1. Research Ideation | `research-ideation` skill + `literature-reviewer` agent + Zotero MCP | `/research-init`, `/zotero-review`, `/zotero-notes` |
 | 1b. Research Validation | `novelty-assessment` + `hypothesis-formulation` + `competitive-check` | `/check-competition` |
 | 1c. Experiment Design | `experiment-design` skill | `/design-experiments` |
-| 2. ML Project Dev | `architecture-design` skill + `code-reviewer` agent | `/plan`, `/commit`, `/tdd` |
-| 3. Experiment Analysis | `results-analysis` skill + `results-report` skill | `/analyze-results` |
-| 3b. Iteration Loop | `failure-diagnosis` + `hypothesis-revision` + `experiment-state.json` | (skill-triggered) |
-| 4. Pre-Writing | `claim-evidence-bridge` skill | `/map-claims` |
-| 5. Paper Writing | `ml-paper-writing` skill + `paper-miner` agent | `/mine-writing-patterns` |
+| 2. Implementation | `project-scaffold` + `experiment-data-builder` + `model-setup` + `measurement-implementation` | `/scaffold`, `/build-data`, `/setup-model`, `/implement-metrics` |
+| 2b. Validation | `setup-validation` skill | `/validate-setup` |
+| 2c. Compute Planning | `compute-planner` skill | `/plan-compute` |
+| 3. Execution | `experiment-runner` skill | `/run-experiment` |
+| 3b. Result Collection | `result-collector` skill | `/collect-results` |
+| 4. Experiment Analysis | `results-analysis` skill + `results-report` skill | `/analyze-results` |
+| 4b. Iteration Loop | `failure-diagnosis` + `hypothesis-revision` + `experiment-state.json` | (skill-triggered) |
+| 5. Pre-Writing | `claim-evidence-bridge` + `contribution-positioning` + `story-construction` | `/map-claims`, `/position`, `/story` |
+| 6. Manuscript | `manuscript-production` + `ml-paper-writing` + `paper-miner` agent | `/produce-manuscript`, `/mine-writing-patterns` |
 | 6. Self-Review | `paper-self-review` skill | - |
 | 7. Submission & Rebuttal | `review-response` skill + `rebuttal-writer` agent | `/rebuttal` |
 | 8. Post-Acceptance | `post-acceptance` skill | `/presentation`, `/poster`, `/promote` |
@@ -99,7 +103,7 @@ Ideation → Validation → Design → Execute → Analyze → [Iterate] → Pre
 
 ---
 
-## Skills Directory (54 skills)
+## Skills Directory (65 skills)
 
 ### 🔬 Research & Analysis (5 skills)
 
@@ -118,6 +122,26 @@ Ideation → Validation → Design → Execute → Analyze → [Iterate] → Pre
 - **failure-diagnosis**: Systematic diagnosis of research-level experiment failures (not code bugs)
 - **hypothesis-revision**: Iterative hypothesis refinement with pivot/persevere/abandon decisions, Obsidian write-back
 - **claim-evidence-bridge**: Map paper claims to experimental evidence, manage paper scope
+
+### 🔧 Experiment Implementation (5 skills)
+
+- **project-scaffold**: Generate runnable project from experiment plan (pyproject.toml, Factory/Registry, Hydra, entry point)
+- **experiment-data-builder**: Translate dataset specs into generators/loaders (synthetic, HuggingFace, benchmarks)
+- **model-setup**: Load, introspect, hook, and ablate models (HuggingFace, hooks, architecture discovery, surgery)
+- **measurement-implementation**: Implement metrics, analytical references, statistical tests (OLS, GD, ridge, Bayes-optimal catalog)
+- **setup-validation**: Pre-flight checklist: data integrity, model loading, measurement correctness, ablation, baseline, smoke test
+
+### 🖥️ Compute & Execution (3 skills)
+
+- **compute-planner**: GPU/memory estimation, SLURM script generation, MIT Engaging partition selection, scheduling strategy
+- **experiment-runner**: Execute experiment matrix via SLURM with phased gates, failure recovery, progress tracking
+- **result-collector**: Aggregate per-run outputs into structured tables for results-analysis
+
+### 📖 Manuscript Pipeline (3 skills)
+
+- **contribution-positioning**: Differentiation matrix, contribution statement, reviewer objection anticipation
+- **story-construction**: Narrative arc, result triage, figure plan, section outline → paper-blueprint.md
+- **manuscript-production**: Publication-quality figures, full prose, LaTeX source, submission package
 
 ### 📝 Paper Writing & Publication (7 skills)
 
@@ -202,6 +226,17 @@ Ideation → Validation → Design → Execute → Analyze → [Iterate] → Pre
 | `/design-experiments` | Generate full experiment plan from hypotheses (baselines, ablations, sample size, resource estimation) |
 | `/check-competition` | Generate search queries for competitive landscape check, analyze pasted results |
 | `/map-claims` | Map paper claims to experimental evidence, manage paper scope before writing |
+| `/scaffold` | Generate runnable ML project from experiment plan (pyproject.toml, src/, configs, entry point) |
+| `/build-data` | Translate dataset specs into working generators and loaders |
+| `/setup-model` | Load, configure, introspect, and prepare models for experiments |
+| `/implement-metrics` | Implement metrics, analytical references, and statistical tests |
+| `/validate-setup` | Run pre-flight validation checklist before full experiment sweep |
+| `/plan-compute` | Estimate GPU resources, generate SLURM scripts for MIT Engaging |
+| `/run-experiment` | Execute experiment matrix via SLURM with phased gates and failure recovery |
+| `/collect-results` | Aggregate raw outputs into structured tables for analysis |
+| `/position` | Map contribution against closest prior works, anticipate reviewer objections |
+| `/story` | Define narrative arc, triage results, create figure plan, produce paper blueprint |
+| `/produce-manuscript` | Generate figures, prose, LaTeX source, and submission package |
 | `/analyze-results` | Analyze experiment results (statistical tests, visualization, ablation) |
 | `/rebuttal` | Generate systematic rebuttal document |
 | `/presentation` | Create conference presentation outline |
