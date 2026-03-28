@@ -1,60 +1,68 @@
-# Research Hypotheses: RAG for Scientific Literature Synthesis
+# Research Hypotheses: Sparse Rationale-Constrained Attention for Hate Speech Explanations
 
 ## Research Question
 
-Can RAG-based systems produce accurate, citation-grounded research summaries comparable to expert-written reviews? Where do they fail?
+Can sparse rationale-constrained attention (sparsemax) improve the faithfulness of hate speech explanations in BERT without degrading classification accuracy, and which attention heads should be supervised?
 
-## H1: Citation Accuracy
+## Hypothesis H1: Sparsemax Attention Supervision Improves Faithfulness
 
-**Hypothesis**: RAG-based literature synthesis systems achieve less than 80% citation accuracy (correct paper cited for the correct claim) compared to >95% in expert-written reviews.
+**Statement**: Training BERT with sparsemax-transformed rationale targets for attention supervision produces more faithful explanations (higher correlation with Integrated Gradients attributions) than softmax attention supervision, as measured on the HateXplain test set.
 
-**Success criteria**: Statistically significant difference (p < 0.05) in citation accuracy between RAG-generated and human-written reviews, with RAG scoring below 80% on citation precision.
+**Rationale**: Sparsemax produces exact zeros, concentrating attention mass on rationale-relevant tokens and eliminating diffuse probability mass on irrelevant tokens. This makes the supervised attention distribution closer to a binary rationale mask, aligning attention with actual decision-relevant features.
 
-**Failure criteria**: RAG citation accuracy exceeds 85%, or the difference is not statistically significant.
+**Success criterion**: Attention-IG correlation (Spearman ρ) ≥ 0.05 higher than softmax-supervised baseline (p < 0.05, paired bootstrap test).
 
-**Measurement**: Citation precision (fraction of citations that correctly support the claim they are attached to), citation recall (fraction of relevant papers that are cited).
+**Failure criterion**: ρ difference < 0.02 or not significant → sparsemax offers no faithfulness benefit over softmax supervision.
 
-## H2: Factual Consistency
+## Hypothesis H2: Selective Head Supervision Preserves Accuracy
 
-**Hypothesis**: RAG-based literature synthesis reduces factual hallucinations by at least 50% compared to generation without retrieval, but still produces measurable hallucinations (>5% of claims unsupported by sources).
+**Statement**: Supervising only the top-K semantically important attention heads (identified via Integrated Gradients head importance scoring on a held-out set) maintains or improves 3-class macro-F1 compared to supervising all 144 heads, while achieving comparable or better faithfulness.
 
-**Success criteria**: (a) RAG hallucinates significantly less than no-retrieval baseline (p < 0.05, effect size d > 0.5); (b) RAG still produces >5% unsupported claims.
+**Rationale**: Not all attention heads encode task-relevant semantics (Voita et al., 2019; Michel et al., 2019). Supervising positional or syntactic heads with semantic rationale targets creates conflicting training signals that degrade performance. Selective supervision avoids this.
 
-**Failure criteria**: RAG produces <5% unsupported claims (near-perfect), or RAG does not significantly outperform no-retrieval baseline.
+**Success criterion**: macro-F1 within 1% of vanilla BERT AND faithfulness (sufficiency, comprehensiveness) at least as good as all-head supervision.
 
-**Measurement**: Faithfulness score (fraction of claims grounded in retrieved documents), hallucination rate per paragraph.
+**Failure criterion**: macro-F1 drops >2% compared to vanilla BERT → selective supervision still harmful.
 
-## H3: Coverage Completeness
+## Hypothesis H3: Combined Sparsemax + Selective Supervision is Pareto-Optimal
 
-**Hypothesis**: RAG-based reviews cover fewer than 70% of the key papers cited in expert-written reviews on the same topic, with systematic biases toward highly-cited and recent papers.
+**Statement**: The combination of sparsemax attention targets with selective head supervision achieves the best trade-off between classification accuracy and explanation faithfulness (Pareto-dominates all other configurations).
 
-**Success criteria**: RAG recall of expert-cited papers is below 70%, and there is a significant correlation between citation count/recency and inclusion probability.
+**Rationale**: Sparsemax provides better supervision targets (sharper, sparser), and selective supervision avoids degrading non-semantic heads. Together they should maximize both accuracy and faithfulness.
 
-**Failure criteria**: RAG recall exceeds 80%, or no significant recency/popularity bias.
+**Success criterion**: The combined model is on the Pareto frontier of (macro-F1, faithfulness) across all experimental conditions.
 
-**Measurement**: Key Paper Recall (KPR), correlation analysis between inclusion and paper metadata (citation count, year, venue).
+**Failure criterion**: Another configuration dominates it on both axes.
 
-## H4: Error Taxonomy
+## Hypothesis H4: Head Importance is Layer-Dependent
 
-**Hypothesis**: RAG-based literature synthesis errors cluster into four distinct categories: (a) citation hallucination (citing non-existent papers), (b) attribution error (correct paper, wrong claim), (c) omission (missing key papers), (d) recency bias (over-representing recent work).
+**Statement**: Semantically important heads for hate speech detection cluster in middle layers (layers 5-8) of BERT-base, consistent with prior work showing these layers encode task-relevant semantics.
 
-**Success criteria**: At least 80% of errors can be classified into these four categories with inter-annotator agreement κ > 0.6.
+**Rationale**: Lower layers capture surface patterns, upper layers capture task-specific features. Middle layers have been shown to contain the most transferable semantic representations.
 
-**Failure criteria**: Error distribution does not cluster meaningfully, or a significant category is missing.
+**Success criterion**: >60% of top-K important heads come from layers 4-8.
 
-**Measurement**: Manual error annotation by 2+ annotators, Cohen's κ for agreement, category distribution analysis.
+**Failure criterion**: Important heads are uniformly distributed across layers.
 
-## Experimental Approach Summary
+## Variables
 
-| Hypothesis | Independent Variable | Dependent Variable | Method |
-|---|---|---|---|
-| H1 | System type (RAG vs human) | Citation accuracy | Paired comparison on same topics |
-| H2 | Retrieval (RAG vs no-retrieval) | Hallucination rate | Controlled generation experiment |
-| H3 | System type (RAG vs human) | Key paper recall | Coverage analysis |
-| H4 | Error instances | Error category | Annotation study |
+### Independent Variables
+- **Attention transformation**: {softmax, sparsemax} for supervision targets
+- **Supervision scope**: {all heads, top-K heads, top-K per layer}
+- **K values**: {12, 24, 36, 48} (out of 144 total heads)
+- **Supervision loss weight (λ)**: {0.1, 0.5, 1.0, 2.0}
 
-## Domain Scope
+### Dependent Variables
+- **Classification**: macro-F1, per-class F1, accuracy
+- **Faithfulness**: attention-IG Spearman ρ, sufficiency, comprehensiveness
+- **Plausibility**: token-level F1, AUPRC against human rationales
+- **Sparsity**: attention entropy, % zero attention weights
 
-- **Target domain**: ML/NLP literature (2020–2025)
-- **Benchmark topics**: 10–20 specific sub-topics with existing expert-written survey papers
-- **Comparison reviews**: Published survey/review papers from top venues (ACL, EMNLP, NeurIPS, ICML)
+### Controls
+- Random seed: {42, 123, 456} (3 seeds per condition)
+- Learning rate: 2e-5 (standard for BERT fine-tuning)
+- Epochs: 10 with early stopping (patience=3)
+- Batch size: 16
+- Max sequence length: 128
+- Model: bert-base-uncased
+- Optimizer: AdamW with linear warmup (10% steps)

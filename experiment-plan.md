@@ -1,125 +1,158 @@
-# Experiment Plan: RAG for Scientific Literature Synthesis
+# Experiment Plan: Sparse Rationale-Constrained Attention for Hate Speech Explanations
 
 ## Overview
 
-Evaluate RAG-based systems for scientific literature synthesis against expert-written reviews, measuring citation accuracy, factual consistency, coverage, and error patterns.
+Evaluate whether sparsemax attention supervision with selective head targeting improves faithfulness of hate speech explanations in BERT-base-uncased on HateXplain, without degrading 3-class classification accuracy. Target venue: NeurIPS 2026.
 
-## Experiment Matrix
+## Dataset
 
-### Conditions
+- **Name**: HateXplain (Mathew et al., 2021)
+- **Source**: `hatexplain` on HuggingFace Datasets (or GitHub: hate-alert/HateXplain)
+- **Size**: 20,148 posts, 3-class (hate, offensive, normal)
+- **Splits**: Use original train/val/test (15,383 / 1,922 / 2,843)
+- **Rationale annotations**: Token-level binary masks from 3 annotators; aggregate via majority vote
+- **Preprocessing**: Lowercase, BERT WordPiece tokenization, max_length=128, truncation
 
-| Condition ID | System | Retrieval | Description |
-|---|---|---|---|
-| C1-RAG-DENSE | RAG + Dense Retrieval | Contriever/E5 | Dense passage retrieval + LLM generation |
-| C2-RAG-SPARSE | RAG + Sparse Retrieval | BM25 | Lexical retrieval + LLM generation |
-| C3-RAG-HYBRID | RAG + Hybrid Retrieval | BM25 + Dense rerank | Combined retrieval + LLM generation |
-| C4-NO-RETRIEVAL | LLM Only | None | Generation from parametric knowledge only |
-| C5-HUMAN | Expert Reviews | N/A | Published survey papers (ground truth) |
+## Model Architecture
 
-### Generator Models
+- **Base**: `bert-base-uncased` (12 layers, 12 heads, 768 hidden, 110M params)
+- **Classification head**: Linear(768, 3) on [CLS] token
+- **Precision**: fp16 mixed precision
+- **Attention modification**: Replace softmax with sparsemax in supervised heads (configurable per-head)
 
-| Model | Parameters | Notes |
-|---|---|---|
-| GPT-4o | API | Commercial baseline |
-| LLaMA-3.1-8B | 8B | Open-source, instruction-tuned |
-| Mistral-7B-v0.3 | 7B | Open-source alternative |
+## Experimental Conditions
 
-### Ablations
+### Phase 1: Baselines (3 conditions × 3 seeds = 9 runs)
 
-| Ablation | Modified Variable | Purpose |
-|---|---|---|
-| A1: Chunk size | 256 / 512 / 1024 tokens | Effect of retrieval granularity |
-| A2: Top-k | 3 / 5 / 10 / 20 retrieved passages | Effect of retrieval breadth |
-| A3: Prompt type | zero-shot / few-shot / CoT | Effect of generation strategy |
-| A4: Corpus recency | Full corpus / last-3-years only | Detect recency bias |
+| ID | Condition | Description |
+|----|-----------|-------------|
+| B1 | `vanilla` | BERT fine-tuned with CE loss only, no attention supervision |
+| B2 | `softmax-all` | BERT + softmax attention supervision on ALL 144 heads |
+| B3 | `softmax-all-strong` | Same as B2 but λ=2.0 (strong supervision) |
 
-## Dataset / Benchmark Construction
+### Phase 2: Head Importance Analysis (1 run, no training)
 
-### Benchmark Topics
-- Select 15 sub-topics from ML/NLP with existing published surveys (2022–2025)
-- Source surveys from ACL Anthology, NeurIPS proceedings, arXiv
-- Each topic: 1 expert review + corpus of ~50–200 cited papers
+| ID | Condition | Description |
+|----|-----------|-------------|
+| A1 | `head-importance` | Run IG head importance scoring on trained B1 model, identify top-K heads |
 
-### Corpus
-- **Source**: Semantic Scholar API (paper metadata + abstracts) + available full texts
-- **Size per topic**: 200–500 candidate papers (retrieval pool)
-- **Ground truth**: Expert survey citations + manual annotation subset
+### Phase 3: Sparsemax Experiments (6 conditions × 3 seeds = 18 runs)
 
-### Annotation
-- 2 annotators per topic for error classification
-- Inter-annotator agreement target: κ > 0.6
-- Annotate: citation accuracy, attribution correctness, claim support
+| ID | Condition | Attention | Scope | λ |
+|----|-----------|-----------|-------|---|
+| S1 | `sparsemax-all` | sparsemax | all 144 heads | 1.0 |
+| S2 | `sparsemax-top12` | sparsemax | top-12 heads | 1.0 |
+| S3 | `sparsemax-top24` | sparsemax | top-24 heads | 1.0 |
+| S4 | `sparsemax-top36` | sparsemax | top-36 heads | 1.0 |
+| S5 | `softmax-top24` | softmax | top-24 heads | 1.0 |
+| S6 | `sparsemax-top24-strong` | sparsemax | top-24 heads | 2.0 |
 
-## Metrics
+### Phase 4: Ablation — Lambda Sweep (4 conditions × 3 seeds = 12 runs)
 
-### Primary Metrics
-| Metric | Formula | Target |
-|---|---|---|
-| Citation Precision | correct_citations / total_citations | H1 |
-| Citation Recall | cited_relevant / total_relevant | H1 |
-| Faithfulness Score | supported_claims / total_claims | H2 |
-| Hallucination Rate | unsupported_claims / total_claims | H2 |
-| Key Paper Recall (KPR) | expert_papers_found / expert_papers_total | H3 |
+| ID | Condition | λ |
+|----|-----------|---|
+| L1 | `sparsemax-top24-lam01` | 0.1 |
+| L2 | `sparsemax-top24-lam05` | 0.5 |
+| L3 | `sparsemax-top24-lam10` | 1.0 |
+| L4 | `sparsemax-top24-lam20` | 2.0 |
 
-### Secondary Metrics
-| Metric | Purpose |
-|---|---|
-| ROUGE-1/2/L | Surface overlap with expert review |
-| BERTScore | Semantic similarity |
-| Recency Correlation | Spearman ρ between paper year and inclusion |
-| Citation Count Correlation | Spearman ρ between citation count and inclusion |
+**Total runs**: 9 + 1 + 18 + 12 = 40 runs
 
-## Baselines
+## Training Configuration
 
-| Baseline | Expected Performance | Source |
-|---|---|---|
-| No-retrieval LLM | ~40% faithfulness, ~20% citation accuracy | Prior work estimates |
-| BM25 + GPT-3.5 | ROUGE-1 ~0.36 | arxiv:2411.18583 |
-| Expert reviews | >95% citation accuracy, >90% coverage | Ground truth |
+```yaml
+model:
+  name: bert-base-uncased
+  num_labels: 3
+  max_length: 128
 
-## Resource Estimation
+training:
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  num_epochs: 10
+  early_stopping_patience: 3
+  batch_size: 16
+  fp16: true
+  gradient_accumulation_steps: 1
 
-| Resource | Estimate |
-|---|---|
-| API calls (GPT-4o) | ~15 topics × 3 runs × ~5K tokens = ~225K tokens per condition |
-| Local GPU (LLaMA/Mistral) | 1× A100 40GB, ~2h per topic per model |
-| Total GPU hours | ~60–90h for local models |
-| Annotation | ~40h human time (2 annotators × 15 topics × ~1.3h each) |
-| Corpus construction | ~10h (API calls + filtering) |
+supervision:
+  attention_transform: sparsemax  # or softmax
+  supervised_heads: all  # or list of (layer, head) tuples
+  lambda_attn: 1.0
+  rationale_aggregation: majority_vote  # from 3 annotators
 
-## Phase Gates
+seeds: [42, 123, 456]
+```
 
-### Gate 1: Data Ready
-- [ ] 15 benchmark topics selected with expert surveys identified
-- [ ] Corpus constructed with ≥200 papers per topic
-- [ ] Annotation guidelines written and pilot-tested
+## Evaluation Metrics
 
-### Gate 2: Baseline Complete
-- [ ] No-retrieval baseline (C4) produces outputs for all topics
-- [ ] BM25 baseline (C2) produces outputs for all topics
-- [ ] Metrics pipeline computes all primary metrics correctly
+### Classification
+- macro-F1 (primary)
+- Per-class F1 (hate, offensive, normal)
+- Accuracy
 
-### Gate 3: Full Sweep Done
-- [ ] All conditions × all topics × 3 seeds completed
-- [ ] Error annotation complete for ≥5 topics
-- [ ] Statistical tests show sufficient power (≥0.8)
+### Faithfulness
+- **Attention-IG correlation**: Spearman ρ between attention weights and Integrated Gradients attributions (per-token, averaged over test set)
+- **Sufficiency**: P(y|rationale tokens only) — higher means rationale is sufficient
+- **Comprehensiveness**: P(y|all tokens) - P(y|non-rationale tokens) — higher means rationale is important
 
-## Success Criteria
+### Plausibility
+- **Token-level F1**: Against human rationale annotations (majority vote)
+- **AUPRC**: Area under precision-recall curve for rationale token identification
 
-| Hypothesis | Pass Condition |
-|---|---|
-| H1 | RAG citation accuracy < 80%, significant difference from human (p < 0.05) |
-| H2 | RAG hallucination < no-retrieval (p < 0.05, d > 0.5), RAG still >5% |
-| H3 | KPR < 70%, significant recency/popularity bias |
-| H4 | 4-category error taxonomy with κ > 0.6 |
+### Attention Properties
+- **Attention entropy**: Mean entropy of attention distributions (lower = sparser)
+- **Sparsity ratio**: % of attention weights that are exactly 0
 
-## Seeds and Repetitions
+## Compute Requirements
 
-- 3 random seeds per condition: {42, 123, 456}
-- Temperature: 0.3 for generation (low variance, reproducible)
-- Retrieval: deterministic (no sampling)
+- **Per run**: ~15 min on A100 80GB (BERT-base, 15K train samples, 10 epochs)
+- **Total**: ~40 runs × 15 min = 10 GPU-hours
+- **Head importance analysis**: ~5 min (single forward pass with IG)
+- **Evaluation**: ~5 min per model
+- **Buffer**: 2x → ~20 GPU-hours total
+- **Cluster**: MIT Engaging, pi_tpoggio partition (A100 80GB), or mit_normal_gpu
 
-## Max Iterations
+## Execution Plan
 
-- Maximum 3 iterations of the experiment loop
-- Pivot if no hypothesis shows significance after 2 iterations
+### Step 1: Data Download (CPU, login node)
+- Download HateXplain dataset
+- Download bert-base-uncased model weights
+- Preprocess and cache tokenized data
+
+### Step 2: Phase 1 — Baselines (GPU)
+- Submit 9 jobs (3 conditions × 3 seeds)
+- Can run in parallel
+
+### Step 3: Phase 2 — Head Importance (GPU)
+- Run IG head importance on best B1 model
+- Output: ranked list of (layer, head) by importance score
+- Determine top-K head sets
+
+### Step 4: Phase 3 — Sparsemax Experiments (GPU)
+- Submit 18 jobs (6 conditions × 3 seeds)
+- Can run in parallel
+
+### Step 5: Phase 4 — Lambda Ablation (GPU)
+- Submit 12 jobs (4 conditions × 3 seeds)
+- Can run in parallel
+
+### Step 6: Evaluation & Analysis
+- Collect all results
+- Statistical tests (paired bootstrap)
+- Generate figures
+
+## Expected Outputs
+
+1. `results/` — Per-run metrics JSON files
+2. `results/summary.csv` — Aggregated results table
+3. `figures/` — Publication-quality figures
+4. `manuscript/` — LaTeX paper
+
+## Risk Mitigation
+
+- **Risk**: Sparsemax gradient issues → Use entmax with α=1.99 as fallback
+- **Risk**: HateXplain class imbalance → Use weighted CE loss
+- **Risk**: Head importance unstable → Average IG over 3 B1 seeds
+- **Risk**: Training instability with sparse attention → Gradient clipping (max_norm=1.0)

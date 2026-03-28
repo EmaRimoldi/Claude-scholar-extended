@@ -1,0 +1,7 @@
+model_name: bert-base-uncased
+num_labels: 3
+attention_transform: softmax
+supervised_heads: "all"
+lambda_attn: 0.0
+top_k: 24
+head_importance_path: results/head_importance/head_importance.json

@@ -1,0 +1,6 @@
+num_epochs: 10
+learning_rate: 2e-5
+weight_decay: 0.01
+warmup_ratio: 0.1
+max_grad_norm: 1.0
+patience: 3

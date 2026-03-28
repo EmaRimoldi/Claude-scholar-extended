@@ -30,7 +30,9 @@ shift 2
 
 # Use Python from the venv if available, else system python3
 PYTHON="python3"
-if [ -f "$PROJECT_ROOT/rag-lit-synthesis/.venv/bin/python" ]; then
+if [ -f "$PROJECT_ROOT/.venv/bin/python" ]; then
+    PYTHON="$PROJECT_ROOT/.venv/bin/python"
+elif [ -f "$PROJECT_ROOT/rag-lit-synthesis/.venv/bin/python" ]; then
     PYTHON="$PROJECT_ROOT/rag-lit-synthesis/.venv/bin/python"
 fi
 

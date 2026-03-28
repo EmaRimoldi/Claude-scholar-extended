@@ -1,0 +1,8 @@
+# @package _global_
+
+# Sparsemax attention supervision on top-K important heads.
+model:
+  attention_transform: sparsemax
+  supervised_heads: "topk"
+  lambda_attn: 1.0
+  top_k: 24
