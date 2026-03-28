@@ -11,10 +11,28 @@ Aggregate raw per-run experiment outputs into structured tables and artifacts re
 
 Use this skill to bridge the gap between experiment execution and strict analysis. It scans `outputs/`, extracts metrics from heterogeneous formats, assembles canonical CSV/JSON tables, detects gaps in the run matrix, and organizes figures -- producing a complete `analysis-input/` directory that matches exactly what `results-analysis` Step 1 expects.
 
+## Deterministic scripts (prefer over agent reasoning)
+
+When the project was scaffolded with `project-scaffold`, deterministic scripts already handle the most common collection tasks. **Use them first**; fall back to agent reasoning only for non-standard formats or layouts.
+
+| Task | Script | Invocation |
+|------|--------|------------|
+| Metric aggregation (Hydra outputs + SLURM log fallback) | `scripts/aggregate_metrics.py` | `make collect` or `python scripts/aggregate_metrics.py [--slurm-log FILE]` |
+| Experiment state update | `scripts/update_experiment_state.py` | `python scripts/update_experiment_state.py --status collecting --job-id <ID>` |
+
+See `project-scaffold/references/template-catalog.md` sections L and O for full script source and configuration.
+
+**When to use the scripts**: The project has standard Hydra `outputs/` layout or SLURM logs with `=== <run_name>` headers and `val {dict}` metric lines.
+
+**When to fall back to agent reasoning**: Non-standard output formats (pickle, torch, custom log patterns), nested multi-level directory layouts not matching Hydra convention, or when gap detection against `experiment-plan.md` is needed.
+
+After running `make collect`, this skill's remaining value is gap detection, figure organization, and summary table computation — steps the deterministic script does not cover.
+
 ## Core contract
 
 ### This skill is responsible for
-- recursively scanning experiment output directories for completed runs,
+- running `make collect` (or `scripts/aggregate_metrics.py`) as the first step for standard projects,
+- recursively scanning experiment output directories for completed runs when the deterministic script is insufficient,
 - extracting metrics from multiple output formats (JSON, CSV, pickle, torch),
 - assembling structured results tables with consistent schemas,
 - detecting missing or failed runs against the expected experiment matrix,

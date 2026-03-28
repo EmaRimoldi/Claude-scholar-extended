@@ -462,7 +462,7 @@ When no experiment-plan.md is present (Mode B), include only the Core group and 
 File: `Makefile`
 
 ```makefile
-.PHONY: setup test lint typecheck run run-quick collect tables build-pdf refresh check-gates analyze clean
+.PHONY: setup test lint typecheck run run-quick collect tables build-pdf refresh check-gates validate validate-quick analyze clean
 
 # ---------- Environment ----------
 setup:
@@ -506,6 +506,12 @@ refresh: collect tables
 check-gates:
 	uv run python scripts/check_gates.py
 
+validate:
+	uv run python scripts/generate_validation_report.py
+
+validate-quick:
+	uv run python scripts/generate_validation_report.py --skip-pytest
+
 analyze:
 	@echo "Run /analyze-results in Claude Code"
 
@@ -523,6 +529,8 @@ clean:
 | `build-pdf` | Recompile manuscript PDF (3-pass pdflatex + bibtex) | After `tables` or prose edits |
 | `refresh` | One-command post-run update: collect + tables | After every SLURM job completes |
 | `check-gates` | Evaluate phase gates (G0/G1/G2) against current results | Before deciding to proceed to next phase |
+| `validate` | Run full validation report (pytest + config + imports + smoke + data) | After code changes, before experiment sweep |
+| `validate-quick` | Validation report without pytest (faster) | Quick sanity check |
 
 The `SLURM_LOG` variable allows passing a specific log file: `make collect SLURM_LOG=cluster/logs/icl-nl-full_12345.out`
 
@@ -1420,3 +1428,279 @@ python scripts/update_experiment_state.py --advance-iteration --status planned
 ```
 
 These can be chained in a post-job script or Makefile target.
+
+---
+
+## P. Validation Report Generator
+
+File: `scripts/generate_validation_report.py`
+
+Produces a structured `validation-report.md` from pytest output, smoke-test results, and basic sanity checks. Replaces agent-driven validation report assembly for the deterministic portions of `setup-validation`.
+
+```python
+#!/usr/bin/env python
+"""Generate validation-report.md from pytest and smoke-test results.
+
+Usage:
+    python scripts/generate_validation_report.py
+    python scripts/generate_validation_report.py --smoke-log outputs/smoke/metrics.json
+    python scripts/generate_validation_report.py --output validation-report.md
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_OUTPUT = ROOT / "validation-report.md"
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# ── Section 1: Pytest ────────────────────────────────────────────────
+
+
+def run_pytest() -> dict:
+    """Run pytest and capture structured results."""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short", "-q"],
+            capture_output=True, text=True, cwd=ROOT, timeout=180,
+        )
+        lines = result.stdout.strip().split("\n")
+        summary_line = lines[-1] if lines else "no output"
+        return {
+            "passed": result.returncode == 0,
+            "summary": summary_line,
+            "stdout": result.stdout[-2000:] if len(result.stdout) > 2000 else result.stdout,
+            "stderr": result.stderr[-1000:] if result.stderr else "",
+            "returncode": result.returncode,
+        }
+    except FileNotFoundError:
+        return {"passed": False, "summary": "pytest not found", "stdout": "", "stderr": "", "returncode": -1}
+    except subprocess.TimeoutExpired:
+        return {"passed": False, "summary": "pytest timed out (180s)", "stdout": "", "stderr": "", "returncode": -1}
+    except Exception as exc:
+        return {"passed": False, "summary": str(exc), "stdout": "", "stderr": "", "returncode": -1}
+
+
+# ── Section 2: Config loading ────────────────────────────────────────
+
+
+def check_config_loading() -> dict:
+    """Verify Hydra configs load without error."""
+    config_dir = ROOT / "configs"
+    if not config_dir.is_dir():
+        return {"passed": True, "message": "No configs/ directory found (skipped)."}
+    yaml_files = list(config_dir.rglob("*.yaml"))
+    if not yaml_files:
+        return {"passed": True, "message": "No YAML files in configs/ (skipped)."}
+    errors = []
+    try:
+        import yaml
+    except ImportError:
+        return {"passed": True, "message": "PyYAML not installed; config syntax check skipped."}
+    for yf in yaml_files:
+        try:
+            yaml.safe_load(yf.read_text())
+        except yaml.YAMLError as exc:
+            errors.append(f"  - `{yf.relative_to(ROOT)}`: {exc}")
+    if errors:
+        return {"passed": False, "message": f"{len(errors)} config(s) failed to parse:\n" + "\n".join(errors)}
+    return {"passed": True, "message": f"All {len(yaml_files)} YAML configs parse successfully."}
+
+
+# ── Section 3: Import check ──────────────────────────────────────────
+
+
+def check_imports() -> dict:
+    """Verify the main package imports without error."""
+    src_dir = ROOT / "src"
+    if not src_dir.is_dir():
+        return {"passed": True, "message": "No src/ directory found (skipped)."}
+    # Find the first Python package under src/
+    packages = [d.name for d in src_dir.iterdir() if d.is_dir() and (d / "__init__.py").exists()]
+    if not packages:
+        return {"passed": True, "message": "No Python packages found in src/ (skipped)."}
+    errors = []
+    for pkg in packages:
+        result = subprocess.run(
+            [sys.executable, "-c", f"import {pkg}"],
+            capture_output=True, text=True, cwd=ROOT,
+            env={**__import__("os").environ, "PYTHONPATH": str(src_dir)},
+            timeout=30,
+        )
+        if result.returncode != 0:
+            errors.append(f"  - `import {pkg}`: {result.stderr.strip().split(chr(10))[-1]}")
+    if errors:
+        return {"passed": False, "message": f"{len(errors)} import(s) failed:\n" + "\n".join(errors)}
+    return {"passed": True, "message": f"All packages import successfully: {', '.join(packages)}"}
+
+
+# ── Section 4: Smoke test metrics ────────────────────────────────────
+
+
+def check_smoke_test(smoke_log: Path | None) -> dict:
+    """Validate smoke-test output metrics are finite and non-degenerate."""
+    if smoke_log is None:
+        # Auto-detect: look for a quick/smoke run in outputs/
+        candidates = list((ROOT / "outputs").rglob("metrics.json")) if (ROOT / "outputs").is_dir() else []
+        if not candidates:
+            return {"passed": True, "message": "No smoke-test metrics found (skipped). Run `make run-quick` first."}
+        smoke_log = max(candidates, key=lambda p: p.stat().st_mtime)
+
+    if not smoke_log.is_file():
+        return {"passed": False, "message": f"Smoke log not found: {smoke_log}"}
+
+    try:
+        metrics = json.loads(smoke_log.read_text())
+    except Exception as exc:
+        return {"passed": False, "message": f"Failed to parse {smoke_log}: {exc}"}
+
+    if not isinstance(metrics, dict):
+        return {"passed": False, "message": f"Expected dict in {smoke_log}, got {type(metrics).__name__}"}
+
+    bad = []
+    for k, v in metrics.items():
+        try:
+            fv = float(v)
+            if not math.isfinite(fv):
+                bad.append(f"  - `{k}` = {v} (non-finite)")
+        except (ValueError, TypeError):
+            pass  # non-numeric fields are fine
+    if bad:
+        return {"passed": False, "message": f"Non-finite metrics in {smoke_log.name}:\n" + "\n".join(bad)}
+    return {
+        "passed": True,
+        "message": f"All metrics in `{smoke_log.relative_to(ROOT)}` are finite. Keys: {', '.join(metrics.keys())}",
+    }
+
+
+# ── Section 5: Data integrity ────────────────────────────────────────
+
+
+def check_data_files() -> dict:
+    """Check that referenced data directories/files exist."""
+    config_dir = ROOT / "configs"
+    if not config_dir.is_dir():
+        return {"passed": True, "message": "No configs/ directory (skipped)."}
+    # Simple heuristic: look for data_dir or data_path in YAML
+    import re
+    data_refs: list[str] = []
+    for yf in config_dir.rglob("*.yaml"):
+        for line in yf.read_text().splitlines():
+            m = re.search(r"(?:data_dir|data_path|root)\s*:\s*(.+)", line)
+            if m:
+                val = m.group(1).strip().strip("\"'")
+                if not val.startswith("${") and not val.startswith("?"):
+                    data_refs.append(val)
+    if not data_refs:
+        return {"passed": True, "message": "No data path references found in configs (skipped)."}
+    missing = [r for r in data_refs if not (ROOT / r).exists() and not Path(r).exists()]
+    if missing:
+        return {"passed": False, "message": f"{len(missing)} data path(s) not found:\n" + "\n".join(f"  - `{m}`" for m in missing)}
+    return {"passed": True, "message": f"All {len(data_refs)} referenced data paths exist."}
+
+
+# ── Report assembly ──────────────────────────────────────────────────
+
+
+def build_report(sections: list[tuple[str, dict]]) -> str:
+    lines = [
+        "# Validation Report",
+        "",
+        f"Generated: {_now()}",
+        "",
+    ]
+    all_passed = True
+    summary_rows = []
+    for name, result in sections:
+        status = "PASS" if result["passed"] else "FAIL"
+        if not result["passed"]:
+            all_passed = False
+        summary_rows.append(f"| {name} | **{status}** |")
+
+    lines += [
+        "## Summary",
+        "",
+        f"**Overall: {'ALL CHECKS PASSED' if all_passed else 'SOME CHECKS FAILED'}**",
+        "",
+        "| Check | Result |",
+        "|-------|--------|",
+    ] + summary_rows + [""]
+
+    for name, result in sections:
+        status = "PASS" if result["passed"] else "FAIL"
+        lines += [
+            f"## {name}",
+            "",
+            f"**{status}**",
+            "",
+            result["message"],
+            "",
+        ]
+        if result.get("stdout"):
+            lines += ["<details><summary>Full output</summary>", "", "```", result["stdout"].strip(), "```", "", "</details>", ""]
+
+    return "\n".join(lines)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Generate validation-report.md.")
+    parser.add_argument("--smoke-log", type=Path, default=None, help="Path to smoke-test metrics.json.")
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Output report path.")
+    parser.add_argument("--skip-pytest", action="store_true", help="Skip pytest execution.")
+    args = parser.parse_args()
+
+    sections: list[tuple[str, dict]] = []
+
+    if not args.skip_pytest:
+        sections.append(("Unit Tests (pytest)", run_pytest()))
+    sections.append(("Config Loading", check_config_loading()))
+    sections.append(("Package Imports", check_imports()))
+    sections.append(("Smoke Test Metrics", check_smoke_test(args.smoke_log)))
+    sections.append(("Data Integrity", check_data_files()))
+
+    report = build_report(sections)
+    args.output.write_text(report)
+    print(f"Wrote {args.output}")
+
+    # Exit with failure code if any check failed
+    if any(not r["passed"] for _, r in sections):
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Checks performed
+
+| Check | What it does |
+|-------|-------------|
+| Unit Tests | Runs `pytest tests/ -v --tb=short` and captures pass/fail summary |
+| Config Loading | Parses all `configs/**/*.yaml` files with PyYAML to catch syntax errors |
+| Package Imports | Verifies `import <pkg>` succeeds for each package under `src/` |
+| Smoke Test Metrics | Loads `metrics.json` from the most recent run (or `--smoke-log`) and checks all values are finite |
+| Data Integrity | Scans config YAML for `data_dir`/`data_path` references and checks paths exist |
+
+### Makefile integration
+
+Add to the project Makefile:
+
+```makefile
+validate:
+	uv run python scripts/generate_validation_report.py
+
+validate-quick:
+	uv run python scripts/generate_validation_report.py --skip-pytest
+```
+
+The exit code is 0 on all-pass, 1 on any failure — suitable for CI or as a pre-submission check.

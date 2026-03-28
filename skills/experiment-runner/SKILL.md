@@ -95,7 +95,22 @@ See `references/failure-recovery-patterns.md` for detailed detection patterns an
 
 ### 5. Phase Gate Evaluation
 
-After all Phase N jobs complete, evaluate the gate criterion before proceeding:
+After all Phase N jobs complete, evaluate the gate criterion before proceeding.
+
+#### Deterministic gate checking (preferred)
+
+When the project was scaffolded with `project-scaffold`, use the deterministic gate checker:
+
+```bash
+make check-gates                                    # uses default gate_spec
+python scripts/check_gates.py --config scripts/gate_spec.json  # custom gates
+```
+
+The script reads `experiments/results_summary.csv` (produced by `make collect`) and evaluates pass/fail criteria. Exit code 0 = all gates pass, 1 = any failure. See `project-scaffold/references/template-catalog.md` section N for the full script source and gate specification format.
+
+**Use agent reasoning for gate evaluation only when**: gate criteria require comparison against a specific baseline condition (not just a threshold), criteria involve statistical tests (p-values, effect sizes), or when the DIAGNOSE decision requires human judgment.
+
+#### Agent-driven gate evaluation (fallback)
 
 1. **Collect results**: Load metrics from `outputs/{run_id}/metrics.json` for all runs in the phase
 2. **Compute aggregate**: Mean +/- std of primary metric across seeds
@@ -120,6 +135,19 @@ Phase 1 Gate Evaluation:
 ### 6. State Management
 
 Maintain `experiment-state.json` throughout the execution lifecycle. This file is shared with `experiment-design`, `hypothesis-revision`, `failure-diagnosis`, and `hooks/session-start.js` — preserve all top-level fields when updating.
+
+#### Deterministic state updates (preferred)
+
+When the project was scaffolded with `project-scaffold`, use `scripts/update_experiment_state.py` for mechanical state transitions:
+
+```bash
+python scripts/update_experiment_state.py --status running          # set status
+python scripts/update_experiment_state.py --job-id 12345 --gpu-hours 10.5  # record job
+python scripts/update_experiment_state.py --advance-iteration --status planned  # next iteration
+python scripts/update_experiment_state.py --analysis experiments/analysis-report.md
+```
+
+See `project-scaffold/references/template-catalog.md` section O for the full script source and usage patterns. **Use agent reasoning for state updates only when**: writing complex `phases` sub-objects, recording failure details with diagnosis, or when upstream skill fields need careful preservation during concurrent updates.
 
 **Full schema** (top-level fields set by upstream skills, preserved by the runner):
 

@@ -198,6 +198,17 @@ Compile the complete submission package.
 - All bibliography entries in a single `.bib` file.
 - Use `\input{}` for long sections to keep the main file navigable.
 
+**Tables**: When the project was scaffolded with `project-scaffold`, use the deterministic CSV-to-LaTeX generator instead of writing tables by hand:
+
+```bash
+make tables                                              # default spec
+python scripts/csv_to_latex_tables.py --config scripts/table_spec.json  # custom spec
+```
+
+This reads `experiments/results_summary.csv` and emits `.tex` files into `manuscript/tables/`. Include them in the manuscript with `\input{tables/tab_<name>}`. After `make refresh`, tables update automatically on the next `make build-pdf`. See `project-scaffold/references/template-catalog.md` section M for the full script source and table specification format.
+
+**Use agent-generated tables only when**: the table requires non-standard formatting (multi-row cells, merged headers, custom highlighting), or when data comes from sources other than `results_summary.csv`.
+
 #### 3.2 Supplementary Material
 
 - Appendix sections for proofs, extended derivations, additional analysis.
