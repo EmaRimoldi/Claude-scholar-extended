@@ -11,6 +11,16 @@ tags: [Research, HPC, SLURM, Cluster]
 
 # Plan Compute Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- `compute-plan.md` → `$PROJECT_DIR/docs/compute-plan.md`
+- `cluster-profile.json` → `$PROJECT_DIR/cluster-profile.json`
+- SLURM scripts → `$PROJECT_DIR/scripts/`
+
+Never write compute plans to the repository root.
+
 Estimate resources and generate cluster submission scripts.
 
 ## Goal

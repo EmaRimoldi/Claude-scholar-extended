@@ -11,6 +11,15 @@ tags: [Research, Data, Analysis]
 
 # Collect Results Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- Result tables → `$PROJECT_DIR/results/tables/`
+- Aggregated data → `$PROJECT_DIR/results/`
+
+Never write result files to the repository root.
+
 Aggregate experiment outputs into analysis-ready tables.
 
 ## Goal

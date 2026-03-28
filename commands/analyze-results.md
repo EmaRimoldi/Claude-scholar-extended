@@ -24,6 +24,16 @@ tags: [Research, Analysis, Statistics, Visualization, Reporting]
 
 # Analyze Results Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- `analysis-report.md` → `$PROJECT_DIR/docs/analysis-report.md`
+- Figures → `$PROJECT_DIR/results/figures/`
+- Statistical outputs → `$PROJECT_DIR/results/`
+
+Never write analysis reports to the repository root.
+
 一键执行**实验后分析 + 报告成稿**工作流。
 
 这是用户默认应该使用的入口。

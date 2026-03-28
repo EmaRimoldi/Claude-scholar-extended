@@ -6,6 +6,14 @@ tags: [Research, Validation, Testing]
 
 # Validate Setup Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- `validation-report.md` → `$PROJECT_DIR/docs/validation-report.md`
+
+Never write validation reports to the repository root.
+
 Verify the experiment pipeline before committing GPU hours.
 
 ## Goal

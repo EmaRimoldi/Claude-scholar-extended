@@ -11,6 +11,16 @@ tags: [Research, Writing, LaTeX, Figures]
 
 # Produce Manuscript Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- LaTeX source → `$PROJECT_DIR/manuscript/`
+- Figures → `$PROJECT_DIR/figures/`
+- Submission package → `$PROJECT_DIR/manuscript/`
+
+Never write manuscript files to the repository root.
+
 Generate the complete submission package.
 
 ## Goal

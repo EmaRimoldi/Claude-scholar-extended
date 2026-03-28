@@ -11,6 +11,15 @@ tags: [Development, Data, ML]
 
 # Build Data Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- Data files → `$PROJECT_DIR/data/`
+- Data loader scripts → `$PROJECT_DIR/src/`
+
+Never write data files to the repository root.
+
 Translate dataset specifications into working code.
 
 ## Goal

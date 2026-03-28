@@ -18,6 +18,17 @@ tags: [Research, Literature Review, Zotero, Paper Search]
 
 # /research-init - Zotero-Integrated Research Startup Workflow
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- `literature-review.md` → `$PROJECT_DIR/docs/literature-review.md`
+- `research-proposal.md` → `$PROJECT_DIR/docs/research-proposal.md`
+- `references.bib` → `$PROJECT_DIR/docs/references.bib`
+- `hypotheses.md` → `$PROJECT_DIR/docs/hypotheses.md`
+
+Never write research documents to the repository root.
+
 Launch a complete literature survey workflow for the research topic "$topic", with scope "$scope" and output type "$output_type".
 
 ## Usage
@@ -142,10 +153,11 @@ Before finishing, verify:
 The command generates the following files:
 
 ```
-{project_dir}/
-├── literature-review.md      # Structured literature review (with Zotero citations)
-├── research-proposal.md      # Research proposal (if requested)
-└── references.bib            # BibTeX references
+$PROJECT_DIR/
+└── docs/
+    ├── literature-review.md      # Structured literature review (with Zotero citations)
+    ├── research-proposal.md      # Research proposal (if requested)
+    └── references.bib            # BibTeX references
 ```
 
 ## Integration Notes

@@ -6,6 +6,14 @@ tags: [Research, Writing, Positioning]
 
 # Position Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- `contribution-positioning.md` → `$PROJECT_DIR/docs/contribution-positioning.md`
+
+Never write positioning documents to the repository root.
+
 Articulate your contribution against the field.
 
 ## Goal

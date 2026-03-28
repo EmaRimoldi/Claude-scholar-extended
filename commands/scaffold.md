@@ -11,6 +11,18 @@ tags: [Development, Scaffolding, ML]
 
 # Scaffold Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- `src/` → `$PROJECT_DIR/src/`
+- `configs/` → `$PROJECT_DIR/configs/`
+- `data/` → `$PROJECT_DIR/data/`
+- `tests/` → `$PROJECT_DIR/tests/`
+- `pyproject.toml` → `$PROJECT_DIR/pyproject.toml`
+
+Never write project scaffold files to the repository root.
+
 Generate a complete, runnable ML experiment project structure.
 
 ## Goal

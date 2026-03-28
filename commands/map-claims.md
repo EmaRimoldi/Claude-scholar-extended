@@ -14,6 +14,14 @@ tags: [Research, Writing, Evidence]
 
 # Map Claims Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- `claim-evidence-map.md` → `$PROJECT_DIR/docs/claim-evidence-map.md`
+
+Never write claim maps to the repository root.
+
 Generate a claim-evidence map that verifies every planned paper claim is supported by experimental evidence.
 
 ## Goal

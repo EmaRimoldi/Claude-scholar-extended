@@ -11,6 +11,15 @@ tags: [Development, Model, ML, Interpretability]
 
 # Setup Model Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- Model code → `$PROJECT_DIR/src/`
+- Model configs → `$PROJECT_DIR/configs/`
+
+Never write model files to the repository root.
+
 Prepare models for the experiment pipeline.
 
 ## Goal

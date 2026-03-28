@@ -11,6 +11,15 @@ tags: [Research, Experimental Design, Planning]
 
 # Design Experiments Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- `experiment-plan.md` → `$PROJECT_DIR/docs/experiment-plan.md`
+- `experiment-state.json` → `$PROJECT_DIR/experiment-state.json`
+
+Never write research documents to the repository root.
+
 Generate a complete experiment plan from testable hypotheses.
 
 ## Goal
@@ -51,8 +60,8 @@ If no `hypotheses.md` is found, the skill will:
 1. **Locate hypotheses**: Read `hypotheses.md` or prompt user
 2. **Activate `experiment-design` skill**: Generate the full plan
 3. **Write outputs**:
-   - `experiment-plan.md` in project root
-   - `experiment-state.json` in project root (if not already present)
+   - `experiment-plan.md` in `$PROJECT_DIR/docs/`
+   - `experiment-state.json` in `$PROJECT_DIR/` (if not already present)
 4. **Obsidian write-back** (if bound):
    - Create `Experiments/{experiment-line}.md` with planned status
    - Append to `Daily/YYYY-MM-DD.md`

@@ -9,6 +9,14 @@ args:
 
 # /rebuttal - 审稿响应工作流
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- Rebuttal document → `$PROJECT_DIR/manuscript/`
+
+Never write rebuttal documents to the repository root.
+
 启动系统化的rebuttal撰写流程，从审稿意见分析到最终rebuttal文档生成。
 
 ## 用法

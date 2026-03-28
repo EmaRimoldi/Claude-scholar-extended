@@ -31,8 +31,13 @@ from typing import Optional
 
 STATE_FILE = "pipeline-state.json"
 
+# Default project directory structure created for each project.
+PROJECT_SUBDIRS = ["docs", "configs", "src", "data", "results", "results/tables",
+                   "results/figures", "manuscript", "logs", "notebooks"]
+
 # Canonical pipeline steps in execution order.
 # Each tuple: (step_id, slash_command, description, prerequisite_files, needs_online)
+# prerequisite_files are relative to project_dir (e.g. "docs/hypotheses.md").
 PIPELINE_STEPS = [
     (
         "research-init",
@@ -52,35 +57,35 @@ PIPELINE_STEPS = [
         "design-experiments",
         "/design-experiments",
         "Experiment plan from hypotheses",
-        ["hypotheses.md"],
+        ["docs/hypotheses.md"],
         False,
     ),
     (
         "scaffold",
         "/scaffold",
         "Generate runnable project structure",
-        ["experiment-plan.md"],
+        ["docs/experiment-plan.md"],
         False,
     ),
     (
         "build-data",
         "/build-data",
         "Create dataset generators and loaders",
-        ["experiment-plan.md"],
+        ["docs/experiment-plan.md"],
         False,
     ),
     (
         "setup-model",
         "/setup-model",
         "Load, configure, introspect models",
-        ["experiment-plan.md"],
+        ["docs/experiment-plan.md"],
         False,
     ),
     (
         "implement-metrics",
         "/implement-metrics",
         "Implement metrics and statistical tests",
-        ["experiment-plan.md"],
+        ["docs/experiment-plan.md"],
         False,
     ),
     (
@@ -94,7 +99,7 @@ PIPELINE_STEPS = [
         "plan-compute",
         "/plan-compute",
         "GPU estimation and SLURM script generation",
-        ["experiment-plan.md"],
+        ["docs/experiment-plan.md"],
         False,
     ),
     (
@@ -188,18 +193,37 @@ def save_state(project_dir: str, state: dict):
         json.dump(state, f, indent=2)
 
 
-def init_state(project_dir: str, force: bool = False) -> dict:
-    state_path = os.path.join(project_dir, STATE_FILE)
+def ensure_project_structure(base_dir: str, project_slug: str) -> str:
+    """Create the canonical project folder structure and return the project_dir (relative)."""
+    project_dir_rel = os.path.join("projects", project_slug)
+    project_dir_abs = os.path.join(base_dir, project_dir_rel)
+
+    for subdir in PROJECT_SUBDIRS:
+        os.makedirs(os.path.join(project_dir_abs, subdir), exist_ok=True)
+
+    return project_dir_rel
+
+
+def init_state(base_dir: str, force: bool = False,
+               project_slug: Optional[str] = None) -> dict:
+    state_path = os.path.join(base_dir, STATE_FILE)
     if os.path.exists(state_path) and not force:
         print(f"State file already exists: {state_path}")
         print("Use --force to reinitialize.")
-        return load_state(project_dir)
+        return load_state(base_dir)
+
+    # Determine project_dir
+    project_dir_rel = None
+    if project_slug:
+        project_dir_rel = ensure_project_structure(base_dir, project_slug)
+        print(f"Project structure created: {project_dir_rel}/")
 
     state = {
-        "version": 1,
+        "version": 2,
         "created_at": now_iso(),
         "updated_at": now_iso(),
         "mode": "interactive",
+        "project_dir": project_dir_rel,
         "steps": {},
     }
 
@@ -217,8 +241,10 @@ def init_state(project_dir: str, force: bool = False) -> dict:
             "slurm_job_id": None,
         }
 
-    save_state(project_dir, state)
+    save_state(base_dir, state)
     print(f"Pipeline state initialized: {state_path}")
+    if project_dir_rel:
+        print(f"Project directory: {project_dir_rel}")
     return state
 
 
@@ -248,9 +274,14 @@ def print_status(state: dict):
     print()
     print("Pipeline Status")
     print("=" * 70)
-    print(f"  Created:  {state.get('created_at', 'N/A')}")
-    print(f"  Updated:  {state.get('updated_at', 'N/A')}")
-    print(f"  Mode:     {state.get('mode', 'interactive')}")
+    print(f"  Created:     {state.get('created_at', 'N/A')}")
+    print(f"  Updated:     {state.get('updated_at', 'N/A')}")
+    print(f"  Mode:        {state.get('mode', 'interactive')}")
+    project_dir = state.get('project_dir')
+    if project_dir:
+        print(f"  Project dir: {project_dir}/")
+    else:
+        print(f"  Project dir: (not set — legacy state)")
     print()
 
     for i, step_id in enumerate(order, 1):
@@ -337,6 +368,7 @@ def main():
 
     p_init = sub.add_parser("init", help="Initialize pipeline state")
     p_init.add_argument("--force", action="store_true")
+    p_init.add_argument("--project", help="Project slug (creates projects/<slug>/ structure)")
 
     sub.add_parser("status", help="Show pipeline status")
 
@@ -366,7 +398,8 @@ def main():
     args = parser.parse_args()
 
     if args.action == "init":
-        init_state(args.dir, force=args.force)
+        init_state(args.dir, force=args.force,
+                   project_slug=getattr(args, 'project', None))
         return
 
     state = load_state(args.dir)

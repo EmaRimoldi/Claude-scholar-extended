@@ -15,6 +15,18 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const{execSync}=require('child_process'),p=require('path');execSync('node '+p.join(process.cwd(),'hooks','research-doc-guard.js'),{stdio:'inherit'})\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "matcher": "*",

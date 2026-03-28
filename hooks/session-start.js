@@ -94,6 +94,22 @@ if (binding.bound) {
   output += '  - Suggested command: /obsidian-init\n\n';
 }
 
+// Check for misplaced research documents in repo root
+const RESEARCH_DOCS = [
+  'literature-review.md', 'hypotheses.md', 'experiment-plan.md',
+  'experiment-state.json', 'compute-plan.md', 'validation-report.md',
+  'analysis-report.md', 'claim-evidence-map.md', 'contribution-positioning.md',
+  'paper-blueprint.md', 'research-proposal.md', 'cluster-profile.json',
+];
+const misplacedDocs = RESEARCH_DOCS.filter(f => fs.existsSync(path.join(cwd, f)));
+if (misplacedDocs.length > 0) {
+  output += `⚠️  Research documents found in repo root (should be in projects/<name>/docs/):\n`;
+  for (const doc of misplacedDocs) {
+    output += `  - ${doc}\n`;
+  }
+  output += `  → Run: git mv <file> projects/<project-name>/docs/\n\n`;
+}
+
 // Pipeline orchestrator state detection
 const pipelineStateFile = path.join(cwd, 'pipeline-state.json');
 if (fs.existsSync(pipelineStateFile)) {

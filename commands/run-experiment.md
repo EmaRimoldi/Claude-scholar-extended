@@ -10,6 +10,16 @@ tags: [Research, Execution, SLURM, Experiment]
 
 # Run Experiment Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- Experiment outputs → `$PROJECT_DIR/results/`
+- Experiment logs → `$PROJECT_DIR/logs/`
+- `experiment-state.json` → `$PROJECT_DIR/experiment-state.json`
+
+Never write experiment outputs to the repository root.
+
 Execute the experiment sweep on the cluster.
 
 ## Goal

@@ -31,20 +31,29 @@ If no flags are given, default to **interactive** mode starting from step 1 (or 
 1. Check if `pipeline-state.json` exists in the project root.
    - If it exists and `--resume` or no flags: load it and find the next pending/failed step.
    - If it exists and `--from <step>`: load it and set the starting point to that step.
-   - If it does not exist: run `python scripts/pipeline_state.py init` to create it.
+   - If it does not exist: run `python scripts/pipeline_state.py init --project <topic-slug>` to create it. Derive `<topic-slug>` from the research topic (kebab-case, e.g. `sparse-hate-explain`).
 
-2. If `--status` was passed:
+2. **Resolve PROJECT_DIR**: Read `project_dir` from `pipeline-state.json`. This is the base directory for ALL research outputs. If `project_dir` is null (legacy state), ask the user for a project slug and run `python scripts/pipeline_state.py init --force --project <slug>` to set it.
+
+3. **Create project folder structure** (if not already present):
+   ```bash
+   mkdir -p $PROJECT_DIR/{docs,configs,src,data,results/tables,results/figures,manuscript,logs,notebooks}
+   ```
+
+4. If `--status` was passed:
    - Run `python scripts/pipeline_state.py status` and display the output.
    - Stop here.
 
-3. If `--reset` was passed:
+5. If `--reset` was passed:
    - Run `python scripts/pipeline_state.py reset`.
    - Stop here.
 
-4. Create the logs directory for this run:
+6. Create the logs directory for this run:
    ```bash
-   mkdir -p logs/pipeline-$(date +%Y-%m-%d)
+   mkdir -p $PROJECT_DIR/logs/pipeline-$(date +%Y-%m-%d)
    ```
+
+**CRITICAL**: For every step below, all output files MUST be written inside `$PROJECT_DIR`. Pass the project directory to each step command. Never write research documents to the repository root.
 
 ## Pipeline Steps
 
@@ -85,7 +94,7 @@ Read the step status from `pipeline-state.json`:
 ### 2. Check prerequisites
 
 For each file listed in the step's `prerequisite_files`:
-- Check if the file exists in the project directory.
+- Check if the file exists inside `$PROJECT_DIR` (paths are relative to project_dir, e.g. `docs/hypotheses.md` → `$PROJECT_DIR/docs/hypotheses.md`).
 - If missing: warn the user. In interactive mode, ask if they want to continue anyway or abort. In auto mode, log a warning and proceed.
 
 ### 3. Check online requirement
@@ -205,4 +214,5 @@ If aborted, remind the user: `Resume later with: /run-pipeline --resume`
 
 - Individual step commands: `/research-init`, `/design-experiments`, `/scaffold`, etc.
 - State script: `python scripts/pipeline_state.py status`
-- Experiment iteration state: `experiment-state.json` (managed by `/run-experiment`)
+- Experiment iteration state: `$PROJECT_DIR/experiment-state.json` (managed by `/run-experiment`)
+- Project directory: All research outputs live in `$PROJECT_DIR` (stored as `project_dir` in `pipeline-state.json`)

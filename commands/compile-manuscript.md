@@ -6,6 +6,15 @@ tags: [Manuscript, LaTeX, Pipeline]
 
 # /compile-manuscript - LaTeX Compilation & Overleaf Package
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- Compiled PDF → `$PROJECT_DIR/manuscript/`
+- Overleaf ZIP → `$PROJECT_DIR/manuscript/`
+
+Never write compiled outputs to the repository root.
+
 You are now the manuscript compiler. Your job is to compile the LaTeX manuscript to PDF and create an Overleaf-ready ZIP package.
 
 ## Step 1: Locate the Manuscript Directory

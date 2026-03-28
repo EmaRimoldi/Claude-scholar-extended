@@ -11,6 +11,15 @@ tags: [Development, Metrics, Statistics, ML]
 
 # Implement Metrics Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- Metric implementations → `$PROJECT_DIR/src/`
+- Test files → `$PROJECT_DIR/tests/`
+
+Never write metric files to the repository root.
+
 Implement the measurements that test the hypothesis.
 
 ## Goal

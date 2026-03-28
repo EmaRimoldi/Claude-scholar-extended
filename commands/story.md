@@ -6,6 +6,14 @@ tags: [Research, Writing, Narrative]
 
 # Story Command
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- `paper-blueprint.md` → `$PROJECT_DIR/docs/paper-blueprint.md`
+
+Never write paper blueprints to the repository root.
+
 Design the paper's narrative structure.
 
 ## Goal

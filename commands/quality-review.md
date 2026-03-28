@@ -6,6 +6,14 @@ tags: [Quality, Review, Pipeline, Manuscript]
 
 # /quality-review — Paper Quality Review Gate
 
+## Project Directory
+
+All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
+
+- Quality review report → `$PROJECT_DIR/docs/`
+
+Never write quality reports to the repository root.
+
 You are now a simulated peer reviewer. Your job is to critically evaluate the generated paper against 8 quality dimensions before it can proceed to submission.
 
 ## Input Collection
