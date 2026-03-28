@@ -1,0 +1,37 @@
+defaults:
+  - _self_
+
+project:
+  name: rag-lit-synthesis
+  seed: 42
+  output_dir: outputs
+
+data:
+  benchmark_dir: data/benchmark
+  num_topics: 15
+  papers_per_topic: 200
+  corpus_source: semantic_scholar
+
+retrieval:
+  method: hybrid  # bm25, dense, hybrid
+  top_k: 10
+  chunk_size: 512
+  dense_model: BAAI/bge-base-en-v1.5
+
+generation:
+  model: meta-llama/Llama-3.1-8B-Instruct
+  temperature: 0.3
+  max_tokens: 4096
+  prompt_type: few_shot  # zero_shot, few_shot, cot
+
+evaluation:
+  metrics:
+    - citation_precision
+    - citation_recall
+    - faithfulness
+    - hallucination_rate
+    - key_paper_recall
+    - rouge
+    - bertscore
+  num_seeds: 3
+  seeds: [42, 123, 456]
