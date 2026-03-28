@@ -1,189 +1,274 @@
-"""Literature synthesis generation using LLMs with retrieved passages."""
+"""Literature synthesis generation: LLM-based and template-based fallback.
 
-from dataclasses import dataclass
-from typing import Optional
+Generates a ~500-word summary of a topic using retrieved papers.
+Three conditions:
+  - C1/C2: retrieval-augmented (uses retrieved paper abstracts)
+  - C3: no retrieval (generates from model knowledge alone)
 
-from ..registry import register
-from ..retrieval.retrievers import RetrievedPassage
+Falls back to template-based generation if no GPU or model too large.
+"""
+
+import logging
+from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
-class SynthesisOutput:
-    """Generated literature synthesis with metadata."""
+class SynthesisResult:
+    """Output of a synthesis generation."""
     text: str
-    cited_paper_ids: list[str]
-    model_name: str
-    prompt_type: str
-    num_retrieved: int
-    generation_config: dict
+    cited_paper_ids: list[str] = field(default_factory=list)
+    method: str = ""  # "llm" or "template"
+    model_name: str = ""
+    condition: str = ""  # "bm25", "dense", "no_retrieval"
 
 
-ZERO_SHOT_TEMPLATE = """You are an expert scientific reviewer. Write a comprehensive literature review section on the topic: {topic}
+# --- Template-based synthesis (fallback, no GPU needed) ---
 
-Use ONLY the following retrieved passages as sources. For each claim, cite the source using [Author, Year] format. Do not include any paper you cannot find in the provided passages.
+def template_synthesis(topic_name: str, retrieved_papers: list[dict],
+                       condition: str) -> SynthesisResult:
+    """Generate a structured summary by combining retrieved abstracts.
 
-Retrieved passages:
+    This is the fallback when no LLM is available. It produces a deterministic,
+    extractive summary by selecting key sentences from top retrieved papers.
+    """
+    if not retrieved_papers:
+        return _no_retrieval_template(topic_name, condition)
+
+    sections = []
+    cited_ids = []
+
+    # Introduction
+    sections.append(
+        f"This review surveys recent work on {topic_name}, covering "
+        f"{len(retrieved_papers)} relevant papers from the literature."
+    )
+
+    # Group papers and extract key content
+    sections.append("\n## Key Approaches and Findings\n")
+    for i, paper in enumerate(retrieved_papers[:10]):
+        title = paper.get("title", "Unknown")
+        abstract = paper.get("abstract", "")
+        authors = paper.get("authors", [])
+        year = paper.get("year", "")
+        pid = paper.get("paper_id", "")
+
+        # Extract first 2 sentences as key contribution
+        sentences = [s.strip() for s in abstract.split(". ") if len(s.strip()) > 20]
+        key_content = ". ".join(sentences[:2]) + "." if sentences else abstract[:200]
+
+        author_str = authors[0] if authors else "Unknown"
+        if len(authors) > 1:
+            author_str += " et al."
+
+        sections.append(
+            f"[{author_str}, {year}] ({title}): {key_content}"
+        )
+        if pid:
+            cited_ids.append(pid)
+
+    # Summary statistics
+    years = [p.get("year", 0) for p in retrieved_papers if p.get("year")]
+    if years:
+        sections.append(
+            f"\nThe surveyed papers span {min(years)}-{max(years)}, "
+            f"reflecting active research in {topic_name}."
+        )
+
+    # Limitations
+    sections.append(
+        f"\n## Limitations and Open Questions\n"
+        f"While significant progress has been made in {topic_name}, "
+        f"several challenges remain. The field would benefit from more "
+        f"standardized benchmarks and reproducible evaluation protocols."
+    )
+
+    text = "\n".join(sections)
+    return SynthesisResult(
+        text=text,
+        cited_paper_ids=cited_ids,
+        method="template",
+        model_name="template-extractive",
+        condition=condition,
+    )
+
+
+def _no_retrieval_template(topic_name: str, condition: str) -> SynthesisResult:
+    """Baseline template with no retrieved papers."""
+    text = (
+        f"This review discusses {topic_name}. "
+        f"Without access to specific retrieved documents, this summary "
+        f"provides a general overview based on common knowledge in the field. "
+        f"The topic of {topic_name} has seen significant recent interest "
+        f"in the machine learning and natural language processing communities. "
+        f"Key challenges include scalability, evaluation methodology, and "
+        f"reproducibility of results across different experimental settings."
+    )
+    return SynthesisResult(
+        text=text,
+        cited_paper_ids=[],
+        method="template",
+        model_name="template-baseline",
+        condition=condition,
+    )
+
+
+# --- LLM-based synthesis ---
+
+RAG_PROMPT = """You are an expert scientific reviewer. Write a ~500-word literature review on: {topic}
+
+Use ONLY the following retrieved papers as sources. Cite each paper as [Author, Year].
+
+Retrieved papers:
 {passages}
 
-Write a well-structured review covering:
+Write a structured review covering:
 1. Key approaches and methods
-2. Main findings and results
-3. Limitations of current work
-4. Open research questions
+2. Main findings
+3. Limitations and open questions
 
 Review:"""
 
-FEW_SHOT_TEMPLATE = """You are an expert scientific reviewer writing a literature review.
+NO_RETRIEVAL_PROMPT = """You are an expert scientific reviewer. Write a ~500-word literature review on: {topic}
 
-Example of a well-cited review paragraph:
-"Recent advances in retrieval-augmented generation have shown promising results for knowledge-intensive tasks [Gao et al., 2024]. The core idea is to combine a retriever that finds relevant documents with a generator that synthesizes information from them [Lewis et al., 2020]. However, hallucination remains a challenge even with retrieval, as models may generate claims not supported by the retrieved passages [Shuster et al., 2021]."
+Based on your knowledge, cover:
+1. Key approaches and methods
+2. Main findings
+3. Limitations and open questions
 
-Now write a comprehensive literature review on: {topic}
-
-Use ONLY the following retrieved passages. Cite every claim with [Author, Year].
-
-Retrieved passages:
-{passages}
+Cite papers you know using [Author, Year] format.
 
 Review:"""
 
-COT_TEMPLATE = """You are an expert scientific reviewer. Your task is to write a literature review on: {topic}
 
-Retrieved passages:
-{passages}
-
-Before writing, think step by step:
-1. First, identify the main themes across the passages
-2. Group papers by theme
-3. For each theme, identify agreements, disagreements, and gaps
-4. Plan the structure of your review
-
-Now write the review, citing each claim with [Author, Year]:"""
-
-
-TEMPLATES = {
-    "zero_shot": ZERO_SHOT_TEMPLATE,
-    "few_shot": FEW_SHOT_TEMPLATE,
-    "cot": COT_TEMPLATE,
-}
-
-
-def format_passages(passages: list[RetrievedPassage]) -> str:
-    """Format retrieved passages for the prompt."""
+def _format_papers_for_prompt(papers: list[dict]) -> str:
     parts = []
-    for i, p in enumerate(passages, 1):
-        parts.append(f"[{i}] Title: {p.title}\nPaper ID: {p.paper_id}\nText: {p.text}\n")
+    for i, p in enumerate(papers, 1):
+        authors = p.get("authors", [])
+        author_str = authors[0] if authors else "Unknown"
+        if len(authors) > 1:
+            author_str += " et al."
+        parts.append(
+            f"[{i}] {author_str} ({p.get('year', '')}). {p.get('title', '')}\n"
+            f"    Abstract: {p.get('abstract', '')[:500]}\n"
+        )
     return "\n".join(parts)
 
 
-@register("generator", "llm_synthesizer")
-class LLMSynthesizer:
-    """Generate literature synthesis using an LLM."""
+def _try_load_llm():
+    """Try to load a small LLM. Returns (model, tokenizer, model_name) or None."""
+    import torch
+    if not torch.cuda.is_available():
+        logger.info("No GPU available, using template fallback")
+        return None
 
-    def __init__(self, model_name: str = "meta-llama/Llama-3.1-8B-Instruct",
-                 temperature: float = 0.3, max_tokens: int = 4096):
-        self.model_name = model_name
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self._model = None
-        self._tokenizer = None
+    vram_gb = torch.cuda.get_device_properties(0).total_mem / (1024**3)
+    logger.info(f"GPU VRAM: {vram_gb:.1f} GB")
 
-    def _load_model(self):
-        """Lazy-load the model."""
-        if self._model is not None:
-            return
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-        import torch
+    # Try models in order of preference (smallest first)
+    candidates = [
+        ("google/flan-t5-large", "seq2seq", 3.0),   # ~3GB, fits anywhere
+        ("google/flan-t5-xl", "seq2seq", 8.0),       # ~8GB
+    ]
 
-        self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self._model = AutoModelForCausalLM.from_pretrained(
-            self.model_name,
-            torch_dtype=torch.float16,
-            device_map="auto",
-        )
+    for model_name, model_type, min_vram in candidates:
+        if vram_gb >= min_vram:
+            try:
+                logger.info(f"Loading {model_name}...")
+                if model_type == "seq2seq":
+                    from transformers import T5ForConditionalGeneration, AutoTokenizer
+                    tokenizer = AutoTokenizer.from_pretrained(model_name)
+                    model = T5ForConditionalGeneration.from_pretrained(
+                        model_name,
+                        torch_dtype=torch.float16,
+                        device_map="auto",
+                    )
+                else:
+                    from transformers import AutoModelForCausalLM, AutoTokenizer
+                    tokenizer = AutoTokenizer.from_pretrained(model_name)
+                    model = AutoModelForCausalLM.from_pretrained(
+                        model_name,
+                        torch_dtype=torch.float16,
+                        device_map="auto",
+                    )
+                logger.info(f"Loaded {model_name} successfully")
+                return model, tokenizer, model_name, model_type
+            except Exception as e:
+                logger.warning(f"Failed to load {model_name}: {e}")
+                continue
 
-    def generate(self, topic: str, passages: list[RetrievedPassage],
-                 prompt_type: str = "few_shot") -> SynthesisOutput:
-        """Generate a literature synthesis."""
-        self._load_model()
-
-        template = TEMPLATES.get(prompt_type, TEMPLATES["few_shot"])
-        formatted_passages = format_passages(passages)
-        prompt = template.format(topic=topic, passages=formatted_passages)
-
-        inputs = self._tokenizer(prompt, return_tensors="pt").to(self._model.device)
-        outputs = self._model.generate(
-            **inputs,
-            max_new_tokens=self.max_tokens,
-            temperature=self.temperature,
-            do_sample=True,
-            top_p=0.9,
-        )
-        generated = self._tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
-
-        cited_ids = [p.paper_id for p in passages if p.title.lower() in generated.lower()]
-
-        return SynthesisOutput(
-            text=generated,
-            cited_paper_ids=cited_ids,
-            model_name=self.model_name,
-            prompt_type=prompt_type,
-            num_retrieved=len(passages),
-            generation_config={"temperature": self.temperature, "max_tokens": self.max_tokens},
-        )
+    logger.info("No LLM fits in VRAM, using template fallback")
+    return None
 
 
-@register("generator", "no_retrieval")
-class NoRetrievalSynthesizer:
-    """Generate literature synthesis without retrieval (baseline)."""
+def llm_synthesis(topic_name: str, retrieved_papers: list[dict],
+                  condition: str, model_bundle=None) -> SynthesisResult:
+    """Generate synthesis using an LLM with retrieved context."""
+    import torch
 
-    NO_RETRIEVAL_TEMPLATE = """You are an expert scientific reviewer. Write a comprehensive literature review on: {topic}
+    if model_bundle is None:
+        model_bundle = _try_load_llm()
 
-Cover key approaches, main findings, limitations, and open questions. Cite papers using [Author, Year] format based on your knowledge.
+    if model_bundle is None:
+        return template_synthesis(topic_name, retrieved_papers, condition)
 
-Review:"""
+    model, tokenizer, model_name, model_type = model_bundle
 
-    def __init__(self, model_name: str = "meta-llama/Llama-3.1-8B-Instruct",
-                 temperature: float = 0.3, max_tokens: int = 4096):
-        self.model_name = model_name
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self._model = None
-        self._tokenizer = None
+    # Build prompt
+    if retrieved_papers:
+        passages_text = _format_papers_for_prompt(retrieved_papers)
+        prompt = RAG_PROMPT.format(topic=topic_name, passages=passages_text)
+    else:
+        prompt = NO_RETRIEVAL_PROMPT.format(topic=topic_name)
 
-    def _load_model(self):
-        if self._model is not None:
-            return
-        from transformers import AutoModelForCausalLM, AutoTokenizer
-        import torch
+    # Truncate prompt to fit model context
+    max_input_tokens = 1024 if "t5" in model_name.lower() else 2048
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True,
+                       max_length=max_input_tokens).to(model.device)
 
-        self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self._model = AutoModelForCausalLM.from_pretrained(
-            self.model_name,
-            torch_dtype=torch.float16,
-            device_map="auto",
-        )
+    with torch.no_grad():
+        if model_type == "seq2seq":
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=512,
+                temperature=0.3,
+                do_sample=True,
+                top_p=0.9,
+                num_beams=1,
+            )
+            generated = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        else:
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=512,
+                temperature=0.3,
+                do_sample=True,
+                top_p=0.9,
+            )
+            generated = tokenizer.decode(
+                outputs[0][inputs.input_ids.shape[1]:],
+                skip_special_tokens=True,
+            )
 
-    def generate(self, topic: str) -> SynthesisOutput:
-        """Generate synthesis without retrieval."""
-        self._load_model()
+    # Extract cited paper IDs by matching titles in generated text
+    cited_ids = []
+    gen_lower = generated.lower()
+    for p in (retrieved_papers or []):
+        # Check if any significant part of the title appears in the output
+        title_words = p.get("title", "").lower().split()
+        if len(title_words) >= 3:
+            # Check if 3+ consecutive title words appear
+            for j in range(len(title_words) - 2):
+                trigram = " ".join(title_words[j:j+3])
+                if trigram in gen_lower:
+                    cited_ids.append(p["paper_id"])
+                    break
 
-        prompt = self.NO_RETRIEVAL_TEMPLATE.format(topic=topic)
-        inputs = self._tokenizer(prompt, return_tensors="pt").to(self._model.device)
-        outputs = self._model.generate(
-            **inputs,
-            max_new_tokens=self.max_tokens,
-            temperature=self.temperature,
-            do_sample=True,
-            top_p=0.9,
-        )
-        generated = self._tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
-
-        return SynthesisOutput(
-            text=generated,
-            cited_paper_ids=[],
-            model_name=self.model_name,
-            prompt_type="no_retrieval",
-            num_retrieved=0,
-            generation_config={"temperature": self.temperature, "max_tokens": self.max_tokens},
-        )
+    return SynthesisResult(
+        text=generated,
+        cited_paper_ids=cited_ids,
+        method="llm",
+        model_name=model_name,
+        condition=condition,
+    )

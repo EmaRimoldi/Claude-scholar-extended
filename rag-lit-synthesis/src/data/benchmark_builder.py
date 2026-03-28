@@ -1,25 +1,61 @@
-"""Benchmark dataset builder for literature synthesis evaluation.
+"""Benchmark dataset builder for RAG literature synthesis evaluation.
 
-Constructs a benchmark of ML/NLP topics with:
-- Expert-written survey papers as ground truth
-- Corpus of candidate papers per topic for retrieval
-- Annotation guidelines for error classification
+Downloads papers from Semantic Scholar API for 5 NLP/ML topics.
+Each topic has 30-50 candidate papers and 1 survey as ground truth.
 """
 
 import json
 import time
+import logging
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
 
 import requests
 
-from ..registry import register
+logger = logging.getLogger(__name__)
+
+SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org/graph/v1"
+PAPER_FIELDS = "paperId,title,authors,year,venue,abstract,citationCount,url"
+
+# 5 well-defined NLP/ML topics with known high-citation surveys
+SEED_TOPICS = [
+    {
+        "topic_id": "attention_mechanisms",
+        "topic_name": "Attention Mechanisms in Neural Networks",
+        "search_query": "attention mechanism transformer neural network",
+        "survey_query": "survey attention mechanism transformer",
+    },
+    {
+        "topic_id": "prompt_engineering",
+        "topic_name": "Prompt Engineering for Large Language Models",
+        "search_query": "prompt engineering large language models",
+        "survey_query": "survey prompt engineering LLM",
+    },
+    {
+        "topic_id": "rlhf",
+        "topic_name": "Reinforcement Learning from Human Feedback",
+        "search_query": "reinforcement learning human feedback RLHF alignment",
+        "survey_query": "survey reinforcement learning human feedback",
+    },
+    {
+        "topic_id": "diffusion_models",
+        "topic_name": "Diffusion Models for Generative AI",
+        "search_query": "diffusion models denoising generative",
+        "survey_query": "survey diffusion models generative",
+    },
+    {
+        "topic_id": "in_context_learning",
+        "topic_name": "In-Context Learning in Large Language Models",
+        "search_query": "in-context learning few-shot large language models",
+        "survey_query": "survey in-context learning",
+    },
+]
 
 
 @dataclass
 class Paper:
-    """Represents a paper in the benchmark."""
+    """A paper in the benchmark."""
     paper_id: str
     title: str
     authors: list[str]
@@ -27,194 +63,229 @@ class Paper:
     venue: str = ""
     abstract: str = ""
     citation_count: int = 0
-    is_expert_cited: bool = False
     url: str = ""
+    is_expert_cited: bool = False
 
 
 @dataclass
 class BenchmarkTopic:
-    """A single benchmark topic with expert review and candidate corpus."""
+    """A benchmark topic with survey ground truth and candidate corpus."""
     topic_id: str
     topic_name: str
-    expert_survey: Optional[Paper] = None
-    expert_cited_papers: list[Paper] = field(default_factory=list)
-    corpus_papers: list[Paper] = field(default_factory=list)
+    survey: Optional[Paper] = None
+    survey_cited_ids: list[str] = field(default_factory=list)
+    corpus: list[Paper] = field(default_factory=list)
 
 
-@register("dataset", "literature_benchmark")
-class LiteratureBenchmarkBuilder:
-    """Build benchmark dataset from Semantic Scholar API."""
-
-    BASE_URL = "https://api.semanticscholar.org/graph/v1"
-    FIELDS = "paperId,title,authors,year,venue,abstract,citationCount,externalIds,url"
-    RATE_LIMIT_DELAY = 1.1  # seconds between requests
-
-    # Curated list of ML/NLP survey topics with known expert surveys
-    SEED_SURVEYS = [
-        {"topic": "Transformer Architectures", "paper_id": "204e3073870fae3d05bcbc2f6a8e263d9b72e776"},
-        {"topic": "Retrieval-Augmented Generation", "paper_id": "46f9f7b8f88f72e12cbdb21e3311f995eb6e65c5"},
-        {"topic": "Prompt Engineering", "paper_id": "f2cd4440e0ef78a6db9b56a04d6e37ef38c14e0a"},
-        {"topic": "LLM Hallucination", "paper_id": "d2764e5df46ded096b33e3f3d67fbc5e66e3dae5"},
-        {"topic": "In-Context Learning", "paper_id": "38d2d3023e7ac002a53d32cd8faa691c67ee1c6d"},
-        {"topic": "Knowledge Graphs and LLMs", "paper_id": "26ce5a81d458b0492bdc5a9011ff01b7a5ff1a3e"},
-        {"topic": "Text Summarization", "paper_id": "a27c0fc8f02ed3e14e10d14d58fbc399afa1d5a0"},
-        {"topic": "Question Answering", "paper_id": "3a57a19571d416ceff75d82b7be5e20d41acc7b8"},
-        {"topic": "Machine Translation", "paper_id": "bb1ee1a279c0e26b0b2ed0a0b75e7aa600e0f5d0"},
-        {"topic": "Instruction Tuning", "paper_id": "d18a72751a30ba57e8d7b5a9d0e0b31c0b4a3e5e"},
-        {"topic": "Evaluation of LLMs", "paper_id": "9a0b7b2da7b58e36d7f0cdd1e5eece7ef6c3fbb3"},
-        {"topic": "Multimodal LLMs", "paper_id": "a93e39a2f1795914efcf27b0d8aa6d4e3c3c1f22"},
-        {"topic": "LLM Alignment", "paper_id": "a7f0b2b55ae22f2c7c0de67af2ddfe15ad15fb70"},
-        {"topic": "Code Generation with LLMs", "paper_id": "d7e5b45afc5e4d4cd3ff7df83c5d1f67c97a8f9e"},
-        {"topic": "Efficient LLM Inference", "paper_id": "e63aa2a91e92b22e5cf2bdc9e5c35a0b7d65d9c2"},
-    ]
-
-    def __init__(self, output_dir: str = "data/benchmark"):
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
-
-    def _api_get(self, endpoint: str, params: dict = None) -> Optional[dict]:
-        """Make rate-limited API request."""
-        time.sleep(self.RATE_LIMIT_DELAY)
+def _api_get(endpoint: str, params: dict | None = None,
+             max_retries: int = 5) -> Optional[dict]:
+    """Rate-limited Semantic Scholar API request with exponential backoff."""
+    url = f"{SEMANTIC_SCHOLAR_API}/{endpoint}"
+    for attempt in range(max_retries):
         try:
-            url = f"{self.BASE_URL}/{endpoint}"
-            resp = requests.get(url, params=params or {}, timeout=15)
+            time.sleep(1.2)  # rate limit: ~1 req/sec for public API
+            resp = requests.get(url, params=params or {}, timeout=20)
             if resp.status_code == 200:
                 return resp.json()
             elif resp.status_code == 429:
-                print(f"  Rate limited, waiting 5s...")
-                time.sleep(5)
-                return self._api_get(endpoint, params)
+                wait = min(2 ** attempt * 5, 60)
+                logger.warning(f"Rate limited, waiting {wait}s (attempt {attempt+1})")
+                time.sleep(wait)
             else:
-                print(f"  API error {resp.status_code}: {endpoint}")
+                logger.warning(f"API {resp.status_code} for {endpoint}")
+                if resp.status_code >= 500:
+                    time.sleep(2 ** attempt)
+                    continue
                 return None
         except requests.RequestException as e:
-            print(f"  Request failed: {e}")
-            return None
+            logger.warning(f"Request error: {e}, retrying...")
+            time.sleep(2 ** attempt)
+    logger.error(f"Failed after {max_retries} retries: {endpoint}")
+    return None
 
-    def fetch_paper(self, paper_id: str) -> Optional[Paper]:
-        """Fetch a single paper's metadata."""
-        data = self._api_get(f"paper/{paper_id}", {"fields": self.FIELDS})
-        if not data:
-            return None
-        return Paper(
-            paper_id=data.get("paperId", ""),
-            title=data.get("title", ""),
-            authors=[a.get("name", "") for a in (data.get("authors") or [])],
-            year=data.get("year") or 0,
-            venue=data.get("venue", ""),
-            abstract=data.get("abstract", ""),
-            citation_count=data.get("citationCount", 0),
-            url=data.get("url", ""),
-        )
 
-    def fetch_citations(self, paper_id: str, limit: int = 200) -> list[Paper]:
-        """Fetch papers cited by a given paper (its references)."""
-        data = self._api_get(
-            f"paper/{paper_id}/references",
-            {"fields": self.FIELDS, "limit": limit},
-        )
-        if not data or "data" not in data:
-            return []
-        papers = []
-        for item in data["data"]:
-            cited = item.get("citedPaper", {})
-            if cited and cited.get("title"):
-                papers.append(Paper(
-                    paper_id=cited.get("paperId", ""),
-                    title=cited.get("title", ""),
-                    authors=[a.get("name", "") for a in (cited.get("authors") or [])],
-                    year=cited.get("year") or 0,
-                    venue=cited.get("venue", ""),
-                    abstract=cited.get("abstract", ""),
-                    citation_count=cited.get("citationCount", 0),
-                    is_expert_cited=True,
-                    url=cited.get("url", ""),
-                ))
-        return papers
+def fetch_paper(paper_id: str) -> Optional[Paper]:
+    """Fetch a single paper by ID."""
+    data = _api_get(f"paper/{paper_id}", {"fields": PAPER_FIELDS})
+    if not data or not data.get("title"):
+        return None
+    return Paper(
+        paper_id=data.get("paperId", ""),
+        title=data.get("title", ""),
+        authors=[a.get("name", "") for a in (data.get("authors") or [])],
+        year=data.get("year") or 0,
+        venue=data.get("venue", ""),
+        abstract=data.get("abstract", "") or "",
+        citation_count=data.get("citationCount", 0),
+        url=data.get("url", ""),
+    )
 
-    def search_corpus(self, query: str, limit: int = 200) -> list[Paper]:
-        """Search for papers on a topic to build retrieval corpus."""
-        data = self._api_get(
-            "paper/search",
-            {"query": query, "fields": self.FIELDS, "limit": limit},
-        )
-        if not data or "data" not in data:
-            return []
-        return [
-            Paper(
+
+def search_papers(query: str, limit: int = 50, year_range: str = "2019-2026") -> list[Paper]:
+    """Search Semantic Scholar for papers matching a query."""
+    data = _api_get("paper/search", {
+        "query": query,
+        "fields": PAPER_FIELDS,
+        "limit": min(limit, 100),
+        "year": year_range,
+    })
+    if not data or "data" not in data:
+        return []
+    papers = []
+    for p in data["data"]:
+        if p.get("title") and p.get("abstract"):
+            papers.append(Paper(
                 paper_id=p.get("paperId", ""),
                 title=p.get("title", ""),
                 authors=[a.get("name", "") for a in (p.get("authors") or [])],
                 year=p.get("year") or 0,
                 venue=p.get("venue", ""),
-                abstract=p.get("abstract", ""),
+                abstract=p.get("abstract", "") or "",
                 citation_count=p.get("citationCount", 0),
-            )
-            for p in data["data"]
-            if p.get("title")
-        ]
+                url=p.get("url", ""),
+            ))
+    return papers
 
-    def build_topic(self, topic_name: str, survey_id: str) -> BenchmarkTopic:
-        """Build a single benchmark topic."""
-        print(f"Building topic: {topic_name}")
 
-        # Fetch expert survey
-        survey = self.fetch_paper(survey_id)
-        if not survey:
-            print(f"  WARNING: Could not fetch survey paper {survey_id}")
-            return BenchmarkTopic(topic_id=survey_id, topic_name=topic_name)
+def find_best_survey(query: str) -> Optional[Paper]:
+    """Find the most-cited survey paper for a topic."""
+    papers = search_papers(query, limit=20, year_range="2020-2026")
+    if not papers:
+        return None
+    # Pick the most cited one
+    papers.sort(key=lambda p: p.citation_count, reverse=True)
+    return papers[0]
 
-        # Fetch papers cited by the survey
-        expert_cited = self.fetch_citations(survey_id)
-        print(f"  Expert survey cites {len(expert_cited)} papers")
 
-        # Build broader corpus via search
-        corpus = self.search_corpus(topic_name, limit=200)
-        print(f"  Corpus search returned {len(corpus)} papers")
+def fetch_survey_references(paper_id: str, limit: int = 200) -> list[str]:
+    """Get paper IDs cited by the survey."""
+    data = _api_get(f"paper/{paper_id}/references", {
+        "fields": "paperId",
+        "limit": limit,
+    })
+    if not data or "data" not in data:
+        return []
+    ids = []
+    for item in data["data"]:
+        cited = item.get("citedPaper", {})
+        if cited and cited.get("paperId"):
+            ids.append(cited["paperId"])
+    return ids
 
-        # Mark corpus papers that are also expert-cited
-        expert_ids = {p.paper_id for p in expert_cited}
-        for p in corpus:
-            if p.paper_id in expert_ids:
-                p.is_expert_cited = True
 
-        return BenchmarkTopic(
-            topic_id=survey_id,
-            topic_name=topic_name,
-            expert_survey=survey,
-            expert_cited_papers=expert_cited,
-            corpus_papers=corpus,
-        )
+def build_topic(seed: dict, min_papers: int = 30) -> BenchmarkTopic:
+    """Build a single benchmark topic."""
+    topic_id = seed["topic_id"]
+    topic_name = seed["topic_name"]
+    logger.info(f"Building topic: {topic_name}")
 
-    def build_all(self, max_topics: int = 15) -> list[BenchmarkTopic]:
-        """Build the full benchmark dataset."""
-        topics = []
-        for entry in self.SEED_SURVEYS[:max_topics]:
-            topic = self.build_topic(entry["topic"], entry["paper_id"])
-            topics.append(topic)
+    # Find best survey
+    survey = find_best_survey(seed["survey_query"])
+    if not survey:
+        logger.warning(f"No survey found for {topic_name}, using search fallback")
+        survey = find_best_survey(seed["search_query"])
 
-            # Save incrementally
-            topic_file = self.output_dir / f"{topic.topic_id}.json"
-            topic_file.write_text(json.dumps(asdict(topic), indent=2, default=str))
+    survey_cited_ids = []
+    if survey:
+        logger.info(f"  Survey: {survey.title} (citations: {survey.citation_count})")
+        survey_cited_ids = fetch_survey_references(survey.paper_id)
+        logger.info(f"  Survey cites {len(survey_cited_ids)} papers")
 
-        # Save manifest
-        manifest = {
-            "num_topics": len(topics),
-            "topics": [
-                {
-                    "topic_id": t.topic_id,
-                    "topic_name": t.topic_name,
-                    "num_expert_cited": len(t.expert_cited_papers),
-                    "num_corpus": len(t.corpus_papers),
-                }
-                for t in topics
-            ],
-        }
-        (self.output_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
-        print(f"\nBenchmark built: {len(topics)} topics")
-        return topics
+    # Build corpus
+    corpus = search_papers(seed["search_query"], limit=50)
+    logger.info(f"  Corpus: {len(corpus)} papers")
+
+    # Mark papers cited by the survey
+    cited_set = set(survey_cited_ids)
+    for p in corpus:
+        if p.paper_id in cited_set:
+            p.is_expert_cited = True
+
+    # If too few papers, try a broader search
+    if len(corpus) < min_papers:
+        extra = search_papers(topic_name, limit=30)
+        existing_ids = {p.paper_id for p in corpus}
+        for p in extra:
+            if p.paper_id not in existing_ids:
+                if p.paper_id in cited_set:
+                    p.is_expert_cited = True
+                corpus.append(p)
+
+    return BenchmarkTopic(
+        topic_id=topic_id,
+        topic_name=topic_name,
+        survey=survey,
+        survey_cited_ids=survey_cited_ids,
+        corpus=corpus,
+    )
+
+
+def build_benchmark(output_dir: str = "data/benchmark") -> list[BenchmarkTopic]:
+    """Build the full 5-topic benchmark."""
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    topics = []
+    for seed in SEED_TOPICS:
+        topic = build_topic(seed)
+        topics.append(topic)
+
+        # Save incrementally
+        topic_file = out / f"{topic.topic_id}.json"
+        topic_file.write_text(json.dumps(asdict(topic), indent=2, default=str))
+        logger.info(f"  Saved {topic_file}")
+
+    # Save manifest
+    manifest = {
+        "num_topics": len(topics),
+        "topics": [
+            {
+                "topic_id": t.topic_id,
+                "topic_name": t.topic_name,
+                "num_corpus": len(t.corpus),
+                "num_survey_cited": len(t.survey_cited_ids),
+                "survey_title": t.survey.title if t.survey else None,
+            }
+            for t in topics
+        ],
+    }
+    (out / "manifest.json").write_text(json.dumps(manifest, indent=2))
+    logger.info(f"Benchmark complete: {len(topics)} topics")
+    return topics
+
+
+def load_benchmark(benchmark_dir: str = "data/benchmark") -> list[BenchmarkTopic]:
+    """Load a previously built benchmark from disk."""
+    bdir = Path(benchmark_dir)
+    manifest_file = bdir / "manifest.json"
+    if not manifest_file.exists():
+        raise FileNotFoundError(f"No benchmark at {bdir}. Run build_benchmark() first.")
+
+    manifest = json.loads(manifest_file.read_text())
+    topics = []
+    for entry in manifest["topics"]:
+        topic_file = bdir / f"{entry['topic_id']}.json"
+        data = json.loads(topic_file.read_text())
+
+        survey = None
+        if data.get("survey"):
+            s = data["survey"]
+            survey = Paper(**{k: v for k, v in s.items() if k in Paper.__dataclass_fields__})
+
+        corpus = []
+        for p in data.get("corpus", []):
+            corpus.append(Paper(**{k: v for k, v in p.items() if k in Paper.__dataclass_fields__}))
+
+        topics.append(BenchmarkTopic(
+            topic_id=data["topic_id"],
+            topic_name=data["topic_name"],
+            survey=survey,
+            survey_cited_ids=data.get("survey_cited_ids", []),
+            corpus=corpus,
+        ))
+    return topics
 
 
 if __name__ == "__main__":
-    builder = LiteratureBenchmarkBuilder()
-    builder.build_all(max_topics=3)  # Start with 3 for testing
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    build_benchmark()

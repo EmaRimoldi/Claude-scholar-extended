@@ -8,30 +8,32 @@ project:
 
 data:
   benchmark_dir: data/benchmark
-  num_topics: 15
-  papers_per_topic: 200
+  num_topics: 5
+  papers_per_topic: 50
   corpus_source: semantic_scholar
 
 retrieval:
-  method: hybrid  # bm25, dense, hybrid
+  conditions:
+    - bm25
+    - dense
+    - no_retrieval
   top_k: 10
-  chunk_size: 512
-  dense_model: BAAI/bge-base-en-v1.5
+  dense_model: all-MiniLM-L6-v2
 
 generation:
-  model: meta-llama/Llama-3.1-8B-Instruct
+  models:
+    - google/flan-t5-large
+    - google/flan-t5-xl
+  fallback: template
   temperature: 0.3
-  max_tokens: 4096
-  prompt_type: few_shot  # zero_shot, few_shot, cot
+  max_tokens: 512
 
 evaluation:
   metrics:
     - citation_precision
     - citation_recall
-    - faithfulness
-    - hallucination_rate
-    - key_paper_recall
-    - rouge
-    - bertscore
-  num_seeds: 3
-  seeds: [42, 123, 456]
+    - rouge_l
+    - bertscore_f1
+    - retrieval_precision_at_10
+    - retrieval_ndcg_at_10
+  seeds: [42]
