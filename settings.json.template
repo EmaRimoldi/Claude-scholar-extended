@@ -76,8 +76,8 @@
       "description": "Chrome browser automation control service"
     },
     "zotero": {
-      "command": "zotero-mcp",
-      "args": ["serve"],
+      "command": "node",
+      "args": ["<path-to-node_modules>/zotero-mcp/build/index.js"],
       "env": {
         "ZOTERO_API_KEY": "<your-api-key>",
         "ZOTERO_LIBRARY_ID": "<your-library-id>",

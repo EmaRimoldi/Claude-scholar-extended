@@ -16,10 +16,15 @@ Usage:
     python pipeline_state.py reset
 """
 
+import sys
+
+if sys.version_info < (3, 6):
+    sys.stderr.write("Error: pipeline_state.py requires Python 3.6+\n")
+    sys.exit(1)
+
 import argparse
 import json
 import os
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
