@@ -94,6 +94,40 @@ if (binding.bound) {
   output += '  - Suggested command: /obsidian-init\n\n';
 }
 
+// Pipeline orchestrator state detection
+const pipelineStateFile = path.join(cwd, 'pipeline-state.json');
+if (fs.existsSync(pipelineStateFile)) {
+  try {
+    const pState = JSON.parse(fs.readFileSync(pipelineStateFile, 'utf8'));
+    const steps = pState.steps || {};
+    const order = [
+      'research-init', 'check-competition', 'design-experiments', 'scaffold',
+      'build-data', 'setup-model', 'implement-metrics', 'validate-setup',
+      'plan-compute', 'run-experiment', 'collect-results', 'analyze-results',
+      'map-claims', 'position', 'story', 'produce-manuscript', 'rebuttal'
+    ];
+    const completed = order.filter(id => steps[id]?.status === 'completed').length;
+    const skipped = order.filter(id => steps[id]?.status === 'skipped').length;
+    const failed = order.filter(id => steps[id]?.status === 'failed').length;
+    const total = order.length;
+    const nextStep = order.find(id => ['pending', 'failed'].includes(steps[id]?.status));
+
+    output += `🔄 Pipeline: ${completed}/${total} completed`;
+    if (skipped > 0) output += `, ${skipped} skipped`;
+    if (failed > 0) output += `, ${failed} failed`;
+    output += '\n';
+    if (nextStep) {
+      output += `  → Next: ${steps[nextStep].command} — ${steps[nextStep].description}\n`;
+      output += `  → Run /run-pipeline --resume to continue\n`;
+    } else {
+      output += `  → All steps done!\n`;
+    }
+    output += '\n';
+  } catch {
+    // Ignore parse errors
+  }
+}
+
 // Experiment iteration loop state detection
 const stateFile = path.join(cwd, 'experiment-state.json');
 if (fs.existsSync(stateFile)) {

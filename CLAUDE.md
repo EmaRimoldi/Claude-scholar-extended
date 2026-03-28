@@ -238,6 +238,7 @@ Ideation → Validation → Design → Execute → Analyze → [Iterate] → Pre
 | `/story` | Define narrative arc, triage results, create figure plan, produce paper blueprint |
 | `/produce-manuscript` | Generate figures, prose, LaTeX source, and submission package |
 | `/analyze-results` | Analyze experiment results (statistical tests, visualization, ablation) |
+| `/run-pipeline` | Run the full research pipeline end-to-end with checkpoints (supports --auto, --resume, --from, --status) |
 | `/rebuttal` | Generate systematic rebuttal document |
 | `/presentation` | Create conference presentation outline |
 | `/poster` | Generate academic poster design |
