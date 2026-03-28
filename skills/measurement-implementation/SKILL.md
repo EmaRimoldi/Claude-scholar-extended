@@ -208,10 +208,38 @@ src/metrics/
 
 - **classification.py**: One class per metric, each decorated with `@register_metric`, each returning the standardized dict
 - **similarity.py**: Numerically stable implementations with eps handling
+- **scaling.py**: Power-law fits and scaling curve metrics with R^2 goodness-of-fit
+- **information.py**: Entropy (Shannon), mutual information (binning and KSG), with appropriate bias correction
 - **comparison.py**: Functions that take (empirical, reference) and return comparison dict
-- **statistical_tests.py**: All tests plus a `select_test()` function that auto-selects based on data properties
+- **statistical_tests.py**: All tests plus a `select_test()` function that auto-selects based on data properties, and a `run_all_tests()` function for batch hypothesis testing with correction
 - **numerical_utils.py**: `check_nan_inf()`, `safe_cosine_similarity()`, `condition_number_check()`, `to_fp64()`
 - **analytical/*.py**: One file per analytical reference, each registered with `analytical_` prefix
+
+### Standardized Return Format
+
+Every metric function returns a dict. The minimum required keys are:
+
+```python
+{
+    "value": float,       # The primary metric value
+    "ci_lower": float,    # Lower bound of 95% confidence interval
+    "ci_upper": float,    # Upper bound of 95% confidence interval
+}
+```
+
+Optional keys (included when applicable):
+
+```python
+{
+    "p_value": float,          # p-value from significance test (if performed)
+    "effect_size": float,      # Effect size measure
+    "effect_size_type": str,   # "cohens_d", "rank_biserial", "eta_squared"
+    "n": int,                  # Number of observations
+    "details": dict,           # Additional metric-specific information
+}
+```
+
+This contract is enforced so that `result-collector` and `experiment-runner` can consume metrics uniformly without knowing which specific metric was called.
 
 ## When to Use
 
@@ -259,6 +287,7 @@ measurement-implementation (Fill src/metrics/)  <-- THIS SKILL
 - **Feeds into**: `experiment-runner` (metrics called during each run), `result-collector` (metric values are the raw data), `setup-validation` (measurement correctness checks)
 - **Hook activation**: Context-aware keyword trigger in `skill-forced-eval.js` on: "metric", "analytical", "cosine similarity", "statistical test", "measurement", "significance"
 - **Command**: `/implement-metrics`
+- **Obsidian integration**: If bound, writes measurement implementation notes to `Experiments/` with metric specifications
 
 ### Key Configuration
 
@@ -266,6 +295,22 @@ measurement-implementation (Fill src/metrics/)  <-- THIS SKILL
 - **Return format**: Standardized dict with `value`, `ci_lower`, `ci_upper`, `p_value`, `effect_size`
 - **Numerical precision**: fp64 for statistics, fp32 for forward passes
 - **Default significance**: alpha = 0.05, two-sided tests, Holm-Bonferroni correction for multiple comparisons
+- **Bootstrap defaults**: n_resamples = 10000, seed = 42 for reproducibility
+- **Permutation defaults**: n_permutations = 10000
+- **File size limit**: Each file follows the 200-400 line limit from `coding-style.md`; split into multiple files if a single file exceeds 400 lines
+
+## Troubleshooting
+
+### Common Issues
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| MetricFactory lookup fails | Metric not registered | Check `@register_metric` decorator is applied and `import_modules()` auto-discovery includes the file |
+| NaN in cosine similarity | Zero-norm vector | Use `safe_cosine_similarity()` from `numerical_utils.py` |
+| Statistical test gives p=0.0 | Exact zero from scipy | Use permutation test instead, or report as p < 1/n_permutations |
+| Bootstrap CI is [NaN, NaN] | All bootstrap samples identical | Check that input data has variance > 0 |
+| OLS solution diverges from expectation | Ill-conditioned X | Check condition number; switch to ridge regression |
+| Comparison function returns unexpected sign | Convention mismatch | Verify which direction is "better" for the metric |
 
 ## Additional Resources
 
