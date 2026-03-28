@@ -462,7 +462,7 @@ When no experiment-plan.md is present (Mode B), include only the Core group and 
 File: `Makefile`
 
 ```makefile
-.PHONY: setup test lint typecheck run collect analyze clean
+.PHONY: setup test lint typecheck run run-quick collect tables build-pdf refresh check-gates analyze clean
 
 # ---------- Environment ----------
 setup:
@@ -485,8 +485,26 @@ typecheck:
 run:
 	uv run python run_experiment.py $(ARGS)
 
+run-quick:
+	PYTHONPATH=src uv run python run_experiment.py experiment.quick=true $(ARGS)
+
 collect:
-	uv run python -m src.collect_results
+	uv run python scripts/aggregate_metrics.py $(if $(SLURM_LOG),--slurm-log $(SLURM_LOG),)
+
+# ---------- Manuscript refresh ----------
+tables:
+	uv run python scripts/csv_to_latex_tables.py
+
+build-pdf:
+	cd manuscript && pdflatex -interaction=nonstopmode main.tex && bibtex main && pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex
+
+refresh: collect tables
+	@echo "Results collected and LaTeX tables regenerated."
+	@echo "Run 'make build-pdf' to recompile the manuscript."
+
+# ---------- Pipeline checks ----------
+check-gates:
+	uv run python scripts/check_gates.py
 
 analyze:
 	@echo "Run /analyze-results in Claude Code"
@@ -495,6 +513,18 @@ analyze:
 clean:
 	rm -rf outputs/ __pycache__ .pytest_cache .mypy_cache .ruff_cache
 ```
+
+### Makefile target reference
+
+| Target | Purpose | When to run |
+|--------|---------|-------------|
+| `collect` | Aggregate metrics from outputs/ or SLURM logs into CSV/JSON | After experiment runs complete |
+| `tables` | Regenerate LaTeX tables from `experiments/results_summary.csv` | After `collect` |
+| `build-pdf` | Recompile manuscript PDF (3-pass pdflatex + bibtex) | After `tables` or prose edits |
+| `refresh` | One-command post-run update: collect + tables | After every SLURM job completes |
+| `check-gates` | Evaluate phase gates (G0/G1/G2) against current results | Before deciding to proceed to next phase |
+
+The `SLURM_LOG` variable allows passing a specific log file: `make collect SLURM_LOG=cluster/logs/icl-nl-full_12345.out`
 
 ---
 
@@ -650,3 +680,743 @@ When a downstream skill (e.g. `experiment-data-builder`) needs a package not in 
 1. Add it to `pyproject.toml` under the appropriate section.
 2. Run `uv sync` (or `uv sync --all-extras`) to update the lock file.
 3. Commit both `pyproject.toml` and `uv.lock` together.
+
+---
+
+## L. Metrics Aggregation Script
+
+File: `scripts/aggregate_metrics.py`
+
+This script replaces agent-driven result collection with a deterministic walk of Hydra `outputs/` (with SLURM log fallback). Projects should adapt the fallback log detection to their naming convention.
+
+```python
+#!/usr/bin/env python
+"""Walk Hydra outputs/ and build experiments/results_summary.csv + .json.
+
+Usage:
+    python scripts/aggregate_metrics.py                     # scan outputs/
+    python scripts/aggregate_metrics.py --slurm-log FILE    # parse SLURM log as fallback
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "outputs"
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Aggregate experiment metrics.")
+    parser.add_argument(
+        "--slurm-log",
+        type=Path,
+        default=None,
+        help="Path to SLURM .out log file for fallback parsing.",
+    )
+    args = parser.parse_args()
+
+    rows: list[dict[str, object]] = []
+
+    # --- Tier 1: walk Hydra outputs/ ---
+    if OUT.is_dir():
+        for metrics_path in sorted(OUT.rglob("metrics.json")):
+            _append_from_hydra(rows, metrics_path)
+
+    # --- Tier 2: fallback to SLURM log ---
+    if not rows and args.slurm_log and args.slurm_log.is_file():
+        print(f"No outputs/ metrics; falling back to SLURM log: {args.slurm_log}")
+        rows = _parse_slurm_log(args.slurm_log)
+
+    # --- Tier 3: auto-detect latest SLURM log ---
+    if not rows:
+        latest = _find_latest_slurm_log()
+        if latest:
+            print(f"No outputs/ metrics; falling back to latest SLURM log: {latest}")
+            rows = _parse_slurm_log(latest)
+
+    if not rows:
+        print("No metrics found. Check outputs/ or pass --slurm-log.")
+        return
+
+    _write_tables(rows)
+
+
+def _append_from_hydra(rows: list[dict[str, object]], metrics_path: Path) -> None:
+    """Extract one row from a Hydra run directory."""
+    run_dir = metrics_path.parent
+    hydra_dir = run_dir / ".hydra"
+    cfg: dict = {}
+    if hydra_dir.is_dir():
+        cfg_yaml = hydra_dir / "config.yaml"
+        if cfg_yaml.is_file():
+            try:
+                from omegaconf import OmegaConf
+                cfg = OmegaConf.to_container(OmegaConf.load(cfg_yaml), resolve=True)
+            except Exception:
+                cfg = {}
+    try:
+        metrics = json.loads(metrics_path.read_text())
+    except Exception as exc:
+        metrics = {"error": str(exc)}
+    try:
+        rel = str(run_dir.relative_to(ROOT))
+    except ValueError:
+        rel = str(run_dir)
+    row: dict[str, object] = {"run_dir": rel}
+    # Extract config fields — adapt these keys to your project
+    ds = cfg.get("dataset", {}) if isinstance(cfg.get("dataset"), dict) else {}
+    exp = cfg.get("experiment", {}) if isinstance(cfg.get("experiment"), dict) else {}
+    row["dataset"] = ds.get("name")
+    row["num_prototypes"] = ds.get("num_prototypes")
+    row["train_steps"] = exp.get("train_steps")
+    row["seed"] = exp.get("seed")
+    row.update(metrics)
+    rows.append(row)
+
+
+def _find_latest_slurm_log() -> Path | None:
+    """Find the most recently modified .out file in cluster/logs/."""
+    log_dir = ROOT / "cluster" / "logs"
+    if not log_dir.is_dir():
+        return None
+    logs = sorted(log_dir.glob("*.out"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return logs[0] if logs else None
+
+
+def _parse_slurm_log(path: Path) -> list[dict[str, object]]:
+    """Parse final validation metrics from a SLURM stdout log.
+
+    Override this function for project-specific log formats.
+    Default: looks for lines matching '=== <run_name> ...' headers
+    and 'val {dict}' metric lines.
+    """
+    import ast
+    import re
+
+    header_re = re.compile(r"^===\s+(\S+)")
+    rows: list[dict[str, object]] = []
+    current_name: str | None = None
+    last_val: dict[str, float] | None = None
+
+    for line in path.read_text().splitlines():
+        m = header_re.match(line.strip())
+        if m:
+            name = m.group(1)
+            if name in ("START", "DONE"):
+                continue
+            if current_name and last_val is not None:
+                rows.append({"run_name": current_name, **last_val})
+            current_name = name
+            last_val = None
+            continue
+        if " - val " in line:
+            idx = line.find("val ")
+            if idx >= 0:
+                blob = line[idx + 4:].strip()
+                try:
+                    d = ast.literal_eval(blob)
+                    if isinstance(d, dict):
+                        last_val = {k: float(v) for k, v in d.items()}
+                except (ValueError, SyntaxError):
+                    pass
+
+    if current_name and last_val is not None:
+        rows.append({"run_name": current_name, **last_val})
+    return rows
+
+
+def _write_tables(rows: list[dict[str, object]]) -> None:
+    exp_dir = ROOT / "experiments"
+    exp_dir.mkdir(parents=True, exist_ok=True)
+    json_path = exp_dir / "results_summary.json"
+    json_path.write_text(json.dumps(rows, indent=2))
+    if not rows:
+        print("No rows to write.")
+        return
+    keys = sorted({k for r in rows for k in r})
+    csv_path = exp_dir / "results_summary.csv"
+    with csv_path.open("w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=keys)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k, "") for k in keys})
+    print(f"Wrote {json_path} and {csv_path} ({len(rows)} runs).")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Key improvements over agent-generated versions:
+- `--slurm-log` CLI argument instead of hardcoded log paths
+- Auto-detects latest SLURM log by modification time when no explicit path given
+- Tiered fallback: Hydra outputs → explicit SLURM log → latest SLURM log
+- Adapt `_append_from_hydra` and `_parse_slurm_log` for project-specific fields
+
+---
+
+## M. CSV-to-LaTeX Table Generator
+
+File: `scripts/csv_to_latex_tables.py`
+
+This script eliminates agent-driven LaTeX table generation. It reads `experiments/results_summary.csv` and emits `.tex` files that the manuscript `\input{}`s directly.
+
+```python
+#!/usr/bin/env python
+"""Generate LaTeX tables from experiments/results_summary.csv.
+
+Produces one .tex file per table in manuscript/tables/. The manuscript
+uses \\input{tables/tab_<name>.tex} to include them, so tables update
+automatically on recompile after running this script.
+
+Usage:
+    python scripts/csv_to_latex_tables.py
+    python scripts/csv_to_latex_tables.py --csv path/to/results.csv
+    python scripts/csv_to_latex_tables.py --config scripts/table_spec.json
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import math
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CSV = ROOT / "experiments" / "results_summary.csv"
+TABLE_DIR = ROOT / "manuscript" / "tables"
+
+# ── Default table specification ──────────────────────────────────────
+# Override with --config to point to a JSON file with this structure.
+# Each entry defines one output .tex file.
+DEFAULT_SPEC: list[dict[str, Any]] = [
+    {
+        "name": "tab_main",
+        "caption": "Main results.",
+        "label": "tab:main",
+        "group_by": "dataset",
+        "columns": {
+            "dataset": "Dataset",
+            "mse": "MSE",
+            "min_spd_mean": r"$\\min_b$ SPD",
+        },
+        "filter": None,
+        "sort_by": "dataset",
+    },
+]
+
+
+def load_csv(path: Path) -> list[dict[str, str]]:
+    with path.open(newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def fmt(val: str, sig: int = 3) -> str:
+    """Format a numeric string to *sig* significant figures."""
+    try:
+        x = float(val)
+    except (ValueError, TypeError):
+        return str(val) if val else "--"
+    if x == 0:
+        return "0"
+    if not math.isfinite(x):
+        return str(x)
+    digits = sig - int(math.floor(math.log10(abs(x)))) - 1
+    if digits < 0:
+        digits = 0
+    return f"{x:.{digits}f}"
+
+
+def matches_filter(row: dict[str, str], filt: dict[str, Any] | None) -> bool:
+    if filt is None:
+        return True
+    for key, val in filt.items():
+        if isinstance(val, list):
+            if row.get(key, "") not in [str(v) for v in val]:
+                return False
+        elif str(row.get(key, "")) != str(val):
+            return False
+    return True
+
+
+def build_table(rows: list[dict[str, str]], spec: dict[str, Any]) -> str:
+    """Build a booktabs LaTeX table from CSV rows and a table spec."""
+    columns = spec["columns"]  # {csv_col: display_name}
+    col_keys = list(columns.keys())
+    col_names = list(columns.values())
+    filt = spec.get("filter")
+    sort_by = spec.get("sort_by")
+
+    filtered = [r for r in rows if matches_filter(r, filt)]
+    if sort_by and sort_by in col_keys:
+        try:
+            filtered.sort(key=lambda r: float(r.get(sort_by, "inf")))
+        except ValueError:
+            filtered.sort(key=lambda r: r.get(sort_by, ""))
+
+    align = "l" + "c" * (len(col_keys) - 1)
+    lines = [
+        r"\begin{table}[t]",
+        r"  \centering",
+        f"  \\caption{{{spec['caption']}}}",
+        f"  \\label{{{spec['label']}}}",
+        f"  \\begin{{tabular}}{{{align}}}",
+        r"    \toprule",
+        "    " + " & ".join(col_names) + r" \\",
+        r"    \midrule",
+    ]
+    for row in filtered:
+        cells = []
+        for i, key in enumerate(col_keys):
+            val = row.get(key, "")
+            cells.append(val if i == 0 else fmt(val))
+        lines.append("    " + " & ".join(cells) + r" \\")
+    lines += [
+        r"    \bottomrule",
+        r"  \end{tabular}",
+        r"\end{table}",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Generate LaTeX tables from CSV.")
+    parser.add_argument("--csv", type=Path, default=DEFAULT_CSV)
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help="JSON file with table specifications (overrides defaults).",
+    )
+    args = parser.parse_args()
+
+    if not args.csv.is_file():
+        print(f"CSV not found: {args.csv}")
+        print("Run 'make collect' first to generate results_summary.csv.")
+        return
+
+    rows = load_csv(args.csv)
+    specs = DEFAULT_SPEC
+    if args.config and args.config.is_file():
+        specs = json.loads(args.config.read_text())
+
+    TABLE_DIR.mkdir(parents=True, exist_ok=True)
+    for spec in specs:
+        tex = build_table(rows, spec)
+        out_path = TABLE_DIR / f"{spec['name']}.tex"
+        out_path.write_text(tex)
+        print(f"Wrote {out_path}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Table specification format
+
+The `--config` JSON file controls what tables are generated:
+
+```json
+[
+  {
+    "name": "tab_families",
+    "caption": "Validation metrics per task family (5000 steps).",
+    "label": "tab:families",
+    "columns": {
+      "dataset": "Family",
+      "mse": "MSE",
+      "min_spd_mean": "$\\\\min_b$ SPD (mean)"
+    },
+    "filter": {"dataset": ["poly_ic", "sin_ic", "pwl_ic", "comp_ic"]},
+    "sort_by": "dataset"
+  },
+  {
+    "name": "tab_diversity",
+    "caption": "Polynomial diversity sweep: effect of prototype count $K$.",
+    "label": "tab:div",
+    "columns": {
+      "num_prototypes": "$K$",
+      "mse": "MSE",
+      "min_spd_mean": "$\\\\min_b$ SPD (mean)"
+    },
+    "filter": {"dataset": "poly_ic"},
+    "sort_by": "num_prototypes"
+  }
+]
+```
+
+### Manuscript integration
+
+In the manuscript `.tex` file, replace hardcoded tables with:
+
+```latex
+\input{tables/tab_families}
+\input{tables/tab_diversity}
+```
+
+After `make refresh`, tables update automatically on the next `make build-pdf`.
+
+---
+
+## N. Phase Gate Checker
+
+File: `scripts/check_gates.py`
+
+Replaces agent-driven gate evaluation with a deterministic script. Reads `experiments/results_summary.csv` and evaluates pass/fail criteria.
+
+```python
+#!/usr/bin/env python
+"""Evaluate experiment phase gates against current results.
+
+Gates are defined in gate_spec.json or use built-in defaults.
+Reads experiments/results_summary.csv and prints PASS/FAIL per gate.
+
+Usage:
+    python scripts/check_gates.py
+    python scripts/check_gates.py --config scripts/gate_spec.json
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CSV = ROOT / "experiments" / "results_summary.csv"
+
+# ── Default gate definitions ─────────────────────────────────────────
+# Override with --config for project-specific gates.
+DEFAULT_GATES: list[dict[str, Any]] = [
+    {
+        "id": "G0",
+        "name": "Setup validation",
+        "type": "pytest",
+        "description": "All smoke tests pass.",
+    },
+    {
+        "id": "G1",
+        "name": "Trivial baseline beaten",
+        "type": "metric_threshold",
+        "metric": "mse",
+        "threshold": 1.0,
+        "direction": "below",
+        "description": "At least one run achieves MSE < threshold (model learns something).",
+    },
+    {
+        "id": "G2",
+        "name": "Metrics finite and non-degenerate",
+        "type": "all_finite",
+        "metrics": ["mse", "min_spd_mean"],
+        "description": "All reported metrics are finite numbers (no NaN/Inf).",
+    },
+]
+
+
+def load_csv(path: Path) -> list[dict[str, str]]:
+    if not path.is_file():
+        return []
+    with path.open(newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def check_pytest() -> tuple[bool, str]:
+    """Run pytest and return (passed, message)."""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short"],
+            capture_output=True, text=True, cwd=ROOT, timeout=120,
+        )
+        passed = result.returncode == 0
+        summary = result.stdout.strip().split("\n")[-1] if result.stdout else "no output"
+        return passed, summary
+    except Exception as exc:
+        return False, str(exc)
+
+
+def check_metric_threshold(
+    rows: list[dict[str, str]], metric: str, threshold: float, direction: str
+) -> tuple[bool, str]:
+    """Check if any row's metric passes the threshold."""
+    values = []
+    for r in rows:
+        try:
+            values.append(float(r[metric]))
+        except (KeyError, ValueError):
+            continue
+    if not values:
+        return False, f"No values found for metric '{metric}'."
+    if direction == "below":
+        best = min(values)
+        passed = best < threshold
+        return passed, f"Best {metric}={best:.4g} (threshold <{threshold})"
+    else:
+        best = max(values)
+        passed = best > threshold
+        return passed, f"Best {metric}={best:.4g} (threshold >{threshold})"
+
+
+def check_all_finite(rows: list[dict[str, str]], metrics: list[str]) -> tuple[bool, str]:
+    """Check that all metric values are finite across all rows."""
+    import math
+    bad = []
+    for i, r in enumerate(rows):
+        for m in metrics:
+            try:
+                v = float(r.get(m, ""))
+                if not math.isfinite(v):
+                    bad.append(f"row {i}: {m}={v}")
+            except (ValueError, TypeError):
+                bad.append(f"row {i}: {m}=MISSING")
+    if bad:
+        return False, f"{len(bad)} non-finite values: {', '.join(bad[:5])}"
+    return True, f"All {len(rows)} rows × {len(metrics)} metrics are finite."
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Check experiment phase gates.")
+    parser.add_argument("--csv", type=Path, default=DEFAULT_CSV)
+    parser.add_argument("--config", type=Path, default=None)
+    args = parser.parse_args()
+
+    rows = load_csv(args.csv)
+    gates = DEFAULT_GATES
+    if args.config and args.config.is_file():
+        gates = json.loads(args.config.read_text())
+
+    all_passed = True
+    print("=" * 60)
+    print("PHASE GATE EVALUATION")
+    print("=" * 60)
+
+    for gate in gates:
+        gid = gate["id"]
+        gtype = gate["type"]
+
+        if gtype == "pytest":
+            passed, msg = check_pytest()
+        elif gtype == "metric_threshold":
+            passed, msg = check_metric_threshold(
+                rows, gate["metric"], gate["threshold"], gate.get("direction", "below")
+            )
+        elif gtype == "all_finite":
+            passed, msg = check_all_finite(rows, gate["metrics"])
+        else:
+            passed, msg = False, f"Unknown gate type: {gtype}"
+
+        status = "PASS" if passed else "FAIL"
+        print(f"\n[{status}] {gid}: {gate['name']}")
+        print(f"       {gate['description']}")
+        print(f"       {msg}")
+        if not passed:
+            all_passed = False
+
+    print("\n" + "=" * 60)
+    print(f"OVERALL: {'ALL GATES PASSED' if all_passed else 'SOME GATES FAILED'}")
+    print("=" * 60)
+    sys.exit(0 if all_passed else 1)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Gate specification format
+
+Override default gates with `--config scripts/gate_spec.json`:
+
+```json
+[
+  {
+    "id": "G0",
+    "name": "Setup validation",
+    "type": "pytest",
+    "description": "All smoke tests pass."
+  },
+  {
+    "id": "G1",
+    "name": "Phase Q passes",
+    "type": "metric_threshold",
+    "metric": "mse",
+    "threshold": 0.5,
+    "direction": "below",
+    "description": "Quick validation run beats trivial MSE floor."
+  },
+  {
+    "id": "G2",
+    "name": "Curves well-behaved",
+    "type": "all_finite",
+    "metrics": ["mse", "min_spd_mean"],
+    "description": "All metrics are finite (no NaN/Inf from numerical issues)."
+  }
+]
+```
+
+The exit code is 0 on all-pass, 1 on any failure — suitable for use in CI or SLURM dependency chains.
+
+---
+
+## O. Experiment State Updater
+
+File: `scripts/update_experiment_state.py`
+
+Replaces manual agent updates to `experiment-state.json`. Reads current results and updates state fields deterministically.
+
+```python
+#!/usr/bin/env python
+"""Update experiment-state.json from current results and SLURM job info.
+
+Usage:
+    python scripts/update_experiment_state.py                          # auto-detect
+    python scripts/update_experiment_state.py --status running         # set status
+    python scripts/update_experiment_state.py --advance-iteration      # increment iteration
+    python scripts/update_experiment_state.py --gpu-hours 48.5         # record GPU usage
+    python scripts/update_experiment_state.py --job-id 11107854        # record SLURM job
+"""
+from __future__ import annotations
+
+import argparse
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+STATE_FILE = ROOT / "experiment-state.json"
+CSV_FILE = ROOT / "experiments" / "results_summary.csv"
+
+VALID_STATUSES = [
+    "planned", "running", "collecting", "analyzing",
+    "confirmed", "diagnosing", "revising", "completed", "paused",
+]
+
+
+def load_state() -> dict:
+    if STATE_FILE.is_file():
+        return json.loads(STATE_FILE.read_text())
+    return {
+        "$schema": "experiment-state-v1",
+        "project": ROOT.name,
+        "created": _now(),
+        "updated": _now(),
+        "iteration": 0,
+        "max_iterations": 3,
+        "active_hypothesis": None,
+        "status": "planned",
+        "latest_analysis": None,
+        "history": [],
+        "resource_budget": {
+            "total_gpu_hours": 0,
+            "used_gpu_hours": 0,
+            "remaining_gpu_hours": None,
+        },
+        "deadline": None,
+    }
+
+
+def save_state(state: dict) -> None:
+    state["updated"] = _now()
+    budget = state.get("resource_budget", {})
+    total = budget.get("total_gpu_hours", 0)
+    used = budget.get("used_gpu_hours", 0)
+    if total > 0:
+        budget["remaining_gpu_hours"] = round(total - used, 2)
+    STATE_FILE.write_text(json.dumps(state, indent=2) + "\n")
+    print(f"Updated {STATE_FILE}")
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _count_results() -> int:
+    if not CSV_FILE.is_file():
+        return 0
+    lines = CSV_FILE.read_text().strip().split("\n")
+    return max(0, len(lines) - 1)  # subtract header
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Update experiment-state.json.")
+    parser.add_argument("--status", choices=VALID_STATUSES, help="Set experiment status.")
+    parser.add_argument("--advance-iteration", action="store_true", help="Increment iteration counter.")
+    parser.add_argument("--gpu-hours", type=float, help="Add GPU hours to used budget.")
+    parser.add_argument("--job-id", type=str, help="Record a SLURM job ID in history.")
+    parser.add_argument("--analysis", type=str, help="Path to latest analysis report.")
+    args = parser.parse_args()
+
+    state = load_state()
+    changed = False
+
+    if args.status:
+        old = state.get("status")
+        state["status"] = args.status
+        print(f"Status: {old} → {args.status}")
+        changed = True
+
+    if args.advance_iteration:
+        old_iter = state.get("iteration", 0)
+        state["iteration"] = old_iter + 1
+        print(f"Iteration: {old_iter} → {old_iter + 1}")
+        changed = True
+
+    if args.gpu_hours is not None:
+        budget = state.setdefault("resource_budget", {})
+        old_used = budget.get("used_gpu_hours", 0)
+        budget["used_gpu_hours"] = round(old_used + args.gpu_hours, 2)
+        print(f"GPU hours: {old_used} → {budget['used_gpu_hours']}")
+        changed = True
+
+    if args.job_id:
+        history = state.setdefault("history", [])
+        entry = {
+            "timestamp": _now(),
+            "job_id": args.job_id,
+            "n_results": _count_results(),
+            "iteration": state.get("iteration", 0),
+        }
+        history.append(entry)
+        print(f"Recorded job {args.job_id} ({entry['n_results']} results)")
+        changed = True
+
+    if args.analysis:
+        state["latest_analysis"] = args.analysis
+        print(f"Latest analysis: {args.analysis}")
+        changed = True
+
+    if not changed:
+        # Auto-update: just refresh the timestamp and result count
+        n = _count_results()
+        print(f"No explicit changes. Current state: iteration={state.get('iteration')}, "
+              f"status={state.get('status')}, results={n}")
+        return
+
+    save_state(state)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### Usage patterns
+
+After a SLURM job completes:
+```bash
+# Record the job and GPU usage
+python scripts/update_experiment_state.py --job-id 11107854 --gpu-hours 48
+python scripts/update_experiment_state.py --status analyzing
+
+# After analysis
+python scripts/update_experiment_state.py --analysis experiments/analysis-report.md
+
+# Advance to next iteration
+python scripts/update_experiment_state.py --advance-iteration --status planned
+```
+
+These can be chained in a post-job script or Makefile target.
