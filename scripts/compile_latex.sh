@@ -140,9 +140,17 @@ for f in *.cls; do [ -f "$f" ] && FILES_TO_ZIP+=("$f"); done
 # .bst files
 for f in *.bst; do [ -f "$f" ] && FILES_TO_ZIP+=("$f"); done
 
-# Figure directories
+# Figure directories - check in manuscript dir AND parent
 DIRS_TO_ZIP=()
-[ -d "figures" ] && DIRS_TO_ZIP+=("figures/")
+if [ -d "figures" ]; then
+    DIRS_TO_ZIP+=("figures/")
+elif [ -d "../figures" ]; then
+    # Figures are a sibling directory — copy into manuscript/figures for the ZIP
+    mkdir -p figures
+    cp ../figures/*.pdf figures/ 2>/dev/null || true
+    cp ../figures/*.png figures/ 2>/dev/null || true
+    DIRS_TO_ZIP+=("figures/")
+fi
 [ -d "images" ] && DIRS_TO_ZIP+=("images/")
 
 # Create the zip

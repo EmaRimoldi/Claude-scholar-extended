@@ -375,7 +375,7 @@ Sparsemax-Top24-Strong & sparsemax & top-24 & 2.0 & 0.672 $\pm$ 0.006 & 0.685 $\
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.85\textwidth]{../figures/fig1_macro_f1_bar.pdf}
+  \includegraphics[width=0.85\textwidth]{figures/fig1_macro_f1_bar.pdf}
   \caption{Macro-F1 across conditions. Error bars show $\pm$1 standard
   deviation over 3 seeds. Sparsemax conditions (blue) maintain or exceed
   baseline performance, while softmax supervision (orange) consistently
@@ -416,14 +416,14 @@ softmax heads require more careful targeting.
 \begin{figure}[t]
   \centering
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{../figures/fig2_heads_tradeoff.pdf}
+    \includegraphics[width=\textwidth]{figures/fig2_heads_tradeoff.pdf}
     \caption{Macro-F1 as a function of the number of supervised heads ($K$)
     for sparsemax conditions.}
     \label{fig:heads_vs_f1}
   \end{subfigure}
   \hfill
   \begin{subfigure}[b]{0.48\textwidth}
-    \includegraphics[width=\textwidth]{../figures/fig4_head_importance.pdf}
+    \includegraphics[width=\textwidth]{figures/fig4_head_importance.pdf}
     \caption{Distribution of IG importance scores across layers. Heads
     cluster in layers 0 and 9--11.}
     \label{fig:head_importance}
@@ -461,7 +461,7 @@ spreading supervision uniformly across all layers.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.6\textwidth]{../figures/fig3_lambda_ablation.pdf}
+  \includegraphics[width=0.6\textwidth]{figures/fig3_lambda_ablation.pdf}
   \caption{Effect of supervision strength $\lambda$ on macro-F1 for
   the Sparsemax-Top24 condition. Performance increases monotonically
   with $\lambda$, in contrast to softmax conditions where higher
