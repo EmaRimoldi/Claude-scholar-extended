@@ -436,7 +436,7 @@ failure-diagnosis / claim-evidence-bridge (Iterate or write)
 Detailed cluster and estimation guides, loaded on demand:
 
 - **`references/engaging-cluster-config.md`** -- MIT Engaging Cluster Configuration
-  - SSH access and authentication
+  - Deployment model: Claude Code runs directly on the cluster (no SSH needed)
   - Complete partition table with hardware specs, time limits, priority levels
   - Module system and available software
   - Filesystem layout, quotas, and storage tiers

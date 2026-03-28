@@ -4,25 +4,33 @@ Complete reference for the MIT Engaging cluster, covering access, partitions, mo
 
 ## Access
 
-### SSH Login
+### Deployment Model: Claude Code on the Cluster
+
+The recommended deployment runs Claude Code **directly on the Engaging login node**. This eliminates the SSH barrier — Claude Code's Bash tool can execute `sbatch`, `squeue`, `module load`, and all SLURM commands natively.
+
+**Setup (one-time, done by the user in a terminal):**
 
 ```bash
-ssh <username>@orcd-login.mit.edu
+ssh <username>@orcd-login.mit.edu      # user authenticates once
+npm install -g @anthropic-ai/claude-code  # or use existing installation
+cd ~/project-directory
+claude                                   # Claude Code now runs ON the cluster
 ```
 
-- Authenticate with MIT Kerberos or SSH keys
-- Login nodes are for job submission and light file management only -- do not run experiments on login nodes
-- Multiple login nodes behind a load balancer; hostname may vary between sessions
+Once Claude Code is running on Engaging, all cluster commands are local — no SSH, no scp, no file transfer needed. The entire pipeline (scaffold → build → validate → submit → monitor → collect → analyze) runs in one session.
 
-### File Transfer
+**Note:** Login nodes are for job submission and light file management — do not run GPU experiments on login nodes. Use `sbatch` to submit to compute nodes.
 
-```bash
-# SCP
-scp local_file <username>@orcd-login.mit.edu:/home/<username>/path/
+### Alternative: Remote Execution from Laptop
 
-# rsync (preferred for large transfers)
-rsync -avz --progress local_dir/ <username>@orcd-login.mit.edu:/home/<username>/path/
-```
+If Claude Code runs on a laptop instead, the user must:
+1. SSH to Engaging in a separate terminal
+2. Copy the project to the cluster (`git clone` or `rsync`)
+3. Run experiments on the cluster
+4. Copy results back (`scp` or `rsync`)
+5. Resume in Claude Code locally for analysis and writing
+
+This is functional but adds manual steps at the SSH boundary.
 
 ## Partitions
 

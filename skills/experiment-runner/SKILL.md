@@ -9,6 +9,8 @@ tags: [Research, Experiment Execution, SLURM, HPC, Reproducibility]
 
 Execute the experiment matrix via SLURM with phased gates, failure recovery, and progress tracking. This skill takes the outputs of `experiment-design` (and optionally `compute-planner`) and orchestrates the actual execution of all planned runs on an HPC cluster.
 
+**Deployment note**: When Claude Code runs directly on the cluster (recommended — see `compute-planner` engaging reference), this skill can execute `sbatch`, `squeue`, `sacct`, and all SLURM commands natively via the Bash tool. No SSH or remote execution needed.
+
 ## Core Features
 
 ### 1. Run Matrix Construction
