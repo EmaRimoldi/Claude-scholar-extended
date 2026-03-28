@@ -239,6 +239,7 @@ Ideation → Validation → Design → Execute → Analyze → [Iterate] → Pre
 | `/produce-manuscript` | Generate figures, prose, LaTeX source, and submission package |
 | `/analyze-results` | Analyze experiment results (statistical tests, visualization, ablation) |
 | `/run-pipeline` | Run the full research pipeline end-to-end with checkpoints (supports --auto, --resume, --from, --status) |
+| `/slurm-status` | Show SLURM job status, queue, pipeline job tracking, and cluster GPU availability |
 | `/rebuttal` | Generate systematic rebuttal document |
 | `/presentation` | Create conference presentation outline |
 | `/poster` | Generate academic poster design |

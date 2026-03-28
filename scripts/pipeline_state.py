@@ -200,6 +200,7 @@ def init_state(project_dir: str, force: bool = False) -> dict:
             "completed_at": None,
             "skipped": False,
             "failure_reason": None,
+            "slurm_job_id": None,
         }
 
     save_state(project_dir, state)
@@ -336,6 +337,10 @@ def main():
 
     p_fail = sub.add_parser("fail", help="Mark step as failed")
     p_fail.add_argument("step_id")
+
+    p_slurm = sub.add_parser("set-slurm-job", help="Associate a SLURM job ID with a step")
+    p_slurm.add_argument("step_id")
+    p_slurm.add_argument("job_id", type=int)
     p_fail.add_argument("--reason", default="")
 
     sub.add_parser("next", help="Print next pending step")
@@ -400,9 +405,19 @@ def main():
             state["steps"][step_id]["completed_at"] = None
             state["steps"][step_id]["skipped"] = False
             state["steps"][step_id]["failure_reason"] = None
+            state["steps"][step_id]["slurm_job_id"] = None
         state["updated_at"] = now_iso()
         save_state(args.dir, state)
         print("All steps reset to pending.")
+
+    elif args.action == "set-slurm-job":
+        if args.step_id not in state["steps"]:
+            print(f"Unknown step: {args.step_id}", file=sys.stderr)
+            sys.exit(1)
+        state["steps"][args.step_id]["slurm_job_id"] = args.job_id
+        state["updated_at"] = now_iso()
+        save_state(args.dir, state)
+        print(f"Step {args.step_id} linked to SLURM job {args.job_id}")
 
     elif args.action == "steps":
         for step_id in get_step_order():
