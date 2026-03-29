@@ -38,7 +38,7 @@
 
   <!-- Title -->
   <text x="500" y="35" text-anchor="middle" font-size="22" font-weight="bold" fill="#222">Claude Scholar Research Pipeline</text>
-  <text x="500" y="58" text-anchor="middle" font-size="13" fill="#666">19-step orchestrator with project directory isolation (v2)</text>
+  <text x="500" y="58" text-anchor="middle" font-size="13" fill="#666">20-step orchestrator with project directory isolation (v2)</text>
 
   <!-- Project Init Box -->
   <rect x="300" y="75" width="400" height="50" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
@@ -140,23 +140,29 @@
   <text x="940" y="685" text-anchor="end" font-size="11" fill="#8a5aaa">Day 7-14+ | SLURM cluster</text>
 
   <!-- Step 9 -->
-  <rect x="70" y="700" width="270" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
-  <text x="80" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">9. /plan-compute</text>
-  <text x="80" y="733" font-size="10" fill="#555">GPU estimation, SLURM scripts</text>
+  <rect x="70" y="700" width="200" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
+  <text x="80" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">9. /download-data</text>
+  <text x="80" y="733" font-size="10" fill="#555">Cache datasets + models</text>
 
   <!-- Step 10 -->
-  <rect x="370" y="700" width="270" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
-  <text x="380" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">10. /run-experiment</text>
-  <text x="380" y="733" font-size="10" fill="#555">Submit matrix, phased gates, recovery</text>
+  <rect x="290" y="700" width="200" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
+  <text x="300" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">10. /plan-compute</text>
+  <text x="300" y="733" font-size="10" fill="#555">GPU estimation, SLURM</text>
 
   <!-- Step 11 -->
-  <rect x="670" y="700" width="260" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
-  <text x="680" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">11. /collect-results</text>
-  <text x="680" y="733" font-size="10" fill="#555">Aggregate outputs to tables</text>
+  <rect x="510" y="700" width="200" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
+  <text x="520" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">11. /run-experiment</text>
+  <text x="520" y="733" font-size="10" fill="#555">Submit matrix, gates</text>
+
+  <!-- Step 12 -->
+  <rect x="730" y="700" width="200" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
+  <text x="740" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">12. /collect-results</text>
+  <text x="740" y="733" font-size="10" fill="#555">Aggregate to tables</text>
 
   <!-- Arrows -->
-  <line x1="340" y1="722" x2="368" y2="722" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
-  <line x1="640" y1="722" x2="668" y2="722" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="270" y1="722" x2="288" y2="722" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="490" y1="722" x2="508" y2="722" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="710" y1="722" x2="728" y2="722" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
 
   <!-- Iteration loop -->
   <rect x="670" y="760" width="260" height="55" rx="6" fill="#fff3f3" stroke="#c44" stroke-width="1.5" stroke-dasharray="5,3"/>
@@ -175,23 +181,23 @@
   <text x="60" y="890" font-size="14" font-weight="bold" fill="#8b5014">Phase 5: Analysis &amp; Writing</text>
   <text x="940" y="890" text-anchor="end" font-size="11" fill="#c08030">Day 14-21</text>
 
-  <!-- Step 12 -->
+  <!-- Step 13 -->
   <rect x="70" y="905" width="860" height="40" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="80" y="923" font-size="12" font-weight="bold" fill="#8b5014">12. /analyze-results</text>
+  <text x="80" y="923" font-size="12" font-weight="bold" fill="#8b5014">13. /analyze-results</text>
   <text x="280" y="923" font-size="10" fill="#555">Statistical tests, confidence intervals, effect sizes, scientific figures</text>
   <text x="80" y="937" font-size="9" fill="#888">Output: $PROJECT_DIR/docs/analysis-report.md, $PROJECT_DIR/results/figures/</text>
 
   <!-- Steps 13-15 row -->
   <rect x="70" y="960" width="270" height="45" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="80" y="978" font-size="12" font-weight="bold" fill="#8b5014">13. /map-claims</text>
+  <text x="80" y="978" font-size="12" font-weight="bold" fill="#8b5014">14. /map-claims</text>
   <text x="80" y="993" font-size="10" fill="#555">Claims to evidence mapping</text>
 
   <rect x="370" y="960" width="270" height="45" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="380" y="978" font-size="12" font-weight="bold" fill="#8b5014">14. /position</text>
+  <text x="380" y="978" font-size="12" font-weight="bold" fill="#8b5014">15. /position</text>
   <text x="380" y="993" font-size="10" fill="#555">Contribution vs. prior work</text>
 
   <rect x="670" y="960" width="260" height="45" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="680" y="978" font-size="12" font-weight="bold" fill="#8b5014">15. /story</text>
+  <text x="680" y="978" font-size="12" font-weight="bold" fill="#8b5014">16. /story</text>
   <text x="680" y="993" font-size="10" fill="#555">Narrative arc, paper blueprint</text>
 
   <line x1="340" y1="982" x2="368" y2="982" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
@@ -199,19 +205,19 @@
 
   <!-- Step 16 -->
   <rect x="70" y="1020" width="860" height="40" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="80" y="1038" font-size="12" font-weight="bold" fill="#8b5014">16. /produce-manuscript</text>
+  <text x="80" y="1038" font-size="12" font-weight="bold" fill="#8b5014">17. /produce-manuscript</text>
   <text x="310" y="1038" font-size="10" fill="#555">Publication-quality figures, full prose, LaTeX source, submission package</text>
   <text x="80" y="1053" font-size="9" fill="#888">Output: $PROJECT_DIR/manuscript/main.tex, figures/</text>
 
   <!-- Step 17 -->
   <rect x="70" y="1075" width="420" height="50" rx="6" fill="#fff" stroke="#c07020" stroke-width="1.5"/>
-  <text x="80" y="1093" font-size="12" font-weight="bold" fill="#c44">17. /quality-review</text>
+  <text x="80" y="1093" font-size="12" font-weight="bold" fill="#c44">18. /quality-review</text>
   <text x="80" y="1108" font-size="10" fill="#555">8-dimension review gate (BLOCKS if any critical dim &lt; 6/10)</text>
   <text x="80" y="1120" font-size="9" fill="#888">GATE: all dims >= 5, critical dims >= 6</text>
 
   <!-- Step 18 -->
   <rect x="520" y="1075" width="410" height="50" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="530" y="1093" font-size="12" font-weight="bold" fill="#8b5014">18. /compile-manuscript</text>
+  <text x="530" y="1093" font-size="12" font-weight="bold" fill="#8b5014">19. /compile-manuscript</text>
   <text x="530" y="1108" font-size="10" fill="#555">LaTeX -> PDF, Overleaf ZIP package</text>
   <text x="530" y="1120" font-size="9" fill="#888">tectonic | pdflatex | xelatex</text>
 
@@ -226,7 +232,7 @@
 
   <!-- Step 19 -->
   <rect x="70" y="1210" width="280" height="45" rx="6" fill="#fff" stroke="#b03060" stroke-width="1"/>
-  <text x="80" y="1228" font-size="12" font-weight="bold" fill="#8b1a4a">19. /rebuttal</text>
+  <text x="80" y="1228" font-size="12" font-weight="bold" fill="#8b1a4a">20. /rebuttal</text>
   <text x="80" y="1243" font-size="10" fill="#555">Systematic reviewer responses</text>
 
   <!-- Post-acceptance -->

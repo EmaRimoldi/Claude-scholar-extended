@@ -282,7 +282,18 @@ The `setup-validation` skill runs a pre-flight checklist:
 
 **Goal:** Run the full experiment matrix, monitor progress, and handle failures.
 
-#### 4.1 Plan compute resources
+#### 4.1 Download data and models
+
+```
+/download-data
+```
+
+Downloads all datasets and pretrained model weights to local cache so SLURM GPU
+jobs do not need internet access. Reads the experiment plan to identify required
+assets, downloads them via HuggingFace or direct URLs, and validates offline
+loading. **This step must complete before submitting GPU jobs.**
+
+#### 4.2 Plan compute resources
 
 ```
 /plan-compute
@@ -292,7 +303,7 @@ Estimates GPU hours, memory requirements, and generates SLURM scripts tailored
 to your cluster (MIT Engaging partitions by default). Outputs a scheduling
 strategy for job dependencies and priorities.
 
-#### 4.2 Submit experiments
+#### 4.3 Submit experiments
 
 ```
 /run-experiment
@@ -306,7 +317,7 @@ The `experiment-runner` skill submits the experiment matrix via SLURM with:
   diagnostic logging.
 - **Progress tracking** --- Real-time status via `experiment-state.json`.
 
-#### 4.3 After jobs complete
+#### 4.4 After jobs complete
 
 ```
 /collect-results
@@ -321,7 +332,7 @@ make refresh
 This aggregates per-run outputs (logs, metrics, checkpoints) into structured
 tables ready for analysis.
 
-#### 4.4 Evaluate phase gates
+#### 4.5 Evaluate phase gates
 
 ```bash
 make check-gates
@@ -330,7 +341,7 @@ make check-gates
 Compares collected results against the success criteria defined in
 `experiment-plan.md`. If gates pass, proceed to Phase 5.
 
-#### 4.5 What happens on gate failure
+#### 4.6 What happens on gate failure
 
 When experiments fail or gates do not pass, Claude Scholar enters the
 **iteration loop** (see dedicated section below). The system will:
@@ -608,19 +619,19 @@ state tracking and checkpoints.
 
 ### How it works
 
-The orchestrator runs the 19 pipeline steps in canonical order:
+The orchestrator runs the 20 pipeline steps in canonical order:
 
 ```
- 1. /research-init         10. /run-experiment
- 2. /check-competition     11. /collect-results
- 3. /design-experiments    12. /analyze-results
- 4. /scaffold              13. /map-claims
- 5. /build-data            14. /position
- 6. /setup-model           15. /story
- 7. /implement-metrics     16. /produce-manuscript
- 8. /validate-setup        17. /quality-review      (gate)
- 9. /plan-compute          18. /compile-manuscript
-                           19. /rebuttal
+ 1. /research-init         11. /run-experiment
+ 2. /check-competition     12. /collect-results
+ 3. /design-experiments    13. /analyze-results
+ 4. /scaffold              14. /map-claims
+ 5. /build-data            15. /position
+ 6. /setup-model           16. /story
+ 7. /implement-metrics     17. /produce-manuscript
+ 8. /validate-setup        18. /quality-review      (gate)
+ 9. /download-data         19. /compile-manuscript
+10. /plan-compute          20. /rebuttal
 ```
 
 **In interactive mode** (default), between each step the orchestrator:
@@ -686,7 +697,7 @@ When `pipeline-state.json` exists, the session-start hook automatically shows
 pipeline progress and suggests the next step:
 
 ```
-🔄 Pipeline: 7/19 completed, 1 skipped
+🔄 Pipeline: 7/20 completed, 1 skipped
   → Next: /plan-compute — GPU estimation and SLURM script generation
   → Run /run-pipeline --resume to continue
 ```
@@ -713,6 +724,7 @@ if any are found outside the project directory.
 | `/setup-model` | Load and configure models | After data is ready |
 | `/implement-metrics` | Implement metrics and statistical tests | After model setup |
 | `/validate-setup` | Pre-flight validation checklist | Before full experiment sweep |
+| `/download-data` | Download datasets and models to local cache | Before submitting GPU jobs |
 | `/plan-compute` | Estimate resources, generate SLURM scripts | Before submitting jobs |
 | `/run-experiment` | Submit experiment matrix to SLURM | When ready to run |
 | `/collect-results` | Aggregate outputs into structured tables | After jobs complete |

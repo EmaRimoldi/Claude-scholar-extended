@@ -75,7 +75,8 @@ Ideation → Validation → Design → Execute → Analyze → [Iterate] → Pre
 | 1c. Experiment Design | `experiment-design` skill | `/design-experiments` |
 | 2. Implementation | `project-scaffold` + `experiment-data-builder` + `model-setup` + `measurement-implementation` | `/scaffold`, `/build-data`, `/setup-model`, `/implement-metrics` |
 | 2b. Validation | `setup-validation` skill | `/validate-setup` |
-| 2c. Compute Planning | `compute-planner` skill | `/plan-compute` |
+| 2c. Data Caching | download datasets/models to local cache | `/download-data` |
+| 2d. Compute Planning | `compute-planner` skill | `/plan-compute` |
 | 3. Execution | `experiment-runner` skill | `/run-experiment` |
 | 3b. Result Collection | `result-collector` skill | `/collect-results` |
 | 4. Experiment Analysis | `results-analysis` skill + `results-report` skill | `/analyze-results` |
@@ -231,6 +232,7 @@ Ideation → Validation → Design → Execute → Analyze → [Iterate] → Pre
 | `/setup-model` | Load, configure, introspect, and prepare models for experiments |
 | `/implement-metrics` | Implement metrics, analytical references, and statistical tests |
 | `/validate-setup` | Run pre-flight validation checklist before full experiment sweep |
+| `/download-data` | Download datasets and models to local cache before GPU jobs |
 | `/plan-compute` | Estimate GPU resources, generate SLURM scripts for MIT Engaging |
 | `/run-experiment` | Execute experiment matrix via SLURM with phased gates and failure recovery |
 | `/collect-results` | Aggregate raw outputs into structured tables for analysis |
