@@ -51,6 +51,25 @@ When creating project structure (configs, __init__.py files, boilerplate):
 
 This saves context window and execution time for the reasoning-heavy steps.
 
+## CONFLICT PREVENTION: No directory/file name collisions
+
+Before creating any source file or directory:
+1. If you are creating `src/foo.py` (single module), check that `src/foo/` does NOT exist
+2. If you are creating `src/foo/` (package directory), check that `src/foo.py` does NOT exist
+3. If both exist, delete the empty/placeholder one before writing the real implementation
+4. NEVER create both `src/X.py` and `src/X/` — Python cannot resolve this ambiguity
+
+When using batch scaffold scripts, the script must check for and prevent these collisions. Only create package directories (with `__init__.py`) for components that will actually have multiple files.
+
+## MANDATORY: Venv Python in all generated scripts
+
+All generated scripts (Makefile, SLURM .sh files, shell wrappers) MUST use the venv Python path explicitly. Never use bare `python`. Use one of:
+- `$PROJECT_ROOT/.venv/bin/python`
+- `source $PROJECT_ROOT/.venv/bin/activate && python3`
+- Set a PYTHON variable at the top of each script pointing to the venv binary
+
+This prevents "command not found" errors and Python version mismatches on compute nodes where system Python may be 3.6 or missing entirely.
+
 ## Integration
 
 - **Primary skill**: `project-scaffold`

@@ -41,6 +41,23 @@ Activates the `compute-planner` skill to estimate GPU memory/time/storage, selec
 3. Activate `compute-planner` skill
 4. Write: compute-plan.md, cluster/ directory with sbatch scripts, launch.sh, monitor.sh
 
+## MANDATORY: Venv activation in generated SLURM scripts
+
+When generating SLURM job scripts, ALWAYS include venv activation at the top:
+```bash
+source /path/to/repo/.venv/bin/activate
+```
+Never rely on bare `python` being correct on compute nodes. Use the absolute path to the repo's `.venv` (not a relative path — SLURM jobs may run from a different CWD).
+
+## Generated SLURM scripts must include
+
+At the top of every generated .sh file:
+```bash
+# Code version: $(git rev-parse HEAD)
+# Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+# Project: $PROJECT_NAME
+```
+
 ## Integration
 
 - **Primary skill**: `compute-planner`
