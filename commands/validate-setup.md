@@ -33,6 +33,26 @@ Activates the `setup-validation` skill to run a structured pre-flight checklist 
 3. Write: validation-report.md with pass/fail per check and timing data
 4. Report overall verdict: READY or NOT READY with blocking issues
 
+## MANDATORY: Full Trainer initialization test
+
+The dry-run MUST test that the training pipeline initializes completely, not just that imports work. Specifically:
+
+1. Load the model
+2. Load and tokenize a small subset of data (first 100 examples)
+3. Initialize the Trainer/training loop with all arguments
+4. Run exactly 1 training step (1 batch forward + backward pass)
+5. Run exactly 1 evaluation step
+
+If ANY of these fail, the validation step FAILS. Do NOT proceed to /run-experiment.
+
+This catches:
+- Deprecated API arguments (e.g., `evaluation_strategy` -> `eval_strategy`)
+- Shape mismatches between model and data
+- Missing metrics or callbacks
+- OOM on even a single batch (wrong batch size)
+
+Implementation: add a `--validate` flag to main.py that runs 1 step of train + 1 step of eval on 100 examples, then exits.
+
 ## Integration
 
 - **Primary skill**: `setup-validation`

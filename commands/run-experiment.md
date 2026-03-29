@@ -19,7 +19,19 @@ Before submitting SLURM jobs, verify:
 3. **SLURM accessible**: Run `sinfo -s` — must show available partitions
 4. **Project directory exists**: $PROJECT_DIR/src/, $PROJECT_DIR/configs/ must exist with code
 
+5. **Venv Python**: Verify that the Python used in SLURM job scripts points to the venv Python (3.10+), not system Python. Check with: `head -20 cluster/job_*.sh | grep python` — must show a path containing `.venv/bin/python`, NOT bare `python`.
+
 If ANY check fails, do NOT submit jobs. Fix the issue first.
+
+## MANDATORY: Commit before submission
+
+Before submitting ANY SLURM job:
+1. Stage all project files: `git add projects/$PROJECT_NAME/`
+2. Commit with message: `experiment: submit $PROJECT_NAME runs — $N_JOBS jobs, $N_RUNS total runs`
+3. Record the commit hash in experiment-state.json under `code_version`
+4. Include the commit hash in each SLURM job script as a comment at the top
+
+This ensures every experiment run is traceable to a specific code version, failed jobs can be reproduced, and results can be linked to code changes.
 
 ## JOB BATCHING STRATEGY
 
