@@ -1,8 +1,8 @@
 ---
 name: rebuttal-writer
 description: Use this agent when the user asks to "write rebuttal", "respond to reviewers", "analyze review comments", or needs help with academic paper review response. This agent specializes in systematic rebuttal writing with professional tone and structured responses.
-model: sonnet
-maxTurns: 15
+model: opus
+maxTurns: 20
 color: cyan
 tools: ["Read", "Write", "Edit", "Grep", "Glob"]
 ---

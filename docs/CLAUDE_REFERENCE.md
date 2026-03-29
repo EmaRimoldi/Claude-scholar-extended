@@ -207,8 +207,8 @@
 | literature-reviewer | opus | 25 | Literature search, classification, trend analysis (Zotero MCP) |
 | literature-reviewer-obsidian | sonnet | 20 | Filesystem-first literature review from Obsidian |
 | research-knowledge-curator-obsidian | sonnet | 15 | Default curator for Obsidian project knowledge base |
-| rebuttal-writer | sonnet | 15 | Systematic rebuttal writing with tone optimization |
-| paper-miner | sonnet | 20 | Extract writing knowledge from successful papers |
+| rebuttal-writer | opus | 20 | Systematic rebuttal writing with tone optimization |
+| paper-miner | opus | 20 | Extract writing knowledge from successful papers |
 
 ### Development Workflow Agents
 
@@ -216,7 +216,7 @@
 |-------|-------|-----------|------|
 | architect | sonnet | 15 | System architecture design |
 | build-error-resolver | sonnet | 20 | Build error fixing (minimal diffs) |
-| bug-analyzer | sonnet | 20 | Deep code execution flow analysis and root cause |
+| bug-analyzer | opus | 20 | Deep code execution flow analysis and root cause |
 | code-reviewer | sonnet | 15 | Code review |
 | dev-planner | sonnet | 15 | Development task planning and breakdown |
 | refactor-cleaner | sonnet | 15 | Code refactoring and cleanup |

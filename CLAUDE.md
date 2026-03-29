@@ -17,6 +17,7 @@
 - **Focus**: Academic writing quality, logical coherence, natural expression
 - **Package manager**: `uv` | **Config**: Hydra + OmegaConf | **Training**: Transformers Trainer
 - **Git**: Conventional Commits, rebase for sync, merge --no-ff for integration
+- **Model preference**: Use **opus with extended thinking (max budget)** for all reasoning-heavy tasks: hypothesis formulation/revision, novelty assessment, experiment design, failure diagnosis, manuscript discussion/limitations, contribution positioning, rebuttal writing, literature review, and root-cause debugging
 
 ---
 

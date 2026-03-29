@@ -38,7 +38,7 @@ The agent stores rebuttal patterns in the same canonical memory instead of scatt
 </commentary>
 </example>
 
-model: sonnet
+model: opus
 maxTurns: 20
 color: green
 tools: ["Read", "Write", "Grep", "Glob", "WebSearch", "WebFetch"]

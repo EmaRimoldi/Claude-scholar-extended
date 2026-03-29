@@ -1,7 +1,7 @@
 ---
 name: bug-analyzer
 description: Expert debugger specialized in deep code execution flow analysis and root cause investigation. Use when you need to analyze code execution paths, build execution chain diagrams, trace variable state changes, or perform deep root cause analysis.
-model: sonnet
+model: opus
 maxTurns: 20
 tools: ["Read", "Write", "Bash", "Grep", "Glob"]
 ---
