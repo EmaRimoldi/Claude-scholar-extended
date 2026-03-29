@@ -120,7 +120,8 @@ if (fs.existsSync(pipelineStateFile)) {
       'research-init', 'check-competition', 'design-experiments', 'scaffold',
       'build-data', 'setup-model', 'implement-metrics', 'validate-setup',
       'plan-compute', 'run-experiment', 'collect-results', 'analyze-results',
-      'map-claims', 'position', 'story', 'produce-manuscript', 'rebuttal'
+      'map-claims', 'position', 'story', 'produce-manuscript',
+      'quality-review', 'compile-manuscript', 'rebuttal'
     ];
     const completed = order.filter(id => steps[id]?.status === 'completed').length;
     const skipped = order.filter(id => steps[id]?.status === 'skipped').length;

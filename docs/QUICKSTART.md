@@ -27,9 +27,19 @@ initial idea to camera-ready submission.
    claude
    ```
 
-3. **Configure credentials** (see [Credential Setup](#credential-setup) below).
+3. **Create a project directory.** All research outputs live inside a
+   dedicated project folder. Run:
+   ```
+   /new-project "Your Research Topic"
+   ```
+   This creates `projects/<topic-slug>/` with the standard layout
+   (`docs/`, `configs/`, `src/`, `data/`, `results/`, `manuscript/`,
+   `logs/`, `notebooks/`) and initializes `pipeline-state.json` with the
+   `project_dir` field pointing to it.
 
-4. **Bootstrap the Obsidian knowledge base** (recommended). If your repo does
+4. **Configure credentials** (see [Credential Setup](#credential-setup) below).
+
+5. **Bootstrap the Obsidian knowledge base** (recommended). If your repo does
    not yet have a `.claude/project-memory/registry.yaml`, Claude Scholar will
    offer to create one automatically, or you can run:
    ```
@@ -38,9 +48,10 @@ initial idea to camera-ready submission.
    This binds the repo to a structured knowledge base that tracks literature,
    experiments, results, and writing across sessions.
 
-5. **Verify the session-start hook fires.** When Claude Code starts, a hook
-   displays Git status, open TODOs, available commands, and the bound Obsidian
-   project status. If you see this summary, the system is ready.
+6. **Verify the session-start hook fires.** When Claude Code starts, a hook
+   displays Git status, open TODOs, available commands, pipeline progress,
+   and the bound Obsidian project status. If you see this summary, the
+   system is ready.
 
 ### Credential Setup
 
@@ -138,7 +149,8 @@ configured) the `literature-reviewer` agent. It walks you through:
   question.
 
 **What it produces:**
-- `literature-review.md` --- Synthesized literature survey.
+- `$PROJECT_DIR/docs/literature-review.md` --- Synthesized literature survey.
+- `$PROJECT_DIR/docs/hypotheses.md` --- Testable hypotheses.
 - Obsidian paper notes (if knowledge base is active).
 
 #### 1.2 Check for competing work
@@ -159,8 +171,8 @@ confirmed, the `hypothesis-formulation` skill converts research gaps into
 falsifiable hypotheses with explicit success and failure criteria.
 
 **Expected outputs at end of Phase 1:**
-- `hypotheses.md` --- Testable hypotheses with success/failure criteria.
-- `novelty-assessment.md` --- Comparison against closest prior work.
+- `$PROJECT_DIR/docs/hypotheses.md` --- Testable hypotheses with success/failure criteria.
+- Novelty assessment (inline or as separate document).
 - Literature notes in Obsidian (if active).
 
 **Decision point:** If novelty is insufficient, iterate on the idea or pivot
@@ -184,7 +196,7 @@ The `experiment-design` skill produces a comprehensive plan covering:
 - **Resource estimation** --- Approximate GPU hours and memory.
 - **Success criteria** --- Quantitative thresholds tied to each hypothesis.
 
-**What `experiment-plan.md` contains:**
+**What `$PROJECT_DIR/docs/experiment-plan.md` contains:**
 - Full experiment matrix (conditions x seeds x metrics).
 - Baseline specifications with expected performance ranges.
 - Ablation schedule.
@@ -197,8 +209,8 @@ The `experiment-design` skill produces a comprehensive plan covering:
 - Confirm the ablation schedule isolates the right variables.
 - Adjust seed count or sample size if compute budget is limited.
 
-`experiment-plan.md` is the **source of truth** for all downstream phases.
-Every subsequent command reads from it.
+`$PROJECT_DIR/docs/experiment-plan.md` is the **source of truth** for all
+downstream phases. Every subsequent command reads from it.
 
 ---
 
@@ -213,11 +225,12 @@ the full sweep.
 /scaffold
 ```
 
-The `project-scaffold` skill generates a complete, runnable ML project:
+The `project-scaffold` skill generates a complete, runnable ML project inside
+`$PROJECT_DIR/`:
 
-- `pyproject.toml` with uv dependency management.
-- `src/` directory with Factory and Registry patterns.
-- Hydra configuration files (`configs/`).
+- `$PROJECT_DIR/pyproject.toml` with uv dependency management.
+- `$PROJECT_DIR/src/` directory with Factory and Registry patterns.
+- `$PROJECT_DIR/configs/` Hydra configuration files.
 - Entry point script.
 - `Makefile` with standard targets.
 
@@ -324,10 +337,10 @@ When experiments fail or gates do not pass, Claude Scholar enters the
 
 1. Run `failure-diagnosis` to identify root causes.
 2. Trigger `hypothesis-revision` for pivot/persevere/abandon decisions.
-3. Update `experiment-state.json` with the iteration record.
+3. Update `$PROJECT_DIR/experiment-state.json` with the iteration record.
 4. Loop back to experiment design or implementation as needed.
 
-**How `experiment-state.json` tracks progress:**
+**How `$PROJECT_DIR/experiment-state.json` tracks progress:**
 - Current phase and iteration number.
 - Per-condition status (passed / failed / pending).
 - Gate evaluation history.
@@ -381,13 +394,33 @@ and produces `paper-blueprint.md` (section outline for the full paper).
 ```
 
 Generates publication-quality figures, full prose for every section, LaTeX
-source, and a submission-ready package. After generation:
+source, and a submission-ready package. All outputs go to
+`$PROJECT_DIR/manuscript/`.
 
-```bash
-make build-pdf
+#### 5.4 Quality review (gate)
+
+```
+/quality-review
 ```
 
-Compiles the LaTeX into a PDF.
+The quality review step acts as a peer-review gate before submission. It scores
+the manuscript across 8 dimensions (claim-evidence alignment, statistical
+rigor, baseline completeness, generalizability, mechanistic validation, error
+analysis, presentation accuracy, reproducibility). Each dimension is scored
+1--10. **Gate rules:** all dimensions must score >= 5, and critical dimensions
+(claim-evidence, statistical rigor, presentation accuracy) must score >= 6.
+If the gate fails, the report includes specific fixes before you proceed.
+
+#### 5.5 Compile the manuscript
+
+```
+/compile-manuscript
+```
+
+Compiles `$PROJECT_DIR/manuscript/main.tex` to PDF and creates an
+Overleaf-ready ZIP package. Tries compilers in order: tectonic, pdflatex,
+xelatex. The ZIP is always created as a fallback even if PDF compilation
+fails.
 
 **Deterministic scripts that save time:**
 - `make refresh` --- Re-collect and update result tables without agent
@@ -454,7 +487,7 @@ available:
 | `make refresh` | Phase 4, after jobs finish | Collects and aggregates all run outputs |
 | `make check-gates` | Phase 4, after refresh | Evaluates phase gate criteria |
 | `make tables` | Phase 5, during writing | Regenerates LaTeX tables from result data |
-| `make build-pdf` | Phase 5, after manuscript | Compiles LaTeX source into PDF |
+| `make build-pdf` | Phase 5, after manuscript | Compiles LaTeX source into PDF (or use `/compile-manuscript` for PDF + Overleaf ZIP) |
 | `make clean` | Any time | Removes temporary and generated files |
 
 ---
@@ -494,7 +527,7 @@ hypothesis-revision  -->  Decision: PIVOT / PERSEVERE / ABANDON
    - **Pivot**: Substantial change to the hypothesis or method.
    - **Abandon**: The direction is exhausted; archive results and move on.
 
-3. **`experiment-state.json`** tracks every iteration:
+3. **`$PROJECT_DIR/experiment-state.json`** tracks every iteration:
    - Iteration count and history.
    - Diagnosis summaries.
    - Revision decisions with rationale.
@@ -518,9 +551,9 @@ hypothesis-revision  -->  Decision: PIVOT / PERSEVERE / ABANDON
 2. **Let deterministic scripts handle tables, gates, and state.** Reserve agent
    time for reasoning-heavy tasks: analysis, writing, positioning.
 
-3. **Keep `experiment-plan.md` as the single source of truth.** All downstream
-   commands read from it. If you change the plan, re-run `/design-experiments`
-   to keep everything consistent.
+3. **Keep `$PROJECT_DIR/docs/experiment-plan.md` as the single source of
+   truth.** All downstream commands read from it. If you change the plan,
+   re-run `/design-experiments` to keep everything consistent.
 
 4. **Use the Obsidian knowledge base.** It persists context across sessions.
    Daily notes, experiment logs, and literature reviews accumulate into a
@@ -575,18 +608,19 @@ state tracking and checkpoints.
 
 ### How it works
 
-The orchestrator runs the 17 pipeline steps in canonical order:
+The orchestrator runs the 19 pipeline steps in canonical order:
 
 ```
- 1. /research-init        9. /plan-compute
- 2. /check-competition   10. /run-experiment
- 3. /design-experiments   11. /collect-results
- 4. /scaffold             12. /analyze-results
- 5. /build-data           13. /map-claims
- 6. /setup-model          14. /position
- 7. /implement-metrics    15. /story
- 8. /validate-setup       16. /produce-manuscript
-                          17. /rebuttal
+ 1. /research-init         10. /run-experiment
+ 2. /check-competition     11. /collect-results
+ 3. /design-experiments    12. /analyze-results
+ 4. /scaffold              13. /map-claims
+ 5. /build-data            14. /position
+ 6. /setup-model           15. /story
+ 7. /implement-metrics     16. /produce-manuscript
+ 8. /validate-setup        17. /quality-review      (gate)
+ 9. /plan-compute          18. /compile-manuscript
+                           19. /rebuttal
 ```
 
 **In interactive mode** (default), between each step the orchestrator:
@@ -601,12 +635,15 @@ steps are logged and skipped.
 
 ### State tracking
 
-Pipeline progress persists in `pipeline-state.json` (gitignored) at the project
-root. Each step records:
+Pipeline progress persists in `pipeline-state.json` (v2, gitignored) at the
+repo root. It records:
 
-- Status: `pending`, `running`, `completed`, `skipped`, `failed`
+- **`project_dir`** --- The active project directory (e.g.,
+  `projects/sparse-hate-explain`). All research outputs are written here.
+- Per-step status: `pending`, `running`, `completed`, `skipped`, `failed`
 - Timestamps for start and completion
 - Failure reason (if applicable)
+- SLURM job IDs (if applicable)
 
 You can also check state directly:
 
@@ -615,9 +652,33 @@ python3 scripts/pipeline_state.py status
 python3 scripts/pipeline_state.py next
 ```
 
+### Project directory enforcement
+
+All pipeline commands write outputs inside `$PROJECT_DIR` (resolved from
+`pipeline-state.json` -> `project_dir`). Research documents never go to the
+repository root. A PostToolUse hook (`research-doc-guard.js`) warns if a
+research document is accidentally written to the root.
+
+**Project directory layout:**
+
+```
+projects/<slug>/
+├── docs/          # literature-review, hypotheses, experiment-plan, etc.
+├── configs/       # Hydra/OmegaConf configs
+├── src/           # Source code
+├── data/          # Datasets (gitignored for large files)
+├── results/       # Experiment outputs
+│   ├── tables/
+│   └── figures/
+├── manuscript/    # LaTeX source, PDF, Overleaf ZIP
+├── logs/          # Experiment and pipeline logs
+├── notebooks/     # Jupyter notebooks
+└── experiment-state.json
+```
+
 ### Logs
 
-Each step logs output to `logs/pipeline-YYYY-MM-DD/step-NN-<name>.log`.
+Each step logs output to `$PROJECT_DIR/logs/pipeline-YYYY-MM-DD/step-NN-<name>.log`.
 
 ### Session-start integration
 
@@ -625,10 +686,13 @@ When `pipeline-state.json` exists, the session-start hook automatically shows
 pipeline progress and suggests the next step:
 
 ```
-🔄 Pipeline: 7/17 completed, 1 skipped
+🔄 Pipeline: 7/19 completed, 1 skipped
   → Next: /plan-compute — GPU estimation and SLURM script generation
   → Run /run-pipeline --resume to continue
 ```
+
+The hook also scans the repo root for misplaced research documents and warns
+if any are found outside the project directory.
 
 ---
 
@@ -638,6 +702,7 @@ pipeline progress and suggests the next step:
 
 | Command | What It Does | When to Use |
 |---|---|---|
+| `/new-project` | Create project directory structure + pipeline state | Very first step for any new project |
 | `/research-init` | Start research ideation with 5W1H + literature review | Beginning of a new project |
 | `/zotero-review` | Synthesize papers from Zotero into literature review | After collecting papers in Zotero |
 | `/zotero-notes` | Batch-create Obsidian paper notes from Zotero | After `/zotero-review` |
@@ -656,6 +721,8 @@ pipeline progress and suggests the next step:
 | `/position` | Position contribution against prior work | Before writing |
 | `/story` | Build narrative arc and paper blueprint | Before writing |
 | `/produce-manuscript` | Generate figures, prose, LaTeX, submission package | Writing phase |
+| `/quality-review` | 8-dimension quality gate (blocks if critical dims fail) | Before submission |
+| `/compile-manuscript` | Compile LaTeX to PDF, create Overleaf ZIP | After quality review passes |
 | `/rebuttal` | Write systematic reviewer responses | After receiving reviews |
 | `/presentation` | Create conference presentation | Post-acceptance |
 | `/poster` | Generate academic poster | Post-acceptance |
