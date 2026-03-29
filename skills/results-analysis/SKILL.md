@@ -92,55 +92,37 @@ Before running any cross-condition statistical test:
 
 ### 3. Run strict statistics
 
-Always produce:
-- descriptive statistics: `mean ± std` when appropriate,
-- `95% CI` or another clearly justified interval,
-- run/seed counts,
-- significance tests with assumptions stated,
-- effect sizes,
-- multiple-comparison handling when several contrasts are reported.
+Use the deterministic script for standard analyses:
 
-Default expectation:
-- check parametric assumptions first,
-- use non-parametric fallback when assumptions fail,
-- state exactly what was tested and on what samples.
+```bash
+python scripts/run_statistics.py \
+    --results analysis-input/results.csv \
+    --metric primary_metric \
+    --groupby strategy,task \
+    --output-dir analysis-output/
+```
 
-See:
-- `references/statistical-methods.md`
-- `references/statistical-reporting.md`
+The script automatically: computes descriptive stats (mean, std, CI), checks assumptions (Shapiro-Wilk, Levene), selects the correct test (t-test/ANOVA/Kruskal-Wallis with appropriate post-hoc), computes effect sizes (Cohen's d, eta-squared), and writes `stats-appendix.md` + `stats-raw.json`.
+
+**Fall back to agent reasoning** for: non-standard test selection, custom comparisons, interpretation of results, or when the script flags assumption violations that need judgment.
 
 ### 4. Generate real scientific figures
 
-Produce actual figures whenever artifacts are available.
+Use the deterministic script for standard figure types:
 
-Minimum expectation for a non-trivial analysis bundle:
-- **one main comparison figure**,
-- **one supporting figure** (training dynamics / ablation / breakdown / error analysis),
-- **one exact numeric summary table** in markdown.
+```bash
+python scripts/generate_figures.py \
+    --results analysis-input/results.csv \
+    --metric primary_metric \
+    --groupby strategy,task \
+    --output-dir analysis-output/figures/
+```
 
-### Figure Type Checklist
+The script generates: bar charts with CI error bars, violin plots, interaction plots (if 2+ groupby factors), and heatmaps — all with colorblind-safe palettes (Okabe-Ito), publication styling, and vector PDF output.
 
-Consider these visualization types for comprehensive results presentation:
-1. Bar charts with error bars (primary comparisons)
-2. Violin/box plots (distribution shape)
-3. Heatmaps (pairwise comparisons, confusion matrices, layer-wise results)
-4. Line plots (training curves, sensitivity analysis, scaling behavior)
-5. Scatter plots (correlation between metrics, Pareto frontiers)
-6. Confusion matrices (classification tasks)
-7. Domain-specific visualizations (attention maps, feature importance, layer activations)
+**Fall back to agent reasoning** for: domain-specific visualizations (attention maps, Pareto fronts, training curves), custom figure layouts, or when the standard figures need additional annotation.
 
-Use at least 3 different types. Do not default to bar charts for everything.
-
-Every main figure must define:
-- figure purpose,
-- plotted variables,
-- error bar meaning,
-- caption requirements,
-- interpretation checklist.
-
-See:
-- `references/visualization-best-practices.md`
-- `references/figure-interpretation.md`
+Minimum expectation: at least 3 different figure types. Every main figure must have a reader takeaway.
 
 ### 5. Mandatory: Hyperparameter Sensitivity Analysis
 

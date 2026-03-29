@@ -24,6 +24,19 @@ You are now a simulated peer reviewer. Your job is to critically evaluate the ge
 4. Locate the experiment plan: `experiment-plan.md`
 5. Locate the claims map: look for `claims_evidence.md` or similar
 
+## Automated Pre-Check
+
+Before scoring, run the mechanical extraction script:
+
+```bash
+python scripts/quality_review.py \
+    --manuscript-dir $PROJECT_DIR/manuscript/ \
+    --results $PROJECT_DIR/analysis-input/results.csv \
+    --output $PROJECT_DIR/manuscript/quality-review-data.json
+```
+
+This extracts: title words, abstract sentences, figure/table labels, scope counts (models/datasets/methods), banned/restricted word flags, efficiency claim detection, statistical reporting counts, and reproducibility markers. Use the extracted JSON to inform scoring below.
+
 ## Review Dimensions
 
 Score each dimension 1-10 and provide specific findings.

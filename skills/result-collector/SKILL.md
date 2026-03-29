@@ -59,154 +59,24 @@ If the user wants statistical analysis after collection, hand off to `results-an
 5. **Deterministic output.**
    Running the collector twice on the same outputs/ must produce identical analysis-input/ content.
 
-## Core Features
+## Deterministic Script
 
-### 1. Output Scanning
+The procedural pipeline (scanning, extraction, assembly, gap detection) is implemented in `scripts/collect_results.py`. **Use this script first**; fall back to agent reasoning only for non-standard formats.
 
-Recursively scan the `outputs/` directory for completed runs:
+```bash
+python scripts/collect_results.py \
+    --results-dir results/ \
+    --experiment-plan docs/experiment-plan.md \
+    --output-dir analysis-input/
+```
 
-- **Hydra convention**: Look for `.hydra/` subdirectories containing `config.yaml` and `overrides.yaml` to identify run configurations.
-- **Filename convention**: When Hydra metadata is absent, parse run directory names for structured fields (model, dataset, seed, method).
-- **Completion detection**: A run is "complete" if it contains a recognized output file (metrics.json, results.csv, eval_results.json, or similar). Runs with only logs but no output files are flagged as incomplete.
-- **Nested scanning**: Handle both flat (`outputs/run_001/`) and nested (`outputs/model/dataset/seed/`) directory layouts.
+The script handles: recursive output scanning (Hydra + filename conventions), metric extraction (JSON > CSV > log fallback), table assembly (`results.csv` + `summary.csv` with t-distribution CI), gap detection against the experiment plan, figure organization, and run manifest generation.
 
-### 2. Metric Extraction
+Run with `--dry-run` to preview without writing files. Run with `--help` for all options.
 
-For each completed run, extract:
+**When to fall back to agent reasoning**: Non-standard output formats (pickle, torch, custom log patterns), nested multi-level directory layouts not matching conventions, or when the script reports errors it cannot resolve.
 
-- **Primary metric value**: Identified from experiment-plan.md or from the most prominent metric in the output file.
-- **Secondary metrics**: All additional numeric metrics found in the output.
-- **Timing info**: Wall-clock time from logs, Hydra timestamps, or output metadata.
-- **GPU memory peak**: From training logs, torch profiler output, or nvidia-smi logs if available.
-
-Handle multiple output formats:
-
-- **JSON**: Parse `metrics.json`, `eval_results.json`, `trainer_state.json`, or any `.json` with numeric fields.
-- **CSV**: Read metric columns from `results.csv`, `eval_results.csv`, or similar tabular outputs.
-- **Pickle / Torch**: Load `.pkl` or `.pt` files containing metric dictionaries when JSON/CSV are absent.
-- **Log parsing**: As a fallback, extract final metric values from training log files using regex patterns.
-
-When a metric cannot be extracted, record `null` in the output and note the failure in the run manifest.
-
-### 3. Table Assembly
-
-Aggregate extracted data into three canonical output files:
-
-#### `analysis-input/results.csv`
-One row per individual run. Columns:
-- identifiers: `model`, `dataset`, `seed`, `method`, `ablation`
-- metrics: `primary_metric`, plus one column per secondary metric
-- metadata: `wall_time_seconds`, `gpu_memory_peak_mb`
-
-See `references/output-schema.md` for the full column specification.
-
-#### `analysis-input/summary.csv`
-One row per experimental condition (aggregated across seeds). Columns:
-- grouping: `model`, `dataset`, `method`, `ablation`
-- aggregates: `metric_mean`, `metric_std`, `metric_ci_lower`, `metric_ci_upper`, `n_seeds`
-
-Confidence intervals use 95% CI by default (t-distribution with n-1 degrees of freedom).
-
-#### `analysis-input/run-manifest.json`
-Array of objects, one per expected run (both completed and missing). Each entry:
-- `config_path`, `output_dir`, `wall_time`, `gpu_memory_peak`, `status`, `error_message`
-
-Status values: `"completed"`, `"failed"`, `"missing"`, `"incomplete"`.
-
-### 4. Gap Detection
-
-Compare completed runs against the expected run matrix:
-
-- **Load experiment plan**: Read `experiment-plan.md` to determine the expected (model x dataset x seed x method x ablation) matrix.
-- **Cross-reference**: Match each expected run against discovered outputs.
-- **Classify gaps**:
-  - `missing` -- no output directory found
-  - `failed` -- output directory exists but run crashed (check stderr logs, error files)
-  - `incomplete` -- output directory exists but final metrics are absent (possible timeout or early stop)
-- **Failure diagnosis**: For failed runs, extract the last error message from logs (OOM, timeout, NaN loss, assertion error).
-- **Generate gap-report.md**: Table of all missing/failed/incomplete runs with expected configuration and failure reason.
-
-### 5. Figure Organization
-
-Collect per-run plots into a canonical figures directory:
-
-- **Scan for figures**: Look for `.pdf`, `.png`, `.svg` files in each run's output directory.
-- **Rename consistently**: Copy to `analysis-input/figures/` using the naming convention `{model}_{dataset}_{seed}_{metric}.{ext}`.
-- **Preserve originals**: Copy, never move. Original files in outputs/ remain untouched.
-- **Index**: Add figure paths to the run manifest for traceability.
-
-## Standard workflow
-
-### 0. Reconcile output paths
-
-Before scanning, detect and warn about output path mismatches that cause silent empty-collection failures:
-
-1. **Check SLURM scripts**: If `cluster/jobs/` exists, scan `*.sh` files for `--output_dir`, `output_dir=`, or `rsync` targets. Extract the actual output paths used by submitted jobs.
-2. **Check Hydra overrides**: If `.hydra/overrides.yaml` or Hydra config files exist, extract `hydra.run.dir` or `output_dir` overrides.
-3. **Compare paths**: If SLURM scripts or Hydra configs write to a path different from the `outputs_dir` parameter (e.g., `/scratch/$USER/...` vs. `outputs/`):
-   - Warn: "SLURM scripts write to {slurm_path} but collector is scanning {outputs_dir}. Either adjust the outputs_dir parameter or ensure results have been copied (e.g., via rsync) to {outputs_dir}."
-   - Suggest: the correct path to pass as `outputs_dir` argument.
-4. **Check experiment-state.json**: If it exists, read `phases.*.output_dir` or similar fields for recorded output locations.
-5. **Check /scratch/ convention**: On HPC clusters, if `outputs/` is empty but `/scratch/$USER/` contains directories matching the project or run naming pattern, warn: "outputs/ is empty but matching run directories found under /scratch/$USER/. Results may not have been synced back."
-
-Only proceed to Step 1 after path reconciliation. If a mismatch is detected and no runs are found at `outputs_dir`, this is a **blocking warning** — do not produce an empty results.csv without explicitly stating the path mismatch as the likely cause.
-
-### 1. Locate and validate inputs
-
-Confirm the following exist:
-- `outputs/` directory (or reconciled output path from Step 0) with at least one run subdirectory
-- `experiment-plan.md` (optional but strongly recommended for gap detection)
-
-If `experiment-plan.md` is missing, state: "No experiment-plan.md found. Gap detection will be skipped. Only discovered runs will be collected."
-
-### 2. Scan and classify runs
-
-Recursively walk `outputs/`. For each subdirectory:
-1. Check for Hydra `.hydra/config.yaml` -- if found, parse run configuration.
-2. Otherwise, parse directory name for structured fields.
-3. Check for completion markers (output files with metrics).
-4. Classify as completed, failed, incomplete, or in-progress.
-
-Report: "Found N run directories: X completed, Y failed, Z incomplete."
-
-### 3. Extract metrics
-
-For each completed run:
-1. Identify the output format (JSON > CSV > pickle/torch > log parsing).
-2. Extract primary metric, secondary metrics, timing, GPU memory.
-3. Record extraction method in the manifest for reproducibility.
-
-If extraction fails for a completed run, downgrade its status to `incomplete` and log the reason.
-
-### 4. Assemble tables
-
-1. Build `results.csv` from all completed runs.
-2. Compute `summary.csv` by grouping on (model, dataset, method, ablation) and aggregating across seeds.
-3. Build `run-manifest.json` from all discovered and expected runs.
-
-### 5. Detect gaps
-
-If `experiment-plan.md` is available:
-1. Parse the expected run matrix.
-2. Cross-reference against completed runs.
-3. Generate `gap-report.md` with missing/failed/incomplete entries.
-
-### 6. Organize figures
-
-1. Scan each run directory for figure files.
-2. Copy to `analysis-input/figures/` with consistent naming.
-3. Log figure mappings in the manifest.
-
-### 7. Final validation
-
-Do not finish until all are true:
-- [ ] `analysis-input/results.csv` exists with one row per completed run
-- [ ] `analysis-input/summary.csv` exists with one row per condition
-- [ ] `analysis-input/run-manifest.json` exists with entries for all runs
-- [ ] no metric values were fabricated or imputed
-- [ ] gap report accounts for every expected-but-missing run
-- [ ] figures are copied (not moved) with consistent naming
-- [ ] output is deterministic (re-running produces identical files)
+After running the script, verify the outputs match the quality bar above.
 
 ## Output structure
 
