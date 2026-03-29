@@ -42,6 +42,15 @@ Activates the `project-scaffold` skill to produce all boilerplate: dependency fi
 2. Activate `project-scaffold` skill
 3. Write: pyproject.toml, src/, run/conf/, run_experiment.py, Makefile, .gitignore, tests/
 
+## EFFICIENCY: Batch file creation
+
+When creating project structure (configs, __init__.py files, boilerplate):
+- Use Python scripts or bash loops to create repetitive files in bulk
+- Do NOT write each config file individually if they follow a pattern
+- Example: generate all strategy configs from a Python dict in one script
+
+This saves context window and execution time for the reasoning-heavy steps.
+
 ## Integration
 
 - **Primary skill**: `project-scaffold`

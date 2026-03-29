@@ -119,9 +119,9 @@ if (fs.existsSync(pipelineStateFile)) {
     const order = [
       'research-init', 'check-competition', 'design-experiments', 'scaffold',
       'build-data', 'setup-model', 'implement-metrics', 'validate-setup',
-      'plan-compute', 'run-experiment', 'collect-results', 'analyze-results',
-      'map-claims', 'position', 'story', 'produce-manuscript',
-      'quality-review', 'compile-manuscript', 'rebuttal'
+      'download-data', 'plan-compute', 'run-experiment', 'collect-results',
+      'analyze-results', 'map-claims', 'position', 'story',
+      'produce-manuscript', 'quality-review', 'compile-manuscript', 'rebuttal'
     ];
     const completed = order.filter(id => steps[id]?.status === 'completed').length;
     const skipped = order.filter(id => steps[id]?.status === 'skipped').length;
@@ -136,6 +136,39 @@ if (fs.existsSync(pipelineStateFile)) {
     if (nextStep) {
       output += `  → Next: ${steps[nextStep].command} — ${steps[nextStep].description}\n`;
       output += `  → Run /run-pipeline --resume to continue\n`;
+
+      // Pre-flight warnings for /run-experiment
+      if (nextStep === 'run-experiment') {
+        const projectDir = pState.project_dir;
+        const warnings = [];
+
+        if (projectDir) {
+          const projPath = path.join(cwd, projectDir);
+          const dataDir = path.join(projPath, 'data');
+          const mainPy = path.join(projPath, 'src', 'main.py');
+          const downloadStep = steps['download-data'];
+
+          // Check if data was downloaded
+          if (!fs.existsSync(dataDir) || fs.readdirSync(dataDir).length === 0) {
+            warnings.push('Data not downloaded (run /download-data first)');
+          }
+          // Check if code was scaffolded
+          if (!fs.existsSync(mainPy)) {
+            warnings.push('No src/main.py found (run /scaffold first)');
+          }
+          // Check if /download-data was completed
+          if (downloadStep && downloadStep.status !== 'completed') {
+            warnings.push('/download-data not completed');
+          }
+        }
+
+        if (warnings.length > 0) {
+          output += `\n  ⚠️  WARNING: /run-experiment is next but prerequisites may be missing:\n`;
+          for (const w of warnings) {
+            output += `    - ${w}\n`;
+          }
+        }
+      }
     } else {
       output += `  → All steps done!\n`;
     }
