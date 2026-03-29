@@ -10,6 +10,35 @@ tags: [Research, Execution, SLURM, Experiment]
 
 # Run Experiment Command
 
+## PRE-FLIGHT CHECKS (mandatory before submitting ANY job)
+
+Before submitting SLURM jobs, verify:
+
+1. **Data cached**: Run `python -c "import os; os.environ['HF_DATASETS_OFFLINE']='1'; os.environ['TRANSFORMERS_OFFLINE']='1'; <load each dataset and model>"` — must succeed
+2. **Dry run passes**: Run `python -m src.main --dry-run` on the login node — must complete without errors
+3. **SLURM accessible**: Run `sinfo -s` — must show available partitions
+4. **Project directory exists**: $PROJECT_DIR/src/, $PROJECT_DIR/configs/ must exist with code
+
+If ANY check fails, do NOT submit jobs. Fix the issue first.
+
+## JOB BATCHING STRATEGY
+
+Do NOT submit one SLURM job per experimental condition. Instead:
+
+1. **Count total runs**: conditions x seeds = N
+2. **If N < 20**: submit as a single GPU job that iterates internally
+3. **If 20 <= N < 100**: group by task type (one job per task, each iterates over strategies x seeds)
+4. **If N >= 100**: group by task type AND split strategies into chunks of ~20 runs per job
+
+Each job script must:
+- Iterate over its assigned conditions in a Python loop (not separate SLURM submissions)
+- Save results incrementally (after each condition, not just at the end)
+- Log progress so partial results are recoverable if the job times out
+
+Example for 15 strategies x 3 tasks x 5 seeds = 225 runs:
+- Submit 3 jobs (one per task), each running 15 strategies x 5 seeds = 75 runs internally
+- NOT 225 separate SLURM submissions
+
 ## Project Directory
 
 All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.
