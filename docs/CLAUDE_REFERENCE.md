@@ -247,7 +247,39 @@ Cross-platform Node.js hooks for automated workflow execution:
 
 ---
 
-## Rules (4 Rules)
+## Deterministic Scripts (12 scripts)
+
+Standalone CLI tools that automate procedural pipeline steps. Run with `--help` for usage. See `scripts/README.md` for full documentation.
+
+### Research Pipeline
+
+| Script | Purpose | Replaces |
+|--------|---------|----------|
+| `pipeline_state.py` | Pipeline orchestration state machine | Manual state tracking |
+| `collect_results.py` | Output scanning, metric extraction, CSV/JSON assembly, gap detection | result-collector procedural sections |
+| `run_statistics.py` | Automatic test selection (ANOVA/t-test/Kruskal-Wallis), effect sizes, post-hoc | statistical-methods.md reference (~560 lines) |
+| `generate_figures.py` | Bar charts, violin plots, interaction plots, heatmaps (Okabe-Ito, PDF) | visualization-best-practices.md reference |
+| `check_gates.py` | Phase gate evaluation (completion, baseline sanity, variance, crashes) | experiment-runner procedural sections |
+| `update_experiment_state.py` | Experiment lifecycle state transitions | experiment-runner procedural sections |
+
+### Manuscript & Review
+
+| Script | Purpose | Replaces |
+|--------|---------|----------|
+| `compile_manuscript.py` | LaTeX compilation (tectonic/pdflatex/xelatex) + Overleaf ZIP | compile-manuscript.md procedural sections |
+| `quality_review.py` | Title overclaiming audit, scope-evidence extraction, statistical reporting scan | quality-review.md mechanical checks |
+
+### Cluster
+
+| Script | Purpose |
+|--------|---------|
+| `slurm/submit.py` | SLURM job submission |
+| `slurm/job_builder.py` | SLURM script generation |
+| `slurm/cluster_profile.py` | Cluster configuration and partition selection |
+
+---
+
+## Rules (5 Rules)
 
 Global constraints, always active:
 
