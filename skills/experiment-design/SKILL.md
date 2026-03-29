@@ -30,6 +30,60 @@ Design ablation studies to isolate component contributions:
 - **Expected impact**: Predicted effect of each ablation (for hypothesis validation)
 - **Interaction effects**: Which components might interact?
 
+#### Causal Claim Ablation Requirements
+
+For every mechanistic claim the paper intends to make (e.g., "freezing attention heads preserves syntactic knowledge"):
+
+1. **Identify confounds**: What else changes when you apply this intervention? (parameter count, compute, capacity, regularization effect)
+2. **Design parameter-matched controls**: If intervention A has different trainable parameters than baseline B, add a control C that matches A's parameter count but changes a different component.
+3. **Design component isolation ablations**: If claiming component X is special, test:
+   - Freeze X only
+   - Freeze everything EXCEPT X
+   - Freeze a random subset of the same size as X
+4. **Pre-register the ablation logic**: Before running experiments, document which ablation supports which claim.
+
+Ablation completeness check (include in experiment plan):
+
+| Claim | Required ablation | Designed? | Confounds addressed? |
+|-------|------------------|-----------|---------------------|
+| [claim 1] | [ablation] | [yes/no] | [list] |
+
+### 2b. Dataset Representativeness Rule
+
+If the paper makes claims about a CATEGORY of tasks (e.g., "syntactic tasks", "semantic tasks", "reasoning tasks"):
+- Minimum 2 datasets per category, ideally 3.
+- Datasets within a category must differ in at least one of: size, domain, metric, or difficulty.
+- If only 1 dataset per category is feasible (compute budget), the paper MUST:
+  1. Frame claims as "on [dataset name]" not "for [task type]".
+  2. Explicitly state this as a limitation in the experiment plan.
+  3. Not use category-level language in title or abstract.
+
+If claims are about specific benchmarks (not categories), 1 dataset per benchmark is fine.
+
+**Confound checklist (mandatory per experimental factor):**
+
+For each factor you claim to study (e.g., "task type"), list:
+- What other variables co-vary with this factor? (dataset size, metric type, label distribution, sequence length)
+- Can you separate the factor of interest from these confounds?
+- If not, what is the honest scope of your claim?
+
+Include the confound checklist as a table in the experiment plan.
+
+### 2c. Motivation-Metric Alignment
+
+If the introduction or motivation mentions ANY of these as benefits:
+- "efficiency", "faster", "cheaper", "less compute", "reduced cost"
+- "parameter efficient", "fewer parameters"
+- "memory efficient", "lower memory"
+
+Then the experiment plan MUST include measurements of:
+- Wall-clock training time (not just parameter count)
+- Peak GPU memory usage
+- Throughput (examples/second)
+- At minimum, report these for the main comparison conditions.
+
+Parameter count alone is NOT an efficiency metric — identical parameter counts can have very different compute costs.
+
 ### 3. Sample Size & Seeds
 
 Determine the number of runs needed:

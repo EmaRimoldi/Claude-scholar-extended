@@ -70,6 +70,18 @@ This skill provides verification principles based on WebSearch and Google Schola
 - Confirm the accuracy of the claim
 - Record the section/page where the claim appears
 
+### 5. Citation Accuracy Requirements (beyond existence checking)
+
+For every citation in the paper:
+
+1. **Author verification**: Confirm author names match the actual paper (check via Semantic Scholar, CrossRef, or Google Scholar). Watch for: wrong first names, missing authors, wrong author order.
+2. **Year verification**: Confirm publication year. Preprints may have a different year than the conference publication.
+3. **Claim verification**: For every sentence that says "[X et al.] showed/found/demonstrated [Y]", verify that paper X actually claims Y by reading the abstract or relevant section. Do NOT attribute a stronger claim to a paper than what the paper actually states.
+4. **Misattribution scan**: After the manuscript draft is complete, review each factual claim and verify the attribution is to the correct source paper. Common errors:
+   - Citing a survey for a finding that originates in a different paper.
+   - Attributing a stronger claim to a paper than what the paper actually states.
+   - Confusing two papers with similar titles or authors.
+
 ## Verification Workflow
 
 ### Integration into Writing Process

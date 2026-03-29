@@ -27,6 +27,26 @@ Verify the logical coherence of the paper:
 - Are result interpretations reasonable?
 - Are conclusions supported by evidence?
 
+#### 2a. Overclaiming Audit
+
+- Every adjective in the title must be experimentally justified.
+- BANNED title words unless justified across ≥3 model families AND ≥5 datasets: "universal", "general", "always", "any", "all".
+- Every factual abstract sentence must map to a specific table or figure.
+- No claim may have broader scope than the experimental design supports.
+- Category-level claims require ≥2 datasets per category.
+
+#### 2b. Limitation-Claim Consistency
+
+For every limitation acknowledged in the paper:
+- Does it affect any stated claim?
+- If yes: is the claim reduced in scope or addressed by an additional experiment?
+- If neither: the claim must be weakened or removed.
+- Acknowledging a limitation without adjusting claims is a reviewer red flag.
+
+#### 2c. Motivation-Measurement Alignment
+
+If the paper motivates with efficiency claims, verify that wall-clock time, GPU memory, and throughput are measured — not just parameter counts.
+
 ### 3. Citation Completeness
 
 Check the completeness and accuracy of citations:

@@ -46,7 +46,20 @@ Assess whether the contribution meets the novelty bar for the target venue:
 - **Second-tier venues**: Accept novel applications and significant engineering contributions
 - **Workshops**: Accept incremental work with interesting preliminary results
 
-### 5. Differentiation Suggestions
+### 5. Novelty Gate Enforcement
+
+After competitive analysis, classify each contribution as:
+
+- **NOVEL**: No prior work does this. Evidence: list searched queries that returned nothing relevant.
+- **INCREMENTAL**: Prior work exists but this version differs in [specific way]. Must explicitly state the delta.
+- **NOT NOVEL**: Prior work already demonstrated this. REMOVE from contribution list.
+
+**Gate rules:**
+- The pipeline MUST NOT proceed to experiment design if ALL contributions are classified as NOT NOVEL.
+- If the primary contribution is INCREMENTAL, the paper must explicitly acknowledge prior work and frame the contribution as an extension, not a discovery.
+- Record the classification and evidence in `novelty-assessment.md` for downstream verification.
+
+### 6. Differentiation Suggestions
 
 When novelty is weak, suggest concrete strategies:
 

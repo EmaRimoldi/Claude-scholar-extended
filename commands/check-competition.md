@@ -53,6 +53,19 @@ This command activates the `competitive-check` skill in a two-turn interaction:
    - `competitive-queries.md` (Turn 1)
    - `competitive-alert.md` (Turn 2)
 
+## Novelty Gate Enforcement
+
+After competitive analysis, each contribution must be classified as:
+
+- **NOVEL**: No prior work does this. Record the searched queries that returned nothing relevant.
+- **INCREMENTAL**: Prior work exists but this version differs in [specific way]. Must explicitly state the delta.
+- **NOT NOVEL**: Prior work already demonstrated this. REMOVE from contribution list.
+
+**Gate rules:**
+- The pipeline MUST NOT proceed to experiment design if ALL contributions are classified as NOT NOVEL.
+- If the primary contribution is INCREMENTAL, the paper must explicitly acknowledge prior work and frame the contribution as an extension, not a discovery.
+- Include the novelty classification in `competitive-alert.md`.
+
 ## Integration
 
 - **Primary skill**: `competitive-check`

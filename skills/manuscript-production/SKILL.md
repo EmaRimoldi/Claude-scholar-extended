@@ -115,7 +115,28 @@ Write the full manuscript, section by section, following the paper blueprint.
 - Forward-reference figures and tables: "as shown in Figure 2" not "as shown below."
 - Maintain consistent terminology: choose one term per concept and use it throughout.
 
-#### 2.2 Abstract
+#### 2.2 Overclaiming Prevention (mandatory)
+
+Before drafting the title and abstract, run these checks:
+
+**Title audit:**
+- Every adjective in the title must be supported by evidence.
+- BANNED words unless experimentally justified across ≥3 model families AND ≥5 datasets: "universal", "general", "always", "any", "all".
+- RESTRICTED words (require ≥2 model families OR ≥3 datasets): "robust", "consistent", "reliable", "task-agnostic".
+- The title must be literally true — not aspirational. If experiments use one model on three tasks, the title must name the model and scope.
+
+**Abstract audit:**
+- Every factual sentence in the abstract must map to a specific table or figure.
+- No sentence may claim broader scope than the experimental design supports.
+- If experiments use 1 model on N datasets, the abstract must say "on [model] across [N] [domain] benchmarks" — not "for language models" or "across tasks" generically.
+
+**Scope-evidence alignment check:**
+1. Count: number of models tested, number of datasets tested, number of domains tested.
+2. Map each claim to its scope: "works on BERT-base" vs. "works on transformers" vs. "works on language models".
+3. Any claim whose scope exceeds evidence scope → REJECT and rewrite with narrower scope.
+4. Category-level claims (e.g., "syntactic tasks") require ≥2 datasets per category; if only 1 dataset per category, use dataset names, not category labels.
+
+#### 2.3 Abstract
 
 Follow the 5-sentence formula from `ml-paper-writing`:
 

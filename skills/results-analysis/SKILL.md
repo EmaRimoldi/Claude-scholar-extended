@@ -77,6 +77,19 @@ Before running statistics, define the exact comparison questions:
 
 Do not mix unrelated comparisons into one undifferentiated table.
 
+### 2b. Statistical Method Validation
+
+Before running any cross-condition statistical test:
+
+1. **Verify the dependent variable is the SAME quantity across all cells.** If different metrics are used for different conditions (e.g., MCC for one task, accuracy for another), do NOT pool into one ANOVA. Run separate per-metric analyses, or normalize to a common scale first.
+2. **Non-significance does NOT mean equivalence.** If claiming "matches baseline" or "no significant difference", use a proper equivalence test (TOST — Two One-Sided Tests) with a predefined equivalence margin. Report the margin and the TOST result. A non-significant t-test is NOT evidence of equivalence.
+3. **Report per-condition analyses FIRST**, then cross-condition comparisons. Per-condition results are always valid; cross-condition pooling requires justification.
+4. **Metric comparability table**: Before any cross-condition analysis, fill in:
+
+| Condition | Metric | Scale | Direction | Comparable? |
+|-----------|--------|-------|-----------|-------------|
+| [cond 1] | [metric] | [range] | [higher/lower is better] | [yes/no] |
+
 ### 3. Run strict statistics
 
 Always produce:

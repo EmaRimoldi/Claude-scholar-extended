@@ -138,6 +138,20 @@ Principle: The searcher finds, the synthesizer interprets. Do not mix these role
 3. Note which specific papers support each gap identification
 4. Formulate potential research questions that address these gaps
 
+### Step 4b: Anti-Scooping Search (mandatory)
+
+After generating hypotheses and identifying research gaps, run a SECOND round of targeted searches:
+
+1. Search for each specific hypothesis claim (not just the general topic).
+2. Search for: "[your method] + [your task]" AND "[your method] + [similar task]".
+3. Search for papers from the last 6 months specifically (recent preprints that may not appear in surveys).
+4. Minimum 3 additional targeted searches per hypothesis.
+
+If a prior paper already demonstrates the main claim:
+- You CANNOT claim it as a contribution.
+- You must either: (a) differentiate explicitly with a clear delta, (b) reframe as replication + extension, or (c) pivot to a different research question.
+- Record which queries were run and what was found in the literature review.
+
 ### Step 5: Generate Outputs
 
 Generate corresponding files based on output_type "$output_type":

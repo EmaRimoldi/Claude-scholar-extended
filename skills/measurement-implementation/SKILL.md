@@ -28,6 +28,24 @@ Each metric implementation must include:
 - Input validation (shape checks, dtype checks)
 - Return dict with: `value`, `ci_lower`, `ci_upper`, `p_value` (if applicable), `effect_size` (if applicable)
 
+### 1b. Metric Definition Requirements
+
+For every metric reported in the paper:
+
+1. **Mathematical definition**: Write the formula explicitly. If using a library implementation, cite which function and version.
+2. **Well-definedness check**: Is this metric well-defined for your model type? (e.g., perplexity is not standard for masked LMs — use pseudo-log-likelihood and DEFINE it explicitly).
+3. **Cross-condition comparability**: If the same metric is compared across conditions that use different underlying measures (e.g., MCC vs. accuracy), you CANNOT pool them in a single statistical test. Either:
+   a. Normalize to a common scale (e.g., delta from baseline, z-score, rank).
+   b. Run separate analyses per metric type.
+   c. Use a metric that IS comparable (e.g., always use accuracy, or always use macro-F1).
+4. **Reproduction recipe**: Someone reading the paper must be able to recompute every number. If using non-standard metrics, provide code or pseudocode.
+
+Include the metric definition table in `src/metrics/README.md`:
+
+| Metric | Formula | Library | Well-defined? | Comparable across conditions? |
+|--------|---------|---------|--------------|-------------------------------|
+| [name] | [formula or reference] | [function, version] | [yes/no + note] | [yes/no + note] |
+
 ### 2. Analytical Reference Implementation
 
 If the hypothesis compares model behavior to a known algorithm, implement that algorithm's analytical solution:

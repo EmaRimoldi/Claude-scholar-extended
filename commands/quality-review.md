@@ -83,12 +83,47 @@ Score each dimension 1-10 and provide specific findings.
 - Check: Are limitations discussed?
 - **Auto-fail (score=1)**: Abstract contains claims contradicted by results
 
+#### D7a: Title and Abstract Overclaiming Audit
+
+- Check: Every adjective in the title is supported by evidence.
+- BANNED title words unless justified across ≥3 model families AND ≥5 datasets: "universal", "general", "always", "any", "all".
+- RESTRICTED title words (require ≥2 model families OR ≥3 datasets): "robust", "consistent", "reliable", "task-agnostic".
+- Check: Every factual sentence in the abstract maps to a specific table or figure.
+- Check: No abstract sentence claims broader scope than the experimental design supports.
+- Check: If experiments use 1 model on N datasets, the abstract says "on [model] across [N] [domain] benchmarks" — not "for language models" or "across tasks" generically.
+- Check: Category-level claims (e.g., "syntactic tasks") are backed by ≥2 datasets per category; if only 1 dataset per category, dataset names are used instead of category labels.
+- **Scope-evidence count**: List number of models, datasets, and domains tested. Map each claim to its evidence scope. Any claim exceeding evidence scope → score ≤ 3.
+
+#### D7b: Limitation-Claim Consistency Check
+
+For every limitation acknowledged in the paper:
+1. Does this limitation affect any stated claim? If yes:
+   a. Is the claim REDUCED in scope to match? (e.g., "X holds on BERT" instead of "X holds generally")
+   b. OR is the limitation addressed by an additional experiment or analysis?
+   c. If NEITHER a nor b: the claim must be weakened or removed. Acknowledging a limitation without adjusting claims is a reviewer red flag.
+2. **Auto-fail (score=1)**: Paper acknowledges a confound or limitation that directly undermines a primary claim, but the claim is stated without qualification.
+
+Limitation resolution table (mandatory in quality review report):
+
+| Limitation | Affected claims | Resolution | Claim adjusted? |
+|-----------|----------------|------------|----------------|
+| [limitation] | [claims] | [experiment/rewrite/none] | [YES/NO → action] |
+
 ### D8: Reproducibility (weight: medium)
 
 - Check: Are hyperparameters fully specified?
 - Check: Are random seeds reported?
 - Check: Is code availability mentioned?
 - Check: Are hardware/compute details provided?
+
+### D9: Motivation-Measurement Alignment (weight: high)
+
+If the introduction or motivation mentions ANY efficiency benefit ("faster", "cheaper", "less compute", "parameter efficient", "memory efficient"):
+- Check: Are wall-clock training times reported (not just parameter counts)?
+- Check: Is peak GPU memory usage measured?
+- Check: Is throughput (examples/second) reported?
+- Parameter count alone is NOT an efficiency metric. Score ≤ 4 if efficiency is claimed but only parameter counts are provided.
+- **Auto-fail (score=1)**: Paper title or abstract contains efficiency claims but no efficiency measurements appear in the results.
 
 ## Output
 
@@ -112,6 +147,7 @@ Generate a structured review:
 | D6: Error Analysis | X/10 | PASS/FAIL |
 | D7: Presentation | X/10 | PASS/FAIL |
 | D8: Reproducibility | X/10 | PASS/FAIL |
+| D9: Motivation-Measurement | X/10 | PASS/FAIL |
 | **Overall** | **X/10** | **PASS/FAIL** |
 
 ## Detailed Findings
@@ -127,7 +163,7 @@ Generate a structured review:
 ## Gate Rules
 
 - **PASS threshold**: All dimensions must score ≥ 5/10
-- **Critical dimensions** (D1, D2, D7): Must score ≥ 6/10
+- **Critical dimensions** (D1, D2, D7, D9): Must score ≥ 6/10
 - If ANY dimension scores < 5: **BLOCK submission** and list required fixes
 - If ANY critical dimension scores < 6: **BLOCK submission**
 - Save the review to `manuscript/quality-review.md`
