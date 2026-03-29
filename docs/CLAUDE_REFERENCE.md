@@ -204,6 +204,7 @@
 
 | Agent | Model | Max Turns | Role |
 |-------|-------|-----------|------|
+| hypothesis-generator | opus | 18 | Generate, score, and rank research hypotheses from literature |
 | literature-reviewer | opus | 25 | Literature search, classification, trend analysis (Zotero MCP) |
 | literature-reviewer-obsidian | sonnet | 20 | Filesystem-first literature review from Obsidian |
 | research-knowledge-curator-obsidian | sonnet | 15 | Default curator for Obsidian project knowledge base |

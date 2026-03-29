@@ -57,6 +57,38 @@ Prioritize experiments for efficient resource use:
 - **Ablations third**: Component analysis after main result confirmed
 - **Extended experiments last**: Secondary hypotheses, additional datasets
 
+### 6. Compute Requirements (estimated at design time)
+
+Include in the experiment plan:
+
+| Resource | Estimate |
+|----------|----------|
+| GPU type needed | [minimum VRAM, recommended type] |
+| Per-run time | [estimated minutes] |
+| Total runs | [conditions x seeds] |
+| Total GPU-hours | [per-run x total runs] |
+| Storage | [dataset size + checkpoints + outputs] |
+
+**Feasibility check**: Can this experiment be completed within available resources? If not, which conditions should be prioritized or cut?
+
+This ensures resource constraints are considered during design, not discovered later at `/plan-compute`.
+
+### 7. Expected Results (mandatory per hypothesis)
+
+For each hypothesis, document BEFORE running experiments:
+
+**If H[N] is TRUE:**
+- Expected metric values: [specific numbers or ranges]
+- Expected patterns: [what the data should look like]
+- Expected effect size: [Cohen's d or similar]
+
+**If H[N] is FALSE:**
+- Expected metric values: [what you'd see instead]
+- Expected patterns: [alternative explanation]
+- What this would mean for the contribution: [implications]
+
+This forces pre-commitment to outcome interpretation and prevents post-hoc rationalization.
+
 ## Input Modes
 
 ### Mode A: Pipeline (from predecessor)

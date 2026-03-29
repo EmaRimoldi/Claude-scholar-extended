@@ -75,7 +75,16 @@ Before running the smoke test, verify the execution environment provides GPU acc
 
 If the user explicitly requests a CPU-only validation (e.g., for testing pipeline logic without GPU), allow it but mark timing data as: "CPU-only — not valid for GPU wall-time estimation" in the validation report.
 
-### 7. End-to-End Smoke Test
+### 7. ML-Specific Validation (mandatory)
+
+- [ ] **Gradient check**: Run numerical gradient verification on 1 batch — relative error < 1e-5
+- [ ] **Numerical stability**: Test with edge-case inputs (all zeros, very large values, empty sequences) — no NaN/Inf
+- [ ] **Fair baseline enforcement**: Verify all conditions use same hyperparameter budget, same data splits, same preprocessing
+- [ ] **Minimum test count**: At least 10 unit tests covering: data loading, model forward pass, metric computation, freezing/modification logic, training step
+- [ ] **Single-step training test**: Initialize Trainer with ALL arguments, run 1 forward + 1 backward pass, run 1 eval step — must complete without error
+- [ ] **Determinism check**: Run 2 training steps with same seed — outputs must be identical
+
+### 8. End-to-End Smoke Test
 
 Run the complete pipeline on a single configuration:
 
