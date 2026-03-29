@@ -71,6 +71,16 @@ The following faithfulness metrics are part of the known metric catalog and must
 - **Sufficiency**: Measures model confidence when only the rationale is provided as input. Higher confidence = rationale is sufficient to reproduce the prediction.
 - **AOPC (Area Over the Perturbation Curve)**: Aggregates comprehensiveness over incremental token removals, providing a curve-level faithfulness score.
 
+## COMPLETION CRITERIA
+
+This step is NOT complete until:
+1. Each metric function has been called with dummy data
+2. The output format is correct (dict with expected keys)
+3. Edge cases handled (empty predictions, all-same labels)
+4. Output: print `Metrics validated: [list of metric names]`
+
+Do NOT mark this step complete by just saying "code exists in src/evaluation.py". You must execute the code and verify output.
+
 ## Integration
 
 - **Primary skill**: `measurement-implementation`

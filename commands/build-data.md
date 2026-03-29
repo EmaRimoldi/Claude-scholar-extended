@@ -40,6 +40,16 @@ Activates the `experiment-data-builder` skill to produce data generators (synthe
 3. Write: src/data_module/dataset/{task}.py + run/conf/dataset/{task}.yaml per dataset
 4. Run data validation checks
 
+## COMPLETION CRITERIA
+
+This step is NOT complete until:
+1. The dataset loading code has been RUN (not just written)
+2. At least one example has been loaded, tokenized, and printed
+3. Train/val/test splits are confirmed to exist with expected sizes
+4. Output: print `Dataset validated: N_train train, N_val val, N_test test examples`
+
+Do NOT mark this step complete by just saying "code exists in src/data.py". You must execute the code and verify output.
+
 ## Integration
 
 - **Primary skill**: `experiment-data-builder`

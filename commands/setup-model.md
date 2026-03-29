@@ -40,6 +40,16 @@ Activates the `model-setup` skill to load models, discover architecture, attach 
 3. Write: model loading code, hook infrastructure, ablation utilities in src/model_module/
 4. Generate model-architecture.json for each model
 
+## COMPLETION CRITERIA
+
+This step is NOT complete until:
+1. The model has been loaded from cache (no download needed)
+2. A forward pass on 1 batch succeeds (even on CPU)
+3. The freezing/modification logic has been tested on the loaded model
+4. Output: print `Model validated: N params total, M trainable with strategy X`
+
+Do NOT mark this step complete by just saying "code exists in src/model.py". You must execute the code and verify output.
+
 ## Integration
 
 - **Primary skill**: `model-setup`
