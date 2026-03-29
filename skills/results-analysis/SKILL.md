@@ -105,6 +105,19 @@ Minimum expectation for a non-trivial analysis bundle:
 - **one supporting figure** (training dynamics / ablation / breakdown / error analysis),
 - **one exact numeric summary table** in markdown.
 
+### Figure Type Checklist
+
+Consider these visualization types for comprehensive results presentation:
+1. Bar charts with error bars (primary comparisons)
+2. Violin/box plots (distribution shape)
+3. Heatmaps (pairwise comparisons, confusion matrices, layer-wise results)
+4. Line plots (training curves, sensitivity analysis, scaling behavior)
+5. Scatter plots (correlation between metrics, Pareto frontiers)
+6. Confusion matrices (classification tasks)
+7. Domain-specific visualizations (attention maps, feature importance, layer activations)
+
+Use at least 3 different types. Do not default to bar charts for everything.
+
 Every main figure must define:
 - figure purpose,
 - plotted variables,
@@ -116,7 +129,11 @@ See:
 - `references/visualization-best-practices.md`
 - `references/figure-interpretation.md`
 
-### 5. Write analysis artifacts
+### 5. Mandatory: Hyperparameter Sensitivity Analysis
+
+For the primary experimental condition, report how results change when varying the top 2-3 hyperparameters (e.g., learning rate, regularization strength, key method parameter). Present as a table or line plot showing metric vs hyperparameter value. This is a standard reviewer request — include it proactively.
+
+### 6. Write analysis artifacts
 
 #### `analysis-report.md`
 Summarize:

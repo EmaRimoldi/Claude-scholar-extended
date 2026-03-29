@@ -20,6 +20,17 @@ Transform vague research ideas into structured, testable hypotheses:
 - **Null hypothesis (H0)**: Explicitly stated for each testable hypothesis
 - **Falsifiability check**: Every hypothesis must have a concrete way to be disproven
 
+### Minimum Count & Scoring Format
+
+Generate minimum 5 hypotheses per invocation. If fewer than 5 novel hypotheses can be identified, state why and document what was considered and rejected.
+
+Score each hypothesis on 5 dimensions with mandatory justification:
+- Novelty: [X/5] — [one sentence explaining this score]
+- Feasibility: [X/5] — [one sentence explaining this score]
+- Impact: [X/5] — [one sentence explaining this score]
+- Testability: [X/5] — [one sentence explaining this score]
+- Specificity: [X/5] — [one sentence explaining this score]
+
 ### 2. Success/Failure Criteria
 
 Define quantitative thresholds for each hypothesis:
@@ -29,7 +40,13 @@ Define quantitative thresholds for each hypothesis:
 - **Ambiguous zone**: What constitutes an inconclusive result?
 - **Metric selection**: Primary metric with justification, secondary metrics
 
-### 3. Risk Assessment & Fallback Strategy
+### 3. Competing Explanations
+
+For each hypothesis, document:
+
+**Competing explanations**: List known alternative hypotheses or explanations from the literature that could account for the same observations. Note which papers propose them. This surfaces known controversies and alternative interpretations early.
+
+### 4. Risk Assessment & Fallback Strategy
 
 For each primary hypothesis:
 
@@ -55,6 +72,13 @@ For each primary hypothesis:
 When running in Mode B, state: "No research-proposal.md or novelty-assessment.md found. Formulating hypotheses from user-provided description."
 
 ## Outputs
+
+### Output Files
+
+1. `$PROJECT_DIR/docs/hypotheses.md` — Full hypothesis log with all details
+2. `$PROJECT_DIR/docs/ranked-hypotheses.md` — Top-5 hypotheses ranked by combined score (Novelty + Feasibility + Impact + Testability + Specificity), with one-line summary each. This serves as a quick reference for experiment prioritization.
+
+### hypotheses.md content
 
 - `hypotheses.md` containing:
   - Primary hypothesis (H1) with: prediction, expected effect size, metric, comparison baseline, success threshold
