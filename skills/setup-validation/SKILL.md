@@ -113,7 +113,7 @@ When running in Mode B, state: "Running validation against existing project. Che
 ## Outputs
 
 - `validation-report.md` containing:
-  - Pass/fail status for each check (7 categories, ~23 individual checks)
+  - Pass/fail status for each check (8 categories, ~29 individual checks)
   - For failures: error message, expected vs. observed, suggested fix
   - Smoke test timing (used by `compute-planner` for per-run estimates)
   - Overall verdict: READY / NOT READY with blocking issues listed
@@ -167,7 +167,7 @@ measurement-implementation┘
 
 ### Key Configuration
 
-- **Checks**: 7 categories, ~23 individual checks
+- **Checks**: 8 categories, ~29 individual checks
 - **Baseline tolerance**: configurable per metric (default ±1% for accuracy, ±0.05 for similarity)
 - **Smoke test**: always runs 1 full configuration as the final check
 - **Output format**: Markdown checklist for human review

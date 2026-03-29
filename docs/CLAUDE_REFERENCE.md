@@ -198,7 +198,7 @@
 
 ---
 
-## Agents (16 Agents)
+## Agents (17 Agents)
 
 ### Research Workflow Agents
 
