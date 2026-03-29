@@ -18,6 +18,29 @@ tags: [Research, Literature Review, Zotero, Paper Search]
 
 # /research-init - Zotero-Integrated Research Startup Workflow
 
+## MANDATORY: Online Literature Search
+
+You MUST use WebSearch and WebFetch tools for literature review. These tools are ALWAYS available in Claude Code sessions. Do NOT claim you are "offline" or skip online search.
+
+Required searches (minimum):
+1. Search for 5+ queries related to the research question using WebSearch
+2. Fetch and read at least 3 full papers or abstracts via WebFetch (arXiv, Semantic Scholar)
+3. Cite REAL papers with real titles, authors, years, and venues
+4. Do NOT write literature reviews purely from training knowledge
+
+If WebSearch genuinely fails (network error), log the error and note which searches failed, but attempt ALL searches before falling back to training knowledge.
+
+Output: $PROJECT_DIR/docs/literature-review.md with real citations from web search results.
+
+## Verification
+
+At the end of /research-init, report:
+- Number of WebSearch calls made: N (minimum: 5)
+- Number of papers found with real citations: M (minimum: 5)
+- Number of WebFetch calls for full paper reading: P (minimum: 2)
+
+If N < 5, the step is NOT complete. Go back and search more.
+
 ## Project Directory
 
 All output files for this step MUST be written inside the active project directory (stored in `pipeline-state.json` → `project_dir`). Read `pipeline-state.json` to resolve `$PROJECT_DIR` before writing any files.

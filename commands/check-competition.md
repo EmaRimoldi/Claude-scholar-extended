@@ -10,6 +10,15 @@ tags: [Research, Competitive Analysis]
 
 # Check Competition Command
 
+## MANDATORY: Online Competitive Check
+
+You MUST use WebSearch to check for competing/recent work. Search for:
+1. The exact research question or close variants
+2. Key method names + "2024 2025 2026"
+3. Related workshop papers, preprints, blog posts
+
+Do NOT skip this step. Do NOT claim offline. If no competing work is found after genuine search, state that explicitly with the queries you tried.
+
 Generate structured search queries to check if competing work has been published.
 
 ## Goal
