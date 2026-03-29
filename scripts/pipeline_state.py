@@ -96,6 +96,13 @@ PIPELINE_STEPS = [
         False,
     ),
     (
+        "download-data",
+        "/download-data",
+        "Download datasets and models to local cache",
+        ["docs/experiment-plan.md"],
+        True,
+    ),
+    (
         "plan-compute",
         "/plan-compute",
         "GPU estimation and SLURM script generation",

@@ -69,17 +69,18 @@ Execute the following steps **in this exact order**. This is the canonical seque
 | 6 | setup-model | `/setup-model` | Load and configure models | experiment-plan.md | No |
 | 7 | implement-metrics | `/implement-metrics` | Metrics and statistical tests | experiment-plan.md | No |
 | 8 | validate-setup | `/validate-setup` | Pre-flight validation checklist | — | No |
-| 9 | plan-compute | `/plan-compute` | GPU estimation, SLURM scripts | experiment-plan.md | No |
-| 10 | run-experiment | `/run-experiment` | Submit experiment matrix | — | No |
-| 11 | collect-results | `/collect-results` | Aggregate outputs into tables | — | No |
-| 12 | analyze-results | `/analyze-results` | Statistical analysis, figures | — | No |
-| 13 | map-claims | `/map-claims` | Claims to evidence mapping | — | No |
-| 14 | position | `/position` | Contribution positioning | — | No |
-| 15 | story | `/story` | Narrative arc, paper blueprint | — | No |
-| 16 | produce-manuscript | `/produce-manuscript` | Figures, prose, LaTeX, package | — | No |
-| 17 | quality-review | `/quality-review` | Quality gate: claims, stats, baselines | — | No |
-| 18 | compile-manuscript | `/compile-manuscript` | Compile LaTeX to PDF, Overleaf ZIP | — | No |
-| 19 | rebuttal | `/rebuttal` | Reviewer response document | — | No |
+| 9 | download-data | `/download-data` | Download datasets and models to local cache | experiment-plan.md | Yes |
+| 10 | plan-compute | `/plan-compute` | GPU estimation, SLURM scripts | experiment-plan.md | No |
+| 11 | run-experiment | `/run-experiment` | Submit experiment matrix | — | No |
+| 12 | collect-results | `/collect-results` | Aggregate outputs into tables | — | No |
+| 13 | analyze-results | `/analyze-results` | Statistical analysis, figures | — | No |
+| 14 | map-claims | `/map-claims` | Claims to evidence mapping | — | No |
+| 15 | position | `/position` | Contribution positioning | — | No |
+| 16 | story | `/story` | Narrative arc, paper blueprint | — | No |
+| 17 | produce-manuscript | `/produce-manuscript` | Figures, prose, LaTeX, package | — | No |
+| 18 | quality-review | `/quality-review` | Quality gate: claims, stats, baselines | — | No |
+| 19 | compile-manuscript | `/compile-manuscript` | Compile LaTeX to PDF, Overleaf ZIP | — | No |
+| 20 | rebuttal | `/rebuttal` | Reviewer response document | — | No |
 
 ## Execution Loop
 
@@ -110,7 +111,7 @@ If mode is **interactive** (not `--auto`), display:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Step N/19: <command>
+  Step N/20: <command>
   <description>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
@@ -159,7 +160,7 @@ Use the AskUserQuestion tool for this confirmation.
 After each step completes, display a brief status line:
 
 ```
-[OK] Step N/19: <command> — completed
+[OK] Step N/20: <command> — completed
      Next: <next_command> — <next_description>
 ```
 
