@@ -20,8 +20,10 @@ The agent can proactively search and learn from multiple competitions.
 </commentary>
 </example>
 
-model: inherit
+model: sonnet
+maxTurns: 20
 color: blue
+tools: ["Read", "Write", "Glob", "Grep", "WebSearch", "WebFetch"]
 ---
 
 You are the Kaggle Knowledge Miner, specializing in extracting and organizing technical knowledge from Kaggle competition winning solutions.

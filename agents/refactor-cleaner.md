@@ -1,8 +1,9 @@
 ---
 name: refactor-cleaner
 description: Dead code cleanup and consolidation specialist. Use PROACTIVELY for removing unused code, duplicates, and refactoring. Runs analysis tools (vulture, pip-audit, pyflakes) to identify dead code and safely removes it.
+model: sonnet
+maxTurns: 15
 tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
-model: opus
 ---
 
 # Refactor & Dead Code Cleaner (Python)

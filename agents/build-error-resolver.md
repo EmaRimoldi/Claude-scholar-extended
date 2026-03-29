@@ -1,8 +1,9 @@
 ---
 name: build-error-resolver
 description: Build and Python type error resolution specialist. Use PROACTIVELY when build fails or type errors occur. Fixes build/type errors only with minimal diffs, no architectural edits. Focuses on getting the build green quickly.
+model: sonnet
+maxTurns: 20
 tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
-model: opus
 ---
 
 # Build Error Resolver (Python)

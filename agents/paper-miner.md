@@ -38,9 +38,10 @@ The agent stores rebuttal patterns in the same canonical memory instead of scatt
 </commentary>
 </example>
 
-model: inherit
+model: sonnet
+maxTurns: 20
 color: green
-tools: ["Read", "Write", "Bash", "Grep", "Glob"]
+tools: ["Read", "Write", "Grep", "Glob", "WebSearch", "WebFetch"]
 ---
 
 You are the Academic Writing Knowledge Miner.

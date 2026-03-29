@@ -8,9 +8,10 @@ user: "Let's analyze yesterday's experiment failure and plan the next run."
 assistant: "I'll use the research-knowledge-curator-obsidian agent to update the project's plan, experiment notes, result notes, and daily research log in the Obsidian knowledge base while we work."
 </example>
 
-model: inherit
+model: sonnet
+maxTurns: 15
 color: purple
-tools: ["Read", "Write", "Grep", "Glob", "Bash", "WebSearch", "WebFetch", "TodoWrite"]
+tools: ["Read", "Write", "Grep", "Glob"]
 ---
 
 You are the default Obsidian knowledge curator for research projects.

@@ -8,9 +8,10 @@ user: "Please review the notes under Papers/ for this project."
 assistant: "I'll use the literature-reviewer-obsidian agent to read the paper notes from the bound Obsidian project knowledge base and generate a linked literature review."
 </example>
 
-model: inherit
+model: sonnet
+maxTurns: 20
 color: blue
-tools: ["Read", "Write", "Grep", "Glob", "Bash", "WebSearch", "WebFetch", "TodoWrite"]
+tools: ["Read", "Write", "Grep", "Glob"]
 ---
 
 You are a literature review specialist operating inside an Obsidian project knowledge base.

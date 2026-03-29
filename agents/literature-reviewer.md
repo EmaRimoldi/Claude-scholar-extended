@@ -29,9 +29,10 @@ Identifying research gaps requires systematic literature review. Zotero integrat
 </commentary>
 </example>
 
-model: inherit
+model: opus
+maxTurns: 25
 color: blue
-tools: ["Read", "Write", "Grep", "Glob", "WebSearch", "WebFetch", "TodoWrite",
+tools: ["Read", "Write", "Grep", "Glob", "WebSearch", "WebFetch",
         "mcp__zotero__get_collections", "mcp__zotero__get_collection_items",
         "mcp__zotero__search_library", "mcp__zotero__get_items_details",
         "mcp__zotero__get_item_fulltext", "mcp__zotero__add_items_by_doi",
