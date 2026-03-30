@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1520" width="1000" height="1520" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 2160" width="1200" height="2160" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#555"/>
@@ -9,6 +9,9 @@
     </marker>
     <marker id="arrow-green" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a4"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a86c8"/>
     </marker>
     <linearGradient id="phase1-bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#e8f0fe"/>
@@ -26,255 +29,384 @@
       <stop offset="0%" stop-color="#f3e5f5"/>
       <stop offset="100%" stop-color="#e1bee7"/>
     </linearGradient>
-    <linearGradient id="phase5-bg" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="phase5a-bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#fff3e0"/>
       <stop offset="100%" stop-color="#ffe0b2"/>
+    </linearGradient>
+    <linearGradient id="phase5b-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fef9e0"/>
+      <stop offset="100%" stop-color="#fdecc8"/>
     </linearGradient>
     <linearGradient id="phase6-bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#fce4ec"/>
       <stop offset="100%" stop-color="#f8bbd0"/>
     </linearGradient>
+    <linearGradient id="gate-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff0f0"/>
+      <stop offset="100%" stop-color="#ffe0e0"/>
+    </linearGradient>
   </defs>
 
   <!-- Title -->
-  <text x="500" y="35" text-anchor="middle" font-size="22" font-weight="bold" fill="#222">Claude Scholar Research Pipeline</text>
-  <text x="500" y="58" text-anchor="middle" font-size="13" fill="#666">20-step orchestrator with project directory isolation (v2)</text>
+  <text x="600" y="34" text-anchor="middle" font-size="22" font-weight="bold" fill="#222">Claude Scholar Research Pipeline</text>
+  <text x="600" y="57" text-anchor="middle" font-size="13" fill="#666">38-step orchestrator · 4 novelty gates · 6 feedback loops · epistemic infrastructure (v3)</text>
 
   <!-- Project Init Box -->
-  <rect x="300" y="75" width="400" height="50" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
-  <text x="500" y="96" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">/new-project &lt;topic&gt;</text>
-  <text x="500" y="113" text-anchor="middle" font-size="11" fill="#666">Creates projects/&lt;slug&gt;/ + pipeline-state.json (project_dir)</text>
-  <line x1="500" y1="125" x2="500" y2="145" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="350" y="70" width="500" height="50" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="600" y="91" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">/new-project &lt;topic&gt;</text>
+  <text x="600" y="108" text-anchor="middle" font-size="11" fill="#666">Creates projects/&lt;slug&gt;/ + pipeline-state.json + .epistemic/ infrastructure</text>
+  <line x1="600" y1="120" x2="600" y2="140" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <!-- ============ PHASE 1: Research Ideation ============ -->
-  <rect x="40" y="150" width="920" height="195" rx="12" fill="url(#phase1-bg)" stroke="#4a86c8" stroke-width="1.5"/>
-  <text x="60" y="175" font-size="14" font-weight="bold" fill="#2a5db0">Phase 1: Research Ideation</text>
-  <text x="940" y="175" text-anchor="end" font-size="11" fill="#5a8ac0">Day 1-3 | Online steps</text>
+  <!-- ============ PHASE 1: Research & Novelty Assessment ============ -->
+  <rect x="40" y="145" width="1120" height="355" rx="12" fill="url(#phase1-bg)" stroke="#4a86c8" stroke-width="1.5"/>
+  <text x="60" y="170" font-size="14" font-weight="bold" fill="#2a5db0">Phase 1: Research &amp; Novelty Assessment</text>
+  <text x="1150" y="170" text-anchor="end" font-size="11" fill="#5a8ac0">Day 1–5 · 8 steps · 4 search passes</text>
 
-  <!-- Step 1 -->
-  <rect x="70" y="190" width="260" height="55" rx="6" fill="#fff" stroke="#4a86c8" stroke-width="1"/>
-  <text x="80" y="210" font-size="12" font-weight="bold" fill="#2a5db0">1. /research-init</text>
-  <text x="80" y="226" font-size="10" fill="#555">Literature review, gap analysis, hypotheses</text>
-  <text x="80" y="238" font-size="9" fill="#888">Output: $PROJECT_DIR/docs/literature-review.md</text>
+  <!-- Row 1: Steps 1-3 -->
+  <rect x="65" y="180" width="330" height="58" rx="6" fill="#fff" stroke="#4a86c8" stroke-width="1"/>
+  <text x="75" y="200" font-size="11" font-weight="bold" fill="#2a5db0">1. /research-landscape (Pass 1)</text>
+  <text x="75" y="215" font-size="10" fill="#555">Broad mapping · 50–100 papers · cluster analysis</text>
+  <text x="75" y="228" font-size="9" fill="#888">Init citation_ledger.json + evidence_registry.json</text>
 
-  <!-- Step 2 -->
-  <rect x="370" y="190" width="260" height="55" rx="6" fill="#fff" stroke="#4a86c8" stroke-width="1"/>
-  <text x="380" y="210" font-size="12" font-weight="bold" fill="#2a5db0">2. /check-competition</text>
-  <text x="380" y="226" font-size="10" fill="#555">Competitive landscape check</text>
-  <text x="380" y="238" font-size="9" fill="#888">Requires: online access</text>
+  <rect x="415" y="180" width="330" height="58" rx="6" fill="#fff" stroke="#4a86c8" stroke-width="1"/>
+  <text x="425" y="200" font-size="11" font-weight="bold" fill="#2a5db0">2. /check-competition (Pass 4)</text>
+  <text x="425" y="215" font-size="10" fill="#555">Cross-field search · competitive landscape</text>
+  <text x="425" y="228" font-size="9" fill="#888">Prereq: research-landscape.md</text>
 
-  <!-- Novelty/Hypothesis block -->
-  <rect x="670" y="190" width="260" height="55" rx="6" fill="#fff" stroke="#4a86c8" stroke-width="1"/>
-  <text x="680" y="210" font-size="12" font-weight="bold" fill="#2a5db0">Novelty + Hypotheses</text>
-  <text x="680" y="226" font-size="10" fill="#555">novelty-assessment, hypothesis-formulation</text>
-  <text x="680" y="238" font-size="9" fill="#888">Output: $PROJECT_DIR/docs/hypotheses.md</text>
+  <rect x="765" y="180" width="350" height="58" rx="6" fill="#fff" stroke="#4a86c8" stroke-width="1"/>
+  <text x="775" y="200" font-size="11" font-weight="bold" fill="#2a5db0">3. /research-init · hypotheses</text>
+  <text x="775" y="215" font-size="10" fill="#555">hypothesis-generator agent (opus)</text>
+  <text x="775" y="228" font-size="9" fill="#888">Output: docs/hypotheses.md</text>
 
-  <!-- Arrows between phase 1 steps -->
-  <line x1="330" y1="217" x2="368" y2="217" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
-  <line x1="630" y1="217" x2="668" y2="217" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="395" y1="209" x2="413" y2="209" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="745" y1="209" x2="763" y2="209" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
 
-  <!-- Decision diamond -->
-  <polygon points="500,260 540,280 500,300 460,280" fill="#fff" stroke="#c44" stroke-width="1.5"/>
-  <text x="500" y="284" text-anchor="middle" font-size="9" font-weight="bold" fill="#c44">Novel?</text>
-  <text x="555" y="275" font-size="9" fill="#4a4">Yes</text>
-  <text x="445" y="275" font-size="9" fill="#c44">No: iterate</text>
+  <!-- Row 2: Steps 4-6 -->
+  <rect x="65" y="250" width="330" height="58" rx="6" fill="#fff" stroke="#4a86c8" stroke-width="1"/>
+  <text x="75" y="270" font-size="11" font-weight="bold" fill="#2a5db0">4. /claim-search (Pass 2)</text>
+  <text x="75" y="285" font-size="10" fill="#555">7-component decomposition · per-claim search</text>
+  <text x="75" y="298" font-size="9" fill="#888">Output: claim-overlap-report.md</text>
 
-  <line x1="500" y1="300" x2="500" y2="355" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="415" y="250" width="330" height="58" rx="6" fill="#fff" stroke="#4a86c8" stroke-width="1"/>
+  <text x="425" y="270" font-size="11" font-weight="bold" fill="#2a5db0">5. /citation-traversal (Pass 3)</text>
+  <text x="425" y="285" font-size="10" fill="#555">Fwd/back citation graph · Semantic Scholar API</text>
+  <text x="425" y="298" font-size="9" fill="#888">Cache: .cache/citation_graphs/</text>
+
+  <rect x="765" y="250" width="350" height="58" rx="6" fill="#fff" stroke="#4a86c8" stroke-width="1"/>
+  <text x="775" y="270" font-size="11" font-weight="bold" fill="#2a5db0">6. /adversarial-search (Pass 6)</text>
+  <text x="775" y="285" font-size="10" fill="#555">5 attack types · attempts to kill novelty claim</text>
+  <text x="775" y="298" font-size="9" fill="#888">Output: adversarial-novelty-report.md</text>
+
+  <line x1="395" y1="279" x2="413" y2="279" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="745" y1="279" x2="763" y2="279" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- Row 3: N1 Gate diamond + recency sweep -->
+  <!-- Recency sweep box (right, aligned with diamond area) -->
+  <rect x="765" y="322" width="350" height="55" rx="6" fill="#fff" stroke="#4a86c8" stroke-width="1"/>
+  <text x="775" y="341" font-size="11" font-weight="bold" fill="#2a5db0">8. /recency-sweep sweep_id=1 (Pass 5)</text>
+  <text x="775" y="356" font-size="10" fill="#555">Concurrent work · arXiv, OpenReview, lab blogs</text>
+  <text x="775" y="369" font-size="9" fill="#888">Output: concurrent-work-report.md</text>
+
+  <!-- N1 Gate diamond -->
+  <polygon points="390,365 430,350 470,365 430,380" fill="url(#gate-bg)" stroke="#c44" stroke-width="2"/>
+  <text x="430" y="369" text-anchor="middle" font-size="10" font-weight="bold" fill="#c44">N1</text>
+
+  <!-- Gate label box -->
+  <rect x="65" y="320" width="300" height="72" rx="6" fill="url(#gate-bg)" stroke="#c44" stroke-width="1.5"/>
+  <text x="75" y="340" font-size="11" font-weight="bold" fill="#c44">7. /novelty-gate gate=N1  ◆ GATE</text>
+  <text x="75" y="356" font-size="10" fill="#555">7-dimension novelty evaluation (opus)</text>
+  <text x="75" y="370" font-size="10" fill="#4a4">PROCEED → Phase 2</text>
+  <text x="75" y="383" font-size="10" fill="#c44">REPOSITION→Step 3 (×2) · PIVOT→Step 1 (×1) · KILL</text>
+
+  <!-- Feedback loop arrows for N1 -->
+  <path d="M 40,356 L 20,356 L 20,279 L 63,279" stroke="#c44" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrow-red)"/>
+  <text x="14" y="318" font-size="9" fill="#c44" transform="rotate(-90, 14, 318)">REPOSITION</text>
+
+  <!-- Down arrow from Phase 1 -->
+  <line x1="600" y1="500" x2="600" y2="520" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
   <!-- ============ PHASE 2: Experiment Design ============ -->
-  <rect x="40" y="360" width="920" height="100" rx="12" fill="url(#phase2-bg)" stroke="#c08030" stroke-width="1.5"/>
-  <text x="60" y="385" font-size="14" font-weight="bold" fill="#8b5e14">Phase 2: Experiment Design</text>
-  <text x="940" y="385" text-anchor="end" font-size="11" fill="#b08030">Day 3-4</text>
+  <rect x="40" y="525" width="1120" height="115" rx="12" fill="url(#phase2-bg)" stroke="#c08030" stroke-width="1.5"/>
+  <text x="60" y="550" font-size="14" font-weight="bold" fill="#8b5e14">Phase 2: Experiment Design</text>
+  <text x="1150" y="550" text-anchor="end" font-size="11" fill="#b08030">Day 5–6 · Steps 9–10</text>
 
-  <!-- Step 3 -->
-  <rect x="70" y="400" width="860" height="45" rx="6" fill="#fff" stroke="#c08030" stroke-width="1"/>
-  <text x="80" y="420" font-size="12" font-weight="bold" fill="#8b5e14">3. /design-experiments</text>
-  <text x="310" y="420" font-size="10" fill="#555">Baselines, ablations, sample size, resource estimation, success criteria</text>
-  <text x="80" y="435" font-size="9" fill="#888">Prereq: docs/hypotheses.md | Output: $PROJECT_DIR/docs/experiment-plan.md, $PROJECT_DIR/experiment-state.json</text>
+  <rect x="65" y="563" width="530" height="58" rx="6" fill="#fff" stroke="#c08030" stroke-width="1"/>
+  <text x="75" y="583" font-size="12" font-weight="bold" fill="#8b5e14">9. /design-experiments</text>
+  <text x="75" y="598" font-size="10" fill="#555">Baselines · ablations · power analysis · resource estimation</text>
+  <text x="75" y="611" font-size="9" fill="#888">Output: experiment-plan.md · experiment-state.json</text>
 
-  <line x1="500" y1="460" x2="500" y2="480" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="615" y="563" width="500" height="58" rx="6" fill="url(#gate-bg)" stroke="#c44" stroke-width="1.5"/>
+  <text x="625" y="583" font-size="11" font-weight="bold" fill="#c44">10. /design-novelty-check  ◆ GATE N2</text>
+  <text x="625" y="598" font-size="10" fill="#555">Novelty dimensions covered · baselines complete · metrics aligned</text>
+  <text x="625" y="611" font-size="9" fill="#c44">BLOCK → loop back to Step 9 (max 2 iterations)</text>
+
+  <line x1="595" y1="592" x2="613" y2="592" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="600" y1="640" x2="600" y2="660" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
   <!-- ============ PHASE 3: Implementation ============ -->
-  <rect x="40" y="485" width="920" height="195" rx="12" fill="url(#phase3-bg)" stroke="#3a8a3a" stroke-width="1.5"/>
-  <text x="60" y="510" font-size="14" font-weight="bold" fill="#2a6a2a">Phase 3: Implementation</text>
-  <text x="940" y="510" text-anchor="end" font-size="11" fill="#4a8a4a">Day 4-7</text>
+  <rect x="40" y="665" width="1120" height="185" rx="12" fill="url(#phase3-bg)" stroke="#3a8a3a" stroke-width="1.5"/>
+  <text x="60" y="690" font-size="14" font-weight="bold" fill="#2a6a2a">Phase 3: Implementation</text>
+  <text x="1150" y="690" text-anchor="end" font-size="11" fill="#4a8a4a">Day 6–10 · Steps 11–15</text>
 
-  <!-- Step 4 -->
-  <rect x="70" y="525" width="200" height="45" rx="6" fill="#fff" stroke="#3a8a3a" stroke-width="1"/>
-  <text x="80" y="543" font-size="12" font-weight="bold" fill="#2a6a2a">4. /scaffold</text>
-  <text x="80" y="558" font-size="10" fill="#555">pyproject.toml, src/, configs/</text>
+  <rect x="65" y="703" width="240" height="50" rx="6" fill="#fff" stroke="#3a8a3a" stroke-width="1"/>
+  <text x="75" y="722" font-size="11" font-weight="bold" fill="#2a6a2a">11. /scaffold</text>
+  <text x="75" y="737" font-size="10" fill="#555">pyproject.toml · src/ · configs/</text>
 
-  <!-- Step 5 -->
-  <rect x="290" y="525" width="200" height="45" rx="6" fill="#fff" stroke="#3a8a3a" stroke-width="1"/>
-  <text x="300" y="543" font-size="12" font-weight="bold" fill="#2a6a2a">5. /build-data</text>
-  <text x="300" y="558" font-size="10" fill="#555">Dataset generators/loaders</text>
+  <rect x="325" y="703" width="240" height="50" rx="6" fill="#fff" stroke="#3a8a3a" stroke-width="1"/>
+  <text x="335" y="722" font-size="11" font-weight="bold" fill="#2a6a2a">12. /build-data</text>
+  <text x="335" y="737" font-size="10" fill="#555">Dataset generators/loaders</text>
 
-  <!-- Step 6 -->
-  <rect x="510" y="525" width="200" height="45" rx="6" fill="#fff" stroke="#3a8a3a" stroke-width="1"/>
-  <text x="520" y="543" font-size="12" font-weight="bold" fill="#2a6a2a">6. /setup-model</text>
-  <text x="520" y="558" font-size="10" fill="#555">Model load, hooks, surgery</text>
+  <rect x="585" y="703" width="240" height="50" rx="6" fill="#fff" stroke="#3a8a3a" stroke-width="1"/>
+  <text x="595" y="722" font-size="11" font-weight="bold" fill="#2a6a2a">13. /setup-model</text>
+  <text x="595" y="737" font-size="10" fill="#555">Model load · hooks · surgery</text>
 
-  <!-- Step 7 -->
-  <rect x="730" y="525" width="200" height="45" rx="6" fill="#fff" stroke="#3a8a3a" stroke-width="1"/>
-  <text x="740" y="543" font-size="12" font-weight="bold" fill="#2a6a2a">7. /implement-metrics</text>
-  <text x="740" y="558" font-size="10" fill="#555">Metrics, statistical tests</text>
+  <rect x="845" y="703" width="270" height="50" rx="6" fill="#fff" stroke="#3a8a3a" stroke-width="1"/>
+  <text x="855" y="722" font-size="11" font-weight="bold" fill="#2a6a2a">14. /implement-metrics</text>
+  <text x="855" y="737" font-size="10" fill="#555">Metrics · statistical tests</text>
 
-  <!-- Arrows -->
-  <line x1="270" y1="547" x2="288" y2="547" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
-  <line x1="490" y1="547" x2="508" y2="547" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
-  <line x1="710" y1="547" x2="728" y2="547" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="305" y1="728" x2="323" y2="728" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="565" y1="728" x2="583" y2="728" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="825" y1="728" x2="843" y2="728" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
 
-  <!-- Step 8 -->
-  <rect x="70" y="585" width="860" height="45" rx="6" fill="#fff" stroke="#3a8a3a" stroke-width="1"/>
-  <text x="80" y="603" font-size="12" font-weight="bold" fill="#2a6a2a">8. /validate-setup</text>
-  <text x="260" y="603" font-size="10" fill="#555">Pre-flight: data integrity, model loading, metric correctness, ablation sanity, smoke test</text>
-  <text x="80" y="618" font-size="9" fill="#888">Output: $PROJECT_DIR/docs/validation-report.md | GATE: all checks must pass before sweep</text>
+  <rect x="65" y="765" width="1050" height="65" rx="6" fill="#fff" stroke="#3a8a3a" stroke-width="1.5"/>
+  <text x="75" y="787" font-size="12" font-weight="bold" fill="#2a6a2a">15. /validate-setup  ◆ GATE (pre-flight)</text>
+  <text x="340" y="787" font-size="10" fill="#555">Data integrity · model loading · metric correctness · ablation sanity · smoke test</text>
+  <text x="75" y="803" font-size="9" fill="#888">Output: docs/validation-report.md | All checks must pass before proceeding to execution</text>
+  <text x="75" y="818" font-size="9" fill="#888">Prereq: experiment-plan.md</text>
 
-  <!-- Down arrow into step 8 -->
-  <path d="M 500,570 L 500,583" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
-  <line x1="500" y1="630" x2="500" y2="655" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M 600,753 L 600,763" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="600" y1="850" x2="600" y2="870" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
   <!-- ============ PHASE 4: Execution ============ -->
-  <rect x="40" y="660" width="920" height="175" rx="12" fill="url(#phase4-bg)" stroke="#7b3e9e" stroke-width="1.5"/>
-  <text x="60" y="685" font-size="14" font-weight="bold" fill="#5a2d7a">Phase 4: Execution</text>
-  <text x="940" y="685" text-anchor="end" font-size="11" fill="#8a5aaa">Day 7-14+ | SLURM cluster</text>
+  <rect x="40" y="875" width="1120" height="125" rx="12" fill="url(#phase4-bg)" stroke="#7b3e9e" stroke-width="1.5"/>
+  <text x="60" y="900" font-size="14" font-weight="bold" fill="#5a2d7a">Phase 4: Execution</text>
+  <text x="1150" y="900" text-anchor="end" font-size="11" fill="#8a5aaa">Day 10–19 · Steps 16–19 · SLURM cluster</text>
 
-  <!-- Step 9 -->
-  <rect x="70" y="700" width="200" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
-  <text x="80" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">9. /download-data</text>
-  <text x="80" y="733" font-size="10" fill="#555">Cache datasets + models</text>
+  <rect x="65" y="913" width="240" height="65" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
+  <text x="75" y="933" font-size="11" font-weight="bold" fill="#5a2d7a">16. /download-data</text>
+  <text x="75" y="948" font-size="10" fill="#555">Cache datasets + models</text>
+  <text x="75" y="963" font-size="9" fill="#888">Must complete before GPU jobs</text>
 
-  <!-- Step 10 -->
-  <rect x="290" y="700" width="200" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
-  <text x="300" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">10. /plan-compute</text>
-  <text x="300" y="733" font-size="10" fill="#555">GPU estimation, SLURM</text>
+  <rect x="325" y="913" width="240" height="65" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
+  <text x="335" y="933" font-size="11" font-weight="bold" fill="#5a2d7a">17. /plan-compute</text>
+  <text x="335" y="948" font-size="10" fill="#555">GPU estimation · SLURM scripts</text>
+  <text x="335" y="963" font-size="9" fill="#888">MIT Engaging partitions</text>
 
-  <!-- Step 11 -->
-  <rect x="510" y="700" width="200" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
-  <text x="520" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">11. /run-experiment</text>
-  <text x="520" y="733" font-size="10" fill="#555">Submit matrix, gates</text>
+  <rect x="585" y="913" width="240" height="65" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
+  <text x="595" y="933" font-size="11" font-weight="bold" fill="#5a2d7a">18. /run-experiment</text>
+  <text x="595" y="948" font-size="10" fill="#555">Submit matrix · phased gates</text>
+  <text x="595" y="963" font-size="9" fill="#888">experiment-state.json tracking</text>
 
-  <!-- Step 12 -->
-  <rect x="730" y="700" width="200" height="45" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
-  <text x="740" y="718" font-size="12" font-weight="bold" fill="#5a2d7a">12. /collect-results</text>
-  <text x="740" y="733" font-size="10" fill="#555">Aggregate to tables</text>
+  <rect x="845" y="913" width="270" height="65" rx="6" fill="#fff" stroke="#7b3e9e" stroke-width="1"/>
+  <text x="855" y="933" font-size="11" font-weight="bold" fill="#5a2d7a">19. /collect-results</text>
+  <text x="855" y="948" font-size="10" fill="#555">Aggregate outputs to tables</text>
+  <text x="855" y="963" font-size="9" fill="#888">make refresh</text>
 
-  <!-- Arrows -->
-  <line x1="270" y1="722" x2="288" y2="722" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
-  <line x1="490" y1="722" x2="508" y2="722" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
-  <line x1="710" y1="722" x2="728" y2="722" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="305" y1="945" x2="323" y2="945" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="565" y1="945" x2="583" y2="945" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="825" y1="945" x2="843" y2="945" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
 
-  <!-- Iteration loop -->
-  <rect x="670" y="760" width="260" height="55" rx="6" fill="#fff3f3" stroke="#c44" stroke-width="1.5" stroke-dasharray="5,3"/>
-  <text x="680" y="780" font-size="11" font-weight="bold" fill="#c44">Iteration Loop (on gate failure)</text>
-  <text x="680" y="795" font-size="9" fill="#888">failure-diagnosis -> hypothesis-revision</text>
-  <text x="680" y="807" font-size="9" fill="#888">PIVOT / PERSEVERE / ABANDON</text>
+  <line x1="600" y1="1000" x2="600" y2="1020" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <!-- Iteration arrow back to Phase 2 -->
-  <path d="M 930,787 L 960,787 L 960,430 L 940,430" stroke="#c44" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrow-red)"/>
-  <text x="965" y="600" font-size="9" fill="#c44" transform="rotate(-90, 965, 600)">iterate back</text>
+  <!-- ============ PHASE 5A: Analysis & Epistemic Grounding ============ -->
+  <rect x="40" y="1025" width="1120" height="235" rx="12" fill="url(#phase5a-bg)" stroke="#c07020" stroke-width="1.5"/>
+  <text x="60" y="1050" font-size="14" font-weight="bold" fill="#8b5014">Phase 5A: Analysis &amp; Epistemic Grounding</text>
+  <text x="1150" y="1050" text-anchor="end" font-size="11" fill="#c08030">Day 19–23 · Steps 20–25</text>
 
-  <line x1="500" y1="835" x2="500" y2="860" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <!-- Row 1 -->
+  <rect x="65" y="1063" width="530" height="55" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
+  <text x="75" y="1082" font-size="12" font-weight="bold" fill="#8b5014">20. /analyze-results</text>
+  <text x="75" y="1097" font-size="10" fill="#555">Statistical tests · confidence intervals · scientific figures · hypothesis outcomes</text>
+  <text x="75" y="1110" font-size="9" fill="#888">Output: analysis-report.md · hypothesis-outcomes.md · results/figures/</text>
 
-  <!-- ============ PHASE 5: Analysis & Writing ============ -->
-  <rect x="40" y="865" width="920" height="280" rx="12" fill="url(#phase5-bg)" stroke="#c07020" stroke-width="1.5"/>
-  <text x="60" y="890" font-size="14" font-weight="bold" fill="#8b5014">Phase 5: Analysis &amp; Writing</text>
-  <text x="940" y="890" text-anchor="end" font-size="11" fill="#c08030">Day 14-21</text>
+  <rect x="615" y="1063" width="500" height="55" rx="6" fill="#fff" stroke="#c08030" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="625" y="1082" font-size="11" font-weight="bold" fill="#8b5014">21. Gap Detection (inline)</text>
+  <text x="625" y="1097" font-size="10" fill="#555">Missing ablations or baselines detected?</text>
+  <text x="625" y="1110" font-size="9" fill="#c44">Critical gap → loop back to Step 9 (max 2 iterations)</text>
 
-  <!-- Step 13 -->
-  <rect x="70" y="905" width="860" height="40" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="80" y="923" font-size="12" font-weight="bold" fill="#8b5014">13. /analyze-results</text>
-  <text x="280" y="923" font-size="10" fill="#555">Statistical tests, confidence intervals, effect sizes, scientific figures</text>
-  <text x="80" y="937" font-size="9" fill="#888">Output: $PROJECT_DIR/docs/analysis-report.md, $PROJECT_DIR/results/figures/</text>
+  <!-- Row 2: N3 gate + recency-2 -->
+  <rect x="65" y="1130" width="530" height="58" rx="6" fill="url(#gate-bg)" stroke="#c44" stroke-width="1.5"/>
+  <text x="75" y="1151" font-size="11" font-weight="bold" fill="#c44">22. /novelty-gate gate=N3  ◆ GATE</text>
+  <text x="75" y="1166" font-size="10" fill="#555">Re-evaluate novelty given actual results · detect contribution shift</text>
+  <text x="75" y="1179" font-size="9" fill="#c44">Shift detected → re-run Passes 2+6 · KILL if criteria met</text>
 
-  <!-- Steps 13-15 row -->
-  <rect x="70" y="960" width="270" height="45" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="80" y="978" font-size="12" font-weight="bold" fill="#8b5014">14. /map-claims</text>
-  <text x="80" y="993" font-size="10" fill="#555">Claims to evidence mapping</text>
+  <rect x="615" y="1130" width="500" height="58" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
+  <text x="625" y="1151" font-size="11" font-weight="bold" fill="#8b5014">23. /recency-sweep sweep_id=2 (Pass 5)</text>
+  <text x="625" y="1166" font-size="10" fill="#555">Concurrent work during execution window</text>
+  <text x="625" y="1179" font-size="9" fill="#888">Delta from sweep-1 via watchlist caching</text>
 
-  <rect x="370" y="960" width="270" height="45" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="380" y="978" font-size="12" font-weight="bold" fill="#8b5014">15. /position</text>
-  <text x="380" y="993" font-size="10" fill="#555">Contribution vs. prior work</text>
+  <!-- Row 3 -->
+  <rect x="65" y="1200" width="530" height="45" rx="6" fill="#fff" stroke="#c07020" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="75" y="1219" font-size="11" font-weight="bold" fill="#8b5014">24. Literature re-scan (inline)</text>
+  <text x="75" y="1234" font-size="10" fill="#555">Results-contextualized rescan of prior work</text>
 
-  <rect x="670" y="960" width="260" height="45" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="680" y="978" font-size="12" font-weight="bold" fill="#8b5014">16. /story</text>
-  <text x="680" y="993" font-size="10" fill="#555">Narrative arc, paper blueprint</text>
+  <rect x="615" y="1200" width="500" height="45" rx="6" fill="#fff" stroke="#c07020" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="625" y="1219" font-size="11" font-weight="bold" fill="#8b5014">25. Method-code reconciliation (inline)</text>
+  <text x="625" y="1234" font-size="10" fill="#555">Hard block on method/implementation discrepancy</text>
 
-  <line x1="340" y1="982" x2="368" y2="982" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
-  <line x1="640" y1="982" x2="668" y2="982" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="600" y1="1260" x2="600" y2="1280" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <!-- Step 16 -->
-  <rect x="70" y="1020" width="860" height="40" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="80" y="1038" font-size="12" font-weight="bold" fill="#8b5014">17. /produce-manuscript</text>
-  <text x="310" y="1038" font-size="10" fill="#555">Publication-quality figures, full prose, LaTeX source, submission package</text>
-  <text x="80" y="1053" font-size="9" fill="#888">Output: $PROJECT_DIR/manuscript/main.tex, figures/</text>
+  <!-- Gap detection loop arrow -->
+  <path d="M 40,1090 L 20,1090 L 20,592 L 63,592" stroke="#c44" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrow-red)"/>
+  <text x="14" y="845" font-size="9" fill="#c44" transform="rotate(-90, 14, 845)">gap loop</text>
 
-  <!-- Step 17 -->
-  <rect x="70" y="1075" width="420" height="50" rx="6" fill="#fff" stroke="#c07020" stroke-width="1.5"/>
-  <text x="80" y="1093" font-size="12" font-weight="bold" fill="#c44">18. /quality-review</text>
-  <text x="80" y="1108" font-size="10" fill="#555">8-dimension review gate (BLOCKS if any critical dim &lt; 6/10)</text>
-  <text x="80" y="1120" font-size="9" fill="#888">GATE: all dims >= 5, critical dims >= 6</text>
+  <!-- ============ PHASE 5B: Claim Architecture & Writing Cycle ============ -->
+  <rect x="40" y="1285" width="1120" height="295" rx="12" fill="url(#phase5b-bg)" stroke="#c08020" stroke-width="1.5"/>
+  <text x="60" y="1310" font-size="14" font-weight="bold" fill="#8b5014">Phase 5B: Claim Architecture &amp; Writing Cycle</text>
+  <text x="1150" y="1310" text-anchor="end" font-size="11" fill="#c08020">Day 23–29 · Steps 26–34 · Revision cycle ×3</text>
 
-  <!-- Step 18 -->
-  <rect x="520" y="1075" width="410" height="50" rx="6" fill="#fff" stroke="#c07020" stroke-width="1"/>
-  <text x="530" y="1093" font-size="12" font-weight="bold" fill="#8b5014">19. /compile-manuscript</text>
-  <text x="530" y="1108" font-size="10" fill="#555">LaTeX -> PDF, Overleaf ZIP package</text>
-  <text x="530" y="1120" font-size="9" fill="#888">tectonic | pdflatex | xelatex</text>
+  <!-- Row 1: Steps 26-28 -->
+  <rect x="65" y="1323" width="330" height="55" rx="6" fill="#fff" stroke="#c08020" stroke-width="1"/>
+  <text x="75" y="1343" font-size="11" font-weight="bold" fill="#8b5014">26. /map-claims</text>
+  <text x="75" y="1358" font-size="10" fill="#555">Claim Dependency Graph · Skeptic Agent (opus)</text>
+  <text x="75" y="1371" font-size="9" fill="#888">Output: claim-ledger.md · claim_graph.json</text>
 
-  <line x1="490" y1="1100" x2="518" y2="1100" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <rect x="415" y="1323" width="330" height="55" rx="6" fill="#fff" stroke="#c08020" stroke-width="1"/>
+  <text x="425" y="1343" font-size="11" font-weight="bold" fill="#8b5014">27. /position</text>
+  <text x="425" y="1358" font-size="10" fill="#555">Contribution positioning · novelty-reassessment.md</text>
+  <text x="425" y="1371" font-size="9" fill="#888">Output: positioning.md</text>
 
-  <line x1="500" y1="1145" x2="500" y2="1165" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="765" y="1323" width="350" height="55" rx="6" fill="#fff" stroke="#c08020" stroke-width="1"/>
+  <text x="775" y="1343" font-size="11" font-weight="bold" fill="#8b5014">28. /story</text>
+  <text x="775" y="1358" font-size="10" fill="#555">Narrative arc · figure plan · paper blueprint</text>
+  <text x="775" y="1371" font-size="9" fill="#888">Output: paper-blueprint.md</text>
 
-  <!-- ============ PHASE 6: Review & Submit ============ -->
-  <rect x="40" y="1170" width="920" height="100" rx="12" fill="url(#phase6-bg)" stroke="#b03060" stroke-width="1.5"/>
-  <text x="60" y="1195" font-size="14" font-weight="bold" fill="#8b1a4a">Phase 6: Review &amp; Submit</text>
-  <text x="940" y="1195" text-anchor="end" font-size="11" fill="#c04070">Day 21-28</text>
+  <line x1="395" y1="1350" x2="413" y2="1350" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="745" y1="1350" x2="763" y2="1350" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
 
-  <!-- Step 19 -->
-  <rect x="70" y="1210" width="280" height="45" rx="6" fill="#fff" stroke="#b03060" stroke-width="1"/>
-  <text x="80" y="1228" font-size="12" font-weight="bold" fill="#8b1a4a">20. /rebuttal</text>
-  <text x="80" y="1243" font-size="10" fill="#555">Systematic reviewer responses</text>
+  <!-- Row 2: Steps 29-30 -->
+  <rect x="65" y="1390" width="530" height="45" rx="6" fill="#fff" stroke="#c08020" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="75" y="1408" font-size="11" font-weight="bold" fill="#8b5014">29. Narrative Gap Detector (inline)</text>
+  <text x="75" y="1423" font-size="10" fill="#555">Evidence missing → loop back to Step 20 or Step 9 (max 1 per direction)</text>
 
-  <!-- Post-acceptance -->
-  <rect x="380" y="1210" width="190" height="45" rx="6" fill="#fff" stroke="#b03060" stroke-width="1"/>
-  <text x="390" y="1228" font-size="12" font-weight="bold" fill="#8b1a4a">/presentation</text>
-  <text x="390" y="1243" font-size="10" fill="#555">Slides + speaker notes</text>
+  <rect x="615" y="1390" width="500" height="45" rx="6" fill="#fff" stroke="#c08020" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="625" y="1408" font-size="11" font-weight="bold" fill="#8b5014">30. Figure-argument alignment (inline)</text>
+  <text x="625" y="1423" font-size="10" fill="#555">Redesign figures that don't serve their claim</text>
 
-  <rect x="590" y="1210" width="150" height="45" rx="6" fill="#fff" stroke="#b03060" stroke-width="1"/>
-  <text x="600" y="1228" font-size="12" font-weight="bold" fill="#8b1a4a">/poster</text>
-  <text x="600" y="1243" font-size="10" fill="#555">Academic poster</text>
+  <!-- Row 3: Steps 31-33 -->
+  <rect x="65" y="1447" width="330" height="50" rx="6" fill="#fff" stroke="#c08020" stroke-width="1"/>
+  <text x="75" y="1466" font-size="11" font-weight="bold" fill="#8b5014">31. /produce-manuscript</text>
+  <text x="75" y="1481" font-size="10" fill="#555">Full prose + Citation Audit · LaTeX source</text>
 
-  <rect x="760" y="1210" width="170" height="45" rx="6" fill="#fff" stroke="#b03060" stroke-width="1"/>
-  <text x="770" y="1228" font-size="12" font-weight="bold" fill="#8b1a4a">/promote</text>
-  <text x="770" y="1243" font-size="10" fill="#555">Twitter, LinkedIn, blog</text>
+  <rect x="415" y="1447" width="330" height="50" rx="6" fill="#fff" stroke="#c08020" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="425" y="1466" font-size="11" font-weight="bold" fill="#8b5014">32. Cross-section consistency (inline)</text>
+  <text x="425" y="1481" font-size="10" fill="#555">5-check hard block on failure</text>
 
-  <!-- ============ Infrastructure Legend ============ -->
-  <rect x="40" y="1300" width="920" height="200" rx="12" fill="#fafafa" stroke="#ccc" stroke-width="1"/>
-  <text x="60" y="1325" font-size="14" font-weight="bold" fill="#333">Infrastructure</text>
+  <rect x="765" y="1447" width="350" height="50" rx="6" fill="#fff" stroke="#c08020" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="775" y="1466" font-size="11" font-weight="bold" fill="#8b5014">33. Claim-source alignment (inline)</text>
+  <text x="775" y="1481" font-size="10" fill="#555">Hard block on untraced claims</text>
 
-  <!-- State tracking -->
-  <rect x="60" y="1340" width="280" height="80" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1"/>
-  <text x="70" y="1358" font-size="11" font-weight="bold" fill="#333">State Tracking</text>
-  <text x="70" y="1375" font-size="10" fill="#555">pipeline-state.json (v2, gitignored)</text>
-  <text x="70" y="1390" font-size="10" fill="#555">experiment-state.json (in $PROJECT_DIR)</text>
-  <text x="70" y="1405" font-size="10" fill="#555">project_dir = projects/&lt;slug&gt;/</text>
+  <line x1="395" y1="1472" x2="413" y2="1472" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="745" y1="1472" x2="763" y2="1472" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
 
-  <!-- Orchestrator modes -->
-  <rect x="360" y="1340" width="280" height="80" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1"/>
-  <text x="370" y="1358" font-size="11" font-weight="bold" fill="#333">/run-pipeline Modes</text>
-  <text x="370" y="1375" font-size="10" fill="#555">--auto | --resume | --from &lt;step&gt;</text>
-  <text x="370" y="1390" font-size="10" fill="#555">--status | --reset | --skip-online</text>
-  <text x="370" y="1405" font-size="10" fill="#555">Interactive: Continue / Skip / Abort</text>
+  <!-- Row 4: Step 34 verify-paper -->
+  <rect x="65" y="1510" width="1050" height="55" rx="6" fill="url(#gate-bg)" stroke="#c44" stroke-width="1.5"/>
+  <text x="75" y="1530" font-size="12" font-weight="bold" fill="#c44">34. /verify-paper (7-dimension PQV)  ◆ GATE</text>
+  <text x="430" y="1530" font-size="10" fill="#555">Novelty · Methodology · Claim-Evidence · Argument · Cross-Section · Presentation · Reproducibility</text>
+  <text x="75" y="1548" font-size="10" fill="#555">41 criteria · acceptance probability HIGH/MEDIUM/LOW</text>
+  <text x="340" y="1548" font-size="9" fill="#c44">CRITICAL→BLOCK · dim&lt;5→BLOCK · avg&lt;7→REVISE · partial re-run: --dimensions N,M · Revision cycle ×3</text>
 
-  <!-- Hooks & guards -->
-  <rect x="660" y="1340" width="280" height="80" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1"/>
-  <text x="670" y="1358" font-size="11" font-weight="bold" fill="#333">Hooks &amp; Guards</text>
-  <text x="670" y="1375" font-size="10" fill="#555">session-start: pipeline progress display</text>
-  <text x="670" y="1390" font-size="10" fill="#555">research-doc-guard: root write warning</text>
-  <text x="670" y="1405" font-size="10" fill="#555">security-guard: key/secret detection</text>
+  <!-- Revision loop arrow (right side) -->
+  <path d="M 1160,1537 L 1185,1537 L 1185,1350 L 1115,1350" stroke="#c44" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrow-red)"/>
+  <text x="1191" y="1440" font-size="9" fill="#c44" transform="rotate(-90, 1191, 1440)">revision ×3</text>
 
-  <!-- Project directory structure -->
-  <rect x="60" y="1435" width="890" height="50" rx="6" fill="#e8f5e9" stroke="#4a8a4a" stroke-width="1"/>
-  <text x="70" y="1455" font-size="11" font-weight="bold" fill="#2a6a2a">Project Directory: projects/&lt;slug&gt;/</text>
-  <text x="70" y="1475" font-size="10" fill="#555" font-family="monospace">docs/ | configs/ | src/ | data/ | results/{tables,figures} | manuscript/ | logs/ | notebooks/</text>
+  <line x1="600" y1="1565" x2="600" y2="1585" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ============ PHASE 6: Pre-Submission & Publication ============ -->
+  <rect x="40" y="1590" width="1120" height="145" rx="12" fill="url(#phase6-bg)" stroke="#b03060" stroke-width="1.5"/>
+  <text x="60" y="1615" font-size="14" font-weight="bold" fill="#8b1a4a">Phase 6: Pre-Submission &amp; Publication</text>
+  <text x="1150" y="1615" text-anchor="end" font-size="11" fill="#c04070">Day 29–38 · Steps 35–38</text>
+
+  <rect x="65" y="1628" width="240" height="90" rx="6" fill="#fff" stroke="#b03060" stroke-width="1" stroke-dasharray="5,3"/>
+  <text x="75" y="1648" font-size="11" font-weight="bold" fill="#8b1a4a">35. Adversarial review (inline)</text>
+  <text x="75" y="1663" font-size="10" fill="#555">3 hostile simulated reviewers</text>
+  <text x="75" y="1678" font-size="9" fill="#c44">Critical item → route upstream</text>
+  <text x="75" y="1692" font-size="9" fill="#c44">(max 2 iterations)</text>
+
+  <rect x="325" y="1628" width="240" height="90" rx="6" fill="#fff" stroke="#b03060" stroke-width="1"/>
+  <text x="335" y="1648" font-size="11" font-weight="bold" fill="#8b1a4a">36. /recency-sweep final</text>
+  <text x="335" y="1663" font-size="10" fill="#555">Pass 5 final · ≤48h before submit</text>
+  <text x="335" y="1678" font-size="9" fill="#c44">blocks_project → escalate human</text>
+
+  <rect x="585" y="1628" width="240" height="90" rx="6" fill="url(#gate-bg)" stroke="#c44" stroke-width="1.5"/>
+  <text x="595" y="1648" font-size="11" font-weight="bold" fill="#c44">37. /novelty-gate N4  ◆ GATE</text>
+  <text x="595" y="1663" font-size="10" fill="#555">Final novelty confirmation</text>
+  <text x="595" y="1678" font-size="9" fill="#c44">KILL → all artifacts preserved</text>
+  <text x="595" y="1692" font-size="9" fill="#888">Override: kill_decision.py</text>
+
+  <rect x="845" y="1628" width="270" height="90" rx="6" fill="#fff" stroke="#b03060" stroke-width="1"/>
+  <text x="855" y="1648" font-size="11" font-weight="bold" fill="#8b1a4a">38. /compile-manuscript</text>
+  <text x="855" y="1663" font-size="10" fill="#555">LaTeX → PDF · Overleaf ZIP</text>
+  <text x="855" y="1678" font-size="9" fill="#888">tectonic | pdflatex | xelatex</text>
+  <text x="855" y="1692" font-size="9" fill="#888">chktex validation</text>
+
+  <line x1="305" y1="1673" x2="323" y2="1673" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="565" y1="1673" x2="583" y2="1673" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="825" y1="1673" x2="843" y2="1673" stroke="#555" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- Adversarial review loop -->
+  <path d="M 40,1660 L 16,1660 L 16,1350 L 63,1350" stroke="#c44" stroke-width="1.2" fill="none" stroke-dasharray="4,3" marker-end="url(#arrow-red)"/>
+
+  <!-- Post-submission -->
+  <rect x="40" y="1760" width="1120" height="50" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="1"/>
+  <text x="60" y="1781" font-size="12" font-weight="bold" fill="#555">Post-submission (not part of main pipeline):</text>
+  <text x="370" y="1781" font-size="11" fill="#555">/presentation  ·  /poster  ·  /promote  ·  /rebuttal (after reviews received)</text>
+
+  <!-- ============ Infrastructure ============ -->
+  <rect x="40" y="1830" width="1120" height="310" rx="12" fill="#fafafa" stroke="#ccc" stroke-width="1"/>
+  <text x="60" y="1855" font-size="14" font-weight="bold" fill="#333">Infrastructure</text>
+
+  <!-- Epistemic Infrastructure -->
+  <rect x="60" y="1870" width="340" height="115" rx="6" fill="#e8f0fe" stroke="#4a86c8" stroke-width="1"/>
+  <text x="70" y="1889" font-size="11" font-weight="bold" fill="#2a5db0">Epistemic Layer ($PROJECT_DIR/.epistemic/)</text>
+  <text x="70" y="1906" font-size="10" fill="#555">citation_ledger.json — provenance per paper</text>
+  <text x="70" y="1921" font-size="10" fill="#555">claim_graph.json — Claim Dependency Graph</text>
+  <text x="70" y="1936" font-size="10" fill="#555">confidence_tracker.json — per-claim confidence</text>
+  <text x="70" y="1951" font-size="10" fill="#555">evidence_registry.json — evidence entries</text>
+
+  <!-- Pipeline state -->
+  <rect x="420" y="1870" width="340" height="115" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1"/>
+  <text x="430" y="1889" font-size="11" font-weight="bold" fill="#333">State Tracking</text>
+  <text x="430" y="1906" font-size="10" fill="#555">pipeline-state.json (gitignored)</text>
+  <text x="430" y="1921" font-size="10" fill="#555">experiment-state.json (in $PROJECT_DIR)</text>
+  <text x="430" y="1936" font-size="10" fill="#555">project_dir = projects/&lt;slug&gt;/</text>
+  <text x="430" y="1951" font-size="10" fill="#555">/run-pipeline --auto|--resume|--from &lt;step&gt;</text>
+
+  <!-- Scripts -->
+  <rect x="780" y="1870" width="340" height="115" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1"/>
+  <text x="790" y="1889" font-size="11" font-weight="bold" fill="#333">Deterministic Scripts (16)</text>
+  <text x="790" y="1906" font-size="10" fill="#555">pipeline_state, collect_results, run_statistics</text>
+  <text x="790" y="1921" font-size="10" fill="#555">generate_figures, check_gates, update_experiment_state</text>
+  <text x="790" y="1936" font-size="10" fill="#555">dedup_papers, kill_decision, novelty_assess</text>
+  <text x="790" y="1951" font-size="10" fill="#555">recency_sweep, search_quality, + slurm/ (3)</text>
+
+  <!-- Agents -->
+  <rect x="60" y="2000" width="340" height="120" rx="6" fill="#f3e5f5" stroke="#7b3e9e" stroke-width="1"/>
+  <text x="70" y="2019" font-size="11" font-weight="bold" fill="#5a2d7a">Agents (26)</text>
+  <text x="70" y="2036" font-size="10" fill="#555">Research: hypothesis-gen, literature-reviewer</text>
+  <text x="70" y="2051" font-size="10" fill="#555">Search cohort (6): keyword, semantic, citation</text>
+  <text x="70" y="2066" font-size="10" fill="#555">  cross-field, recency, adversarial-attacker</text>
+  <text x="70" y="2081" font-size="10" fill="#555">Verification (4): skeptic, reproducibility</text>
+  <text x="70" y="2096" font-size="10" fill="#555">  reviewer-simulator, scope-guard</text>
+  <text x="70" y="2111" font-size="10" fill="#555">Dev (8): architect, bug-analyzer, code-reviewer…</text>
+
+  <!-- Obsidian -->
+  <rect x="420" y="2000" width="340" height="120" rx="6" fill="#e8f0fe" stroke="#4a86c8" stroke-width="1"/>
+  <text x="430" y="2019" font-size="11" font-weight="bold" fill="#2a5db0">Obsidian Knowledge Base (14 skills)</text>
+  <text x="430" y="2036" font-size="10" fill="#555">project-memory, literature, logs, experiments</text>
+  <text x="430" y="2051" font-size="10" fill="#555">Zotero bridge, synthesis maps, daily notes</text>
+  <text x="430" y="2066" font-size="10" fill="#555">Auto-bound via .claude/project-memory/</text>
+
+  <!-- Hooks -->
+  <rect x="780" y="2000" width="340" height="120" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1"/>
+  <text x="790" y="2019" font-size="11" font-weight="bold" fill="#333">Hooks (6)</text>
+  <text x="790" y="2036" font-size="10" fill="#555">session-start: pipeline progress + N-gate status</text>
+  <text x="790" y="2051" font-size="10" fill="#555">research-doc-guard: root write warning</text>
+  <text x="790" y="2066" font-size="10" fill="#555">security-guard, skill-forced-eval</text>
+  <text x="790" y="2081" font-size="10" fill="#555">session-summary, stop-summary</text>
+
+  <!-- Project directory -->
+  <rect x="60" y="2130" width="1060" height="30" rx="5" fill="#e8f5e9" stroke="#4a8a4a" stroke-width="1"/>
+  <text x="70" y="2148" font-size="10" font-weight="bold" fill="#2a6a2a">Project Directory:  </text>
+  <text x="190" y="2148" font-size="10" fill="#555" font-family="monospace">projects/&lt;slug&gt;/ {docs, configs, src, data, results/{tables,figures}, manuscript, logs, notebooks, .epistemic/, .cache/}</text>
 </svg>

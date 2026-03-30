@@ -4,7 +4,7 @@
 
 ---
 
-## Skills Directory (65 skills)
+## Skills Directory (66 skills)
 
 ### Research & Analysis (5 skills)
 
@@ -44,11 +44,12 @@
 - **story-construction**: Narrative arc, result triage, figure plan, section outline → paper-blueprint.md
 - **manuscript-production**: Publication-quality figures, full prose, LaTeX source, submission package
 
-### Paper Writing & Publication (7 skills)
+### Paper Writing & Publication (8 skills)
 
 - **ml-paper-writing**: ML/AI paper writing assistance (NeurIPS, ICML, ICLR, ACL, AAAI, COLM, Nature, Science, Cell, PNAS)
 - **writing-anti-ai**: Remove AI writing patterns, bilingual (Chinese/English)
 - **paper-self-review**: Paper self-review (6-item quality checklist)
+- **paper-quality-check**: Paper completeness and quality validation before submission
 - **review-response**: Systematic rebuttal writing
 - **post-acceptance**: Post-acceptance processing (presentation, poster, promotion)
 - **doc-coauthoring**: Document co-authoring workflow
@@ -81,7 +82,7 @@
 - **webapp-testing**: Local web application testing
 - **kaggle-learner**: Kaggle competition learning
 
-### Obsidian Knowledge Base (11 skills)
+### Obsidian Knowledge Base (14 skills)
 
 - **obsidian-project-memory**: Default Obsidian project-memory orchestrator for repo-bound research work
 - **obsidian-project-bootstrap**: Bootstrap or import a research repository into an Obsidian project knowledge base
@@ -94,7 +95,9 @@
 - **obsidian-literature-workflow**: Paper-note normalization and literature review inside the project vault
 - **obsidian-markdown**: Vendored official Obsidian Flavored Markdown skill
 - **obsidian-cli**: Vendored official Obsidian CLI skill
-- **obsidian-bases / json-canvas / defuddle**: Vendored official optional support for `.base`, `.canvas`, and clean web-to-markdown extraction
+- **obsidian-bases**: Vendored official support for `.base` database-like views
+- **json-canvas**: Vendored official support for `.canvas` files (mind maps, flowcharts)
+- **defuddle**: Vendored official clean web-to-markdown extraction
 
 ### Web Design (3 skills)
 
@@ -104,12 +107,20 @@
 
 ---
 
-## Commands (50+ Commands)
+## Commands (60 Commands)
 
 ### Research Workflow Commands
 
 | Command | Function |
 |---------|----------|
+| `/research-landscape` | Pass 1: Broad territory mapping — 50–100 papers, cluster analysis, initialize Citation Provenance Ledger |
+| `/claim-search` | Pass 2: Decompose hypothesis into atomic claims, independent per-component search, overlap classification |
+| `/citation-traversal` | Pass 3: Citation graph traversal from seed papers via Semantic Scholar API |
+| `/adversarial-search` | Pass 6: 5 attack types to actively attempt to kill novelty claim before Gate N1 |
+| `/recency-sweep` | Pass 5: Recency sweep (sweep_id=1/2/final) for concurrent work detection with watchlist caching |
+| `/novelty-gate` | Novelty gate N1/N3/N4 — 7-dimension novelty evaluation, PROCEED/REPOSITION/PIVOT/KILL decision |
+| `/design-novelty-check` | Gate N2: Verify experiment design tests the novelty claim, baselines are complete |
+| `/verify-paper` | 7-dimension Paper Quality Verifier (41 criteria) with acceptance probability estimate; replaces /quality-review |
 | `/research-init` | Start Zotero-integrated research ideation workflow (auto-create collections, import papers, full-text analysis) |
 | `/zotero-review` | Read papers from Zotero collection, synthesize into Obsidian literature review and downstream project notes |
 | `/zotero-notes` | Batch read Zotero papers, create/update detailed Obsidian paper notes and refresh `Maps/literature.canvas` |
@@ -137,6 +148,8 @@
 | `/position` | Map contribution against closest prior works, anticipate reviewer objections |
 | `/story` | Define narrative arc, triage results, create figure plan, produce paper blueprint |
 | `/produce-manuscript` | Generate figures, prose, LaTeX source, and submission package |
+| `/quality-review` | Legacy 8-dimension quality gate (superseded by `/verify-paper`) |
+| `/compile-manuscript` | Compile LaTeX to PDF and create Overleaf-ready ZIP |
 | `/analyze-results` | Analyze experiment results (statistical tests, visualization, ablation) |
 | `/run-pipeline` | Run the full research pipeline end-to-end with checkpoints (supports --auto, --resume, --from, --status) |
 | `/slurm-status` | Show SLURM job status, queue, pipeline job tracking, and cluster GPU availability |
@@ -160,7 +173,9 @@
 | `/checkpoint` | Create checkpoint |
 | `/refactor-clean` | Refactor and clean up |
 | `/learn` | Extract reusable patterns from code |
+| `/new-project` | Create research project directory structure + pipeline state |
 | `/create_project` | Create new project |
+| `/mine-writing-patterns` | Extract reusable writing patterns from successful papers |
 | `/setup-pm` | Configure package manager (uv/pnpm) |
 | `/update-memory` | Check and update CLAUDE.md memory |
 
@@ -198,7 +213,7 @@
 
 ---
 
-## Agents (17 Agents)
+## Agents (26 Agents)
 
 ### Research Workflow Agents
 
@@ -210,6 +225,26 @@
 | research-knowledge-curator-obsidian | sonnet | 15 | Default curator for Obsidian project knowledge base |
 | rebuttal-writer | opus | 20 | Systematic rebuttal writing with tone optimization |
 | paper-miner | opus | 20 | Extract writing knowledge from successful papers |
+
+### Search Agent Cohort (multi-pass research)
+
+| Agent | Model | Max Turns | Role |
+|-------|-------|-----------|------|
+| keyword-search | sonnet | 10 | Structured keyword queries across arXiv, Semantic Scholar, ACL |
+| semantic-search | sonnet | 10 | Embedding-based retrieval for concept-level overlap |
+| citation-graph | sonnet | 12 | Forward/backward citation traversal via Semantic Scholar API |
+| cross-field-search | sonnet | 10 | Abstract cross-domain and adjacent-field search (Pass 4) |
+| recency-monitor | sonnet | 8 | Targeted concurrent-work detection with watchlist caching |
+| adversarial-attacker | opus | 12 | 5-attack novelty assault — attempts to kill the contribution claim |
+
+### Verification Agent Cohort
+
+| Agent | Model | Max Turns | Role |
+|-------|-------|-----------|------|
+| skeptic | opus | 15 | Populate Claim Dependency Graph; flag unsupported or over-claimed assertions |
+| reproducibility-checker | sonnet | 12 | Hyperparameter completeness, seed coverage, environment reproducibility |
+| reviewer-simulator | opus | 18 | Simulate 3 hostile reviewers: methodology, novelty, clarity |
+| scope-guard | sonnet | 10 | Detect scope creep; flag claims unsupported by evidence |
 
 ### Development Workflow Agents
 
@@ -233,7 +268,7 @@
 
 ---
 
-## Hooks (5 Hooks)
+## Hooks (6 Hooks)
 
 Cross-platform Node.js hooks for automated workflow execution:
 
@@ -244,10 +279,11 @@ Cross-platform Node.js hooks for automated workflow execution:
 | `session-summary.js` | Session end | Generate work log, detect CLAUDE.md updates, and remind minimum Obsidian write-back for bound repos |
 | `stop-summary.js` | Session stop | Quick status check, temp file detection, and bound-repo Obsidian maintenance reminder |
 | `security-guard.js` | File operations | Security validation (key detection, dangerous command interception) |
+| `research-doc-guard.js` | PostToolUse (Write) | Warn if research documents are written outside `$PROJECT_DIR` |
 
 ---
 
-## Deterministic Scripts (12 scripts)
+## Deterministic Scripts (16 scripts)
 
 Standalone CLI tools that automate procedural pipeline steps. Run with `--help` for usage. See `scripts/README.md` for full documentation.
 
@@ -261,6 +297,16 @@ Standalone CLI tools that automate procedural pipeline steps. Run with `--help` 
 | `generate_figures.py` | Bar charts, violin plots, interaction plots, heatmaps (Okabe-Ito, PDF) | visualization-best-practices.md reference |
 | `check_gates.py` | Phase gate evaluation (completion, baseline sanity, variance, crashes) | experiment-runner procedural sections |
 | `update_experiment_state.py` | Experiment lifecycle state transitions | experiment-runner procedural sections |
+
+### Novelty & Search Quality
+
+| Script | Purpose |
+|--------|---------|
+| `dedup_papers.py` | 3-level paper deduplication (DOI → arXiv ID → title token overlap ≥ 0.85) |
+| `kill_decision.py` | Evaluate 5 kill criteria, write kill-justification.md, support --override-kill |
+| `novelty_assess.py` | Parse search pass reports into normalized novelty-assessment.json for downstream steps |
+| `recency_sweep.py` | Manage recency sweep state, query watchlist caching, delta tracking across 3 sweeps |
+| `search_quality.py` | Coverage, precision, recall, and threat detection rate metrics for search passes |
 
 ### Manuscript & Review
 

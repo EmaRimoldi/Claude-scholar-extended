@@ -101,23 +101,27 @@ natural research lifecycle. Each phase has dedicated skills, commands, and
 outputs.
 
 ```
-Phase 1          Phase 2            Phase 3           Phase 4
-Ideation    -->  Experiment    -->  Implementation -> Execution
-(Day 1-3)        Design (Day 3-4)   (Day 4-7)        (Day 7-14+)
+Phase 1                    Phase 2           Phase 3           Phase 4
+Research & Novelty    -->  Experiment   -->  Implementation -> Execution
+Assessment (Day 1-5)       Design            (Day 6-10)        (Day 10-19)
+8 steps, 4 search passes   (Day 5-6)
+Gate N1                    Gate N2
 
-                                          Phase 5              Phase 6
-                                     -->  Analysis &      -->  Review &
-                                          Writing (Day 14-21)  Submit (Day 21-28)
+                         Phase 5A                  Phase 5B               Phase 6
+                    -->  Analysis & Epistemic  -->  Writing Cycle     -->  Publication
+                         Grounding (Day 19-23)      (Day 23-29)            (Day 29-38)
+                         Gate N3                    Revision cycle (×3)    Gates N4
 ```
 
 | Phase | Focus | Estimated Time |
 |---|---|---|
-| 1. Research Ideation | Literature, gaps, hypotheses, novelty check | 1--3 days |
-| 2. Experiment Design | Baselines, ablations, sample size, resource plan | 1--2 days |
-| 3. Implementation | Scaffold code, data, model, metrics, validation | 3--4 days |
-| 4. Execution | SLURM submission, monitoring, phase gates, iteration | 1--2 weeks |
-| 5. Analysis & Writing | Statistics, figures, narrative, manuscript | 1 week |
-| 6. Review & Submit | Self-review, rebuttal, post-acceptance materials | 1 week |
+| 1. Research & Novelty Assessment | 6 search passes, N1 novelty gate | 1--5 days |
+| 2. Experiment Design | Baselines, ablations, sample size, Gate N2 | 1--2 days |
+| 3. Implementation | Scaffold code, data, model, metrics, validation | 4--5 days |
+| 4. Execution | SLURM submission, monitoring, phase gates | 1--2 weeks |
+| 5A. Analysis & Epistemic Grounding | Statistics, figures, Gate N3 | 4--5 days |
+| 5B. Claim Architecture & Writing Cycle | Map claims, write, verify (7 dims) | 6--7 days |
+| 6. Pre-Submission & Publication | Adversarial review, Gate N4, compile | 1 week |
 
 Time estimates assume a single focused project. Phases overlap in practice.
 
@@ -125,64 +129,120 @@ Time estimates assume a single focused project. Phases overlap in practice.
 
 ## Step-by-Step Guide
 
-### Phase 1: Research Ideation (Day 1--3)
+### Phase 1: Research & Novelty Assessment (Day 1--5)
 
-**Goal:** Identify a promising research direction, review the literature, and
-formulate testable hypotheses.
+**Goal:** Map the research territory, decompose the contribution into verifiable
+claims, and confirm novelty before committing to experiments. Phase 1 runs
+**6 search passes** across 8 steps and ends at **Novelty Gate N1**.
 
-#### 1.1 Start the ideation workflow
+#### 1.1 Broad territory mapping (Pass 1)
 
 ```
-/research-init
+/research-landscape
 ```
 
-This command activates the `research-ideation` skill and (if Zotero MCP is
-configured) the `literature-reviewer` agent. It walks you through:
+Runs a broad search collecting 50--100 papers, builds a cluster analysis
+(4--8 themes), identifies research gaps, and initializes the **Citation
+Provenance Ledger** (`$PROJECT_DIR/.epistemic/citation_ledger.json`).
 
-- **5W1H framework** --- Who, What, Where, When, Why, How for your research
-  question.
-- **Literature review** --- Automated Zotero collection creation, paper import,
-  and full-text analysis. Without Zotero, provide papers manually or use
-  `/zotero-review` later.
-- **Gap analysis** --- Identifies under-explored areas in the literature.
-- **Research question formulation** --- Produces a focused, falsifiable research
-  question.
+**Output:** `$PROJECT_DIR/docs/research-landscape.md`
 
-**What it produces:**
-- `$PROJECT_DIR/docs/literature-review.md` --- Synthesized literature survey.
-- `$PROJECT_DIR/docs/hypotheses.md` --- Testable hypotheses.
-- Obsidian paper notes (if knowledge base is active).
-
-#### 1.2 Check for competing work
+#### 1.2 Check for competing work (Pass 4)
 
 ```
 /check-competition
 ```
 
-This generates structured search queries for arXiv, Semantic Scholar, and Google
-Scholar. Paste the search results back and the `competitive-check` skill will
-analyze them for concurrent or prior work that overlaps with your idea.
+Cross-field search for concurrent or closely prior work. Paste search results
+and the `competitive-check` skill analyzes overlap and identifies threat papers.
 
-#### 1.3 Assess novelty and formulate hypotheses
+#### 1.3 Formulate hypotheses
 
-The `novelty-assessment` skill compares your proposed contribution against the
-closest prior works and flags incremental contributions. If novelty is
-confirmed, the `hypothesis-formulation` skill converts research gaps into
-falsifiable hypotheses with explicit success and failure criteria.
+```
+/research-init
+```
+
+Activates the `hypothesis-generator` agent (opus + extended thinking) to
+convert research gaps into falsifiable hypotheses with explicit success/failure
+criteria.
+
+**Output:** `$PROJECT_DIR/docs/hypotheses.md`
+
+#### 1.4 Claim-level decomposition (Pass 2)
+
+```
+/claim-search
+```
+
+Decomposes the primary hypothesis into 7 atomic components (Method, Task,
+Result, Mechanism, and combinations). Each component is searched independently.
+Papers with ≥2 overlapping components are flagged as HIGH threat.
+
+**Output:** `$PROJECT_DIR/docs/claim-overlap-report.md`
+
+#### 1.5 Citation graph traversal (Pass 3)
+
+```
+/citation-traversal
+```
+
+Forward and backward citation traversal from the top seed papers via the
+Semantic Scholar API. Discovers papers that cite and are cited by the most
+relevant prior work.
+
+#### 1.6 Adversarial novelty attack (Pass 6)
+
+```
+/adversarial-search
+```
+
+5 attack types (Survey, "Already Done", Closest-Prior-Work, Incremental
+Variation, Cross-Field Anticipation). If no rebuttal can be written, the step
+emits a kill signal.
+
+**Output:** `$PROJECT_DIR/docs/adversarial-novelty-report.md`
+
+#### 1.7 Novelty Gate N1 (hard gate)
+
+```
+/novelty-gate gate=N1
+```
+
+Synthesizes all search passes into a 7-dimension novelty evaluation using the
+`adversarial-attacker` and `skeptic` agents (opus + extended thinking).
+
+**Decision:** PROCEED / REPOSITION / PIVOT / KILL
+
+- **PROCEED** → move to Phase 2.
+- **REPOSITION** → loop back to Step 3 (max 2 iterations, then KILL).
+- **PIVOT** → loop back to Step 1 (max 1 iteration, then KILL).
+- **KILL** → pipeline terminates; use `python scripts/kill_decision.py --override-kill` to proceed anyway.
+
+#### 1.8 First recency sweep (Pass 5)
+
+```
+/recency-sweep sweep_id=1
+```
+
+Searches arXiv, OpenReview, Semantic Scholar, and lab blogs for papers published
+in the last 90 days that overlap with the hypothesis.
 
 **Expected outputs at end of Phase 1:**
-- `$PROJECT_DIR/docs/hypotheses.md` --- Testable hypotheses with success/failure criteria.
-- Novelty assessment (inline or as separate document).
-- Literature notes in Obsidian (if active).
-
-**Decision point:** If novelty is insufficient, iterate on the idea or pivot
-before investing in experiments.
+- `$PROJECT_DIR/docs/research-landscape.md`
+- `$PROJECT_DIR/docs/hypotheses.md`
+- `$PROJECT_DIR/docs/claim-overlap-report.md`
+- `$PROJECT_DIR/docs/adversarial-novelty-report.md`
+- `$PROJECT_DIR/.epistemic/citation_ledger.json`
+- Gate N1 decision recorded in `pipeline-state.json`
 
 ---
 
-### Phase 2: Experiment Design (Day 3--4)
+### Phase 2: Experiment Design (Day 5--6)
 
-**Goal:** Translate hypotheses into a concrete, reproducible experiment plan.
+**Goal:** Translate hypotheses into a concrete, reproducible experiment plan
+and verify the design tests the actual novelty claim (Gate N2).
+
+#### 2.1 Design experiments
 
 ```
 /design-experiments
@@ -190,27 +250,30 @@ before investing in experiments.
 
 The `experiment-design` skill produces a comprehensive plan covering:
 
-- **Baselines** --- Which existing methods to compare against.
+- **Baselines** --- Which existing methods to compare against (must include all HIGH-overlap papers from Phase 1).
 - **Ablations** --- Which components to isolate and test.
 - **Sample size / power analysis** --- How many runs, seeds, and data points.
 - **Resource estimation** --- Approximate GPU hours and memory.
 - **Success criteria** --- Quantitative thresholds tied to each hypothesis.
 
-**What `$PROJECT_DIR/docs/experiment-plan.md` contains:**
-- Full experiment matrix (conditions x seeds x metrics).
-- Baseline specifications with expected performance ranges.
-- Ablation schedule.
-- Resource budget.
-- Phase gate criteria (what must pass before proceeding to analysis).
+`$PROJECT_DIR/docs/experiment-plan.md` is the **source of truth** for all downstream phases.
 
-**How to review the plan:**
-- Check that every hypothesis maps to at least one experiment condition.
-- Verify baselines are fair and well-known.
-- Confirm the ablation schedule isolates the right variables.
-- Adjust seed count or sample size if compute budget is limited.
+#### 2.2 Novelty Gate N2 (hard gate)
 
-`$PROJECT_DIR/docs/experiment-plan.md` is the **source of truth** for all
-downstream phases. Every subsequent command reads from it.
+```
+/design-novelty-check
+```
+
+Verifies that the experiment design actually tests the novelty claim identified
+in Phase 1. Checks:
+
+1. Every claimed novelty dimension has at least one experiment testing it.
+2. All HIGH-overlap papers are included as baselines.
+3. Evaluation metrics are aligned with the claimed novelty.
+4. Ablations isolate claimed mechanisms.
+5. Power analysis covers small claimed improvements.
+
+**BLOCK** → loop back to `/design-experiments` (max 2 iterations).
 
 ---
 
@@ -408,19 +471,28 @@ Generates publication-quality figures, full prose for every section, LaTeX
 source, and a submission-ready package. All outputs go to
 `$PROJECT_DIR/manuscript/`.
 
-#### 5.4 Quality review (gate)
+#### 5.4 Paper Quality Verifier (7-dimension gate)
 
 ```
-/quality-review
+/verify-paper
 ```
 
-The quality review step acts as a peer-review gate before submission. It scores
-the manuscript across 8 dimensions (claim-evidence alignment, statistical
-rigor, baseline completeness, generalizability, mechanistic validation, error
-analysis, presentation accuracy, reproducibility). Each dimension is scored
-1--10. **Gate rules:** all dimensions must score >= 5, and critical dimensions
-(claim-evidence, statistical rigor, presentation accuracy) must score >= 6.
-If the gate fails, the report includes specific fixes before you proceed.
+The Paper Quality Verifier (PQV) is the peer-review gate before submission.
+It evaluates the manuscript across **7 dimensions with 41 criteria**:
+
+| # | Dimension | Criteria |
+|---|-----------|---------|
+| 1 | Novelty & Contribution | N1–N6: incremental test, dimension coverage, uncited threats |
+| 2 | Methodological Rigor | M1–M8: baselines, ablations, power, method-code alignment |
+| 3 | Claim-Evidence Alignment | C1–C6: claim trace, confidence, cherry-picking |
+| 4 | Argument Structure | A1–A6: narrative, causation, negative results |
+| 5 | Cross-Section Coherence | X1–X6: abstract/intro/conclusion/related agreement |
+| 6 | Presentation Quality | P1–P7: figures, tables, clarity |
+| 7 | Reproducibility | R1–R6: seeds, configs, checkpoints |
+
+**Gate rules:** CRITICAL issue → BLOCK; 3+ MAJOR from one dimension → BLOCK;
+any dimension < 5 → BLOCK; average < 7 → REVISE. Re-run targeted dimensions
+with `--dimensions N,M`. Outputs acceptance probability: HIGH / MEDIUM / LOW.
 
 #### 5.5 Compile the manuscript
 
@@ -619,19 +691,42 @@ state tracking and checkpoints.
 
 ### How it works
 
-The orchestrator runs the 20 pipeline steps in canonical order:
+The orchestrator runs the 38 pipeline steps in canonical order across 6 phases:
 
 ```
- 1. /research-init         11. /run-experiment
- 2. /check-competition     12. /collect-results
- 3. /design-experiments    13. /analyze-results
- 4. /scaffold              14. /map-claims
- 5. /build-data            15. /position
- 6. /setup-model           16. /story
- 7. /implement-metrics     17. /produce-manuscript
- 8. /validate-setup        18. /quality-review      (gate)
- 9. /download-data         19. /compile-manuscript
-10. /plan-compute          20. /rebuttal
+Phase 1: Research & Novelty Assessment (Steps 1–8)
+ 1. /research-landscape    5. /citation-traversal
+ 2. /check-competition     6. /adversarial-search
+ 3. /research-init         7. /novelty-gate N1      (gate)
+ 4. /claim-search          8. /recency-sweep 1
+
+Phase 2: Experiment Design (Steps 9–10)
+ 9. /design-experiments   10. /design-novelty-check  (gate N2)
+
+Phase 3: Implementation (Steps 11–15)
+11. /scaffold             14. /implement-metrics
+12. /build-data           15. /validate-setup        (gate)
+13. /setup-model
+
+Phase 4: Execution (Steps 16–19)
+16. /download-data        18. /run-experiment
+17. /plan-compute         19. /collect-results
+
+Phase 5A: Analysis & Epistemic Grounding (Steps 20–25)
+20. /analyze-results      23. /recency-sweep 2
+21. gap-detection         24. literature-rescan
+22. /novelty-gate N3      25. method-code-reconciliation
+
+Phase 5B: Claim Architecture & Writing Cycle (Steps 26–34)
+26. /map-claims           31. /produce-manuscript
+27. /position             32. cross-section-consistency
+28. /story                33. claim-source-align
+29. narrative-gap-detect  34. /verify-paper          (gate, 7 dims)
+30. argument-figure-align
+
+Phase 6: Pre-Submission & Publication (Steps 35–38)
+35. adversarial-review    37. /novelty-gate N4       (gate)
+36. /recency-sweep final  38. /compile-manuscript
 ```
 
 **In interactive mode** (default), between each step the orchestrator:
@@ -697,7 +792,7 @@ When `pipeline-state.json` exists, the session-start hook automatically shows
 pipeline progress and suggests the next step:
 
 ```
-🔄 Pipeline: 7/20 completed, 1 skipped
+🔄 Pipeline: 7/38 completed, 1 skipped
   → Next: /plan-compute — GPU estimation and SLURM script generation
   → Run /run-pipeline --resume to continue
 ```
@@ -714,11 +809,18 @@ if any are found outside the project directory.
 | Command | What It Does | When to Use |
 |---|---|---|
 | `/new-project` | Create project directory structure + pipeline state | Very first step for any new project |
-| `/research-init` | Start research ideation with 5W1H + literature review | Beginning of a new project |
+| `/research-landscape` | Pass 1: broad territory mapping, 50–100 papers, cluster analysis | Phase 1, Step 1 |
+| `/check-competition` | Pass 4: search for competing/concurrent work | Phase 1, Step 2 |
+| `/research-init` | Formulate hypotheses from gaps (opus + extended thinking) | Phase 1, Step 3 |
+| `/claim-search` | Pass 2: decompose into atomic claims, per-component search | Phase 1, Step 4 |
+| `/citation-traversal` | Pass 3: citation graph traversal from seed papers | Phase 1, Step 5 |
+| `/adversarial-search` | Pass 6: 5 attacks to kill novelty claim | Phase 1, Step 6 |
+| `/novelty-gate` | Gate N1/N3/N4: PROCEED/REPOSITION/PIVOT/KILL | Phase 1 Step 7, Phase 5A/6 |
+| `/recency-sweep` | Pass 5: concurrent work detection (sweep 1, 2, or final) | Phase 1 Step 8, Phase 5A/6 |
+| `/design-experiments` | Generate full experiment plan | After novelty confirmed |
+| `/design-novelty-check` | Gate N2: verify design tests the novelty claim | After experiment design |
 | `/zotero-review` | Synthesize papers from Zotero into literature review | After collecting papers in Zotero |
 | `/zotero-notes` | Batch-create Obsidian paper notes from Zotero | After `/zotero-review` |
-| `/check-competition` | Search for competing/concurrent work | After formulating your idea |
-| `/design-experiments` | Generate full experiment plan | After hypotheses are ready |
 | `/scaffold` | Generate runnable project structure | Start of implementation |
 | `/build-data` | Create dataset generators/loaders | After scaffolding |
 | `/setup-model` | Load and configure models | After data is ready |
@@ -733,8 +835,8 @@ if any are found outside the project directory.
 | `/position` | Position contribution against prior work | Before writing |
 | `/story` | Build narrative arc and paper blueprint | Before writing |
 | `/produce-manuscript` | Generate figures, prose, LaTeX, submission package | Writing phase |
-| `/quality-review` | 8-dimension quality gate (blocks if critical dims fail) | Before submission |
-| `/compile-manuscript` | Compile LaTeX to PDF, create Overleaf ZIP | After quality review passes |
+| `/verify-paper` | 7-dimension PQV (41 criteria), acceptance probability estimate | After produce-manuscript |
+| `/compile-manuscript` | Compile LaTeX to PDF, create Overleaf ZIP | After verify-paper passes |
 | `/rebuttal` | Write systematic reviewer responses | After receiving reviews |
 | `/presentation` | Create conference presentation | Post-acceptance |
 | `/poster` | Generate academic poster | Post-acceptance |
