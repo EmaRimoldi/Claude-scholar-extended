@@ -14,7 +14,7 @@ The v2 pipeline was engineered for **completion** — making sure a paper gets p
 
 3. **Phase 5 is a revision cycle, not a linear sequence.** Analysis → claim mapping → positioning → narrative → draft → multi-dimensional review → remediation routing → re-draft. This loop terminates on convergence or escalation, not on completion of a step.
 
-Step count: **33 steps** across 6 phases (up from 24). New modules: 11. New feedback loops: 4. New infrastructure components: 6.
+Step count: **38 steps** across 6 phases (up from 24 in v2). New modules: 16. New feedback loops: 6 (4 from critique fixes + 2 novelty gate loops). New infrastructure components: 8. Novelty gates: 4 (N1–N4).
 
 ---
 
@@ -174,7 +174,24 @@ All v2 state files are retained. New additions:
 | `ui-sketcher` | sonnet | UI design | — |
 | `story-generator` | sonnet | Story/requirement generation | — |
 
-### 2.2 Verification Agent Cohort [A4] — New
+### 2.2 Search Agent Cohort [research-system-spec.md Part 4] — New
+
+These agents run during Phase 1 search passes. Each uses a distinct search strategy; results are aggregated, de-duplicated, and ranked. Disagreements (one agent found a paper others missed) are flagged as potential blind spots.
+
+| Agent | Strategy | Invoked At |
+|-------|---------|-----------|
+| Keyword Agent | Search by keyword combinations derived from hypothesis | Step 4 (Pass 2), Step 8 (Pass 5) |
+| Semantic Agent | Search by embedding similarity to hypothesis components | Step 4 (Pass 2) |
+| Citation Agent | Traverses citation graphs from seed papers | Step 5 (Pass 3) |
+| Cross-Field Agent | Searches adjacent fields using abstracted problem descriptions | Step 2 (Pass 4) |
+| Recency Agent | Monitors recent publications and preprints, lab blogs | Steps 8, 23, 36 (Pass 5) |
+| Adversarial Agent | Actively tries to find the most damaging prior work | Step 6 (Pass 6) |
+
+All search agents run against a shared de-duplication index (`citation_ledger.json` + `dedup_papers.py`). Citation graph results cached at `$PROJECT_DIR/.cache/citation_graphs/`. Recency sweep state at `$PROJECT_DIR/.cache/recency_sweeps/`.
+
+---
+
+### 2.3 Verification Agent Cohort [A4] — New
 
 These agents do not generate content. They evaluate, challenge, and flag. They read existing content and return structured reports.
 
@@ -205,6 +222,11 @@ All v2 scripts retained. New scripts:
 | `gap_detector.py` | `analysis-report.md`, `experiment-plan.md`, `hypotheses.md` | `gap-detection-report.md` | Identifies missing ablations, uncontrolled confounds, absent baselines |
 | `narrative_gap_detector.py` | `paper-blueprint.md`, `claim_graph.json`, `evidence_registry.json` | `narrative-gap-report.md` | Flags story elements that require non-existent evidence |
 | `concurrent_work_check.py` | `hypotheses.md`, `analysis-report.md` | arXiv search queries + results | Generates targeted queries for concurrent work check |
+| `dedup_papers.py` | new_results.json, citation_ledger.json | deduped_output.json | De-duplicate search results by DOI, arXiv ID, title overlap; merge fields |
+| `kill_decision.py` | claim-overlap, adversarial, concurrent reports | kill-decision.json | Evaluate 5 kill criteria; log or override kill decisions |
+| `novelty_assess.py` | search pass reports, hypotheses.md | novelty-assessment.json | Machine-readable structured novelty assessment for downstream steps |
+| `recency_sweep.py` | sweep state, queries, results | sweep state files, watchlist.json | Manage 3-sweep recency check state and query watchlists |
+| `search_quality.py` | research-landscape.md, citation_ledger.json | search-quality-report.md | Measure recall, precision, cluster coverage, threat detection rate |
 
 ---
 
@@ -224,87 +246,215 @@ Feedback loop routing is described in Part 5.
 
 ---
 
-### Phase 1: Research Ideation (Day 1–4)
+### Phase 1: Research & Novelty Assessment (Day 1–5)
 
-#### Step 1: `/research-lit` — Literature Review with Provenance Initialization
+Phase 1 is expanded from 3 steps to 8 steps to implement the multi-pass research architecture from `research-system-spec.md`. It now includes 6 search passes (territorial mapping, claim-level, citation graph, cross-field, recency, adversarial), a novelty evaluation framework, and Gate N1 — the primary kill-or-continue decision point.
 
-**Function:** Comprehensive literature search and gap analysis. Simultaneously initializes the Citation Provenance Ledger and seeds the Evidence Registry with literature findings.
+---
 
-**Inputs:** Research topic, venue target, keyword list
+#### Step 1: `/research-landscape` — Broad Territory Mapping (Pass 1) [NEW]
+
+**Function:** Map the entire research space. Scan 50–100 papers, identify major research clusters, active groups, standard benchmarks, and open problems. Initialize Citation Provenance Ledger and Evidence Registry.
+
+**Inputs:** Research topic, venue target
 
 **Outputs:**
-- `$PROJECT_DIR/research-notes.md` — synthesis of literature
-- `$PROJECT_DIR/literature-gaps.md` — identified gaps
-- `.epistemic/citation_ledger.json` — initialized with all reviewed papers; for each paper, records the specific claims it supports
-- `.epistemic/evidence_registry.json` — seeded with literature evidence entries (type: `literature_finding`)
+- `$PROJECT_DIR/research-landscape.md` — cluster map, 4–8 clusters, 3+ research gaps
+- `.epistemic/citation_ledger.json` — initialized with all reviewed papers (≥ 50)
+- `.epistemic/evidence_registry.json` — seeded with literature findings
 
-**Gate:** At least 20 papers reviewed; at least 3 distinct research gaps identified; Citation Provenance Ledger has entries for all cited papers.
+**Gate:** ≥ 8 search queries; ≥ 50 papers catalogued; ≥ 15 papers read in full; ≥ 4 clusters; ≥ 3 gaps; Citation Ledger initialized.
 
 **Epistemic updates:** Citation Provenance Ledger initialized. Evidence Registry seeded.
 
-**Failure mode:** Literature review is completed but the ledger is not populated, causing the Citation Audit at Step 24 to have no baseline to verify against.
+**Failure mode:** Territorial mapping is superficial; Pass 2 (claim-level) has no seeds; the landscape misses entire research threads.
+
+**Command:** `/research-landscape`
 
 ---
 
-#### Step 2: `/check-competition` — Competitive Landscape Check
+#### Step 2: `/check-competition` — Competitive Landscape + Cross-Field Search (Pass 4)
 
-**Function:** Map the research space: who is working on this, what has been published recently, what venues have rejected or accepted similar work. Requires online access.
+**Function:** Map the competitive research space. Enhanced with Pass 4 (cross-field search) — searches adjacent fields using abstracted problem descriptions to find work that keyword search misses.
 
-**Inputs:** Research topic, initial gaps from Step 1
+**Inputs:** Research topic, `research-landscape.md`
 
 **Outputs:**
 - `$PROJECT_DIR/competitive-landscape.md`
-- Flagged: any concurrent work that is very close (within 6 months, same contribution)
+- `$PROJECT_DIR/cross-field-report.md` — analogous work in adjacent fields with explicit novelty impact analysis
 
-**Gate:** Search coverage ≥ 3 databases; landscape document classifies papers into "directly competing", "adjacent", "baseline-eligible" categories.
+**Gate:** ≥ 3 databases; 3 adjacent fields searched; each paper classified as "directly competing", "adjacent", "baseline-eligible", or "cross-field prior art".
 
-**Failure mode:** Misses a directly competing paper that a reviewer will cite in rejection.
+**Failure mode:** Misses a competing paper from an adjacent field that a reviewer knows well.
+
+**Command:** `/check-competition`
 
 ---
 
-#### Step 3: `/assess-novelty-hypotheses` — Initial Novelty Assessment + Hypothesis Formulation
+#### Step 3: `/formulate-hypotheses` — Hypothesis Generation
 
-**Function:** Given literature and competitive landscape, assess novelty of candidate research directions and formulate falsifiable hypotheses. This assessment is explicitly preliminary — it will be revised at Step 16.
+**Function:** Given the research landscape and competitive landscape, generate falsifiable hypotheses with explicit novelty claims per dimension. This is the foundation for Pass 2 (claim-level search).
 
-**Inputs:** `research-notes.md`, `competitive-landscape.md`, `literature-gaps.md`
+**Inputs:** `research-landscape.md`, `competitive-landscape.md`, `cross-field-report.md`
 
 **Outputs:**
-- `$PROJECT_DIR/hypotheses.md` — each hypothesis with: statement, falsification criteria, expected direction, confidence level, literature support
-- `$PROJECT_DIR/novelty-initial.md` — initial novelty assessment with explicit "this may change after results" flag
-- `.epistemic/claim_graph.json` — initialized with hypothesis nodes (type: `hypothesized_claim`)
+- `$PROJECT_DIR/hypotheses.md` — hypotheses with: canonical claim (method → result → task → mechanism), falsification criteria, novelty dimension claims, confidence level
+- `.epistemic/claim_graph.json` — initialized with hypothesis nodes
 
-**Gate:** At least 2 primary hypotheses; at least 1 alternative hypothesis; all hypotheses are falsifiable (have stated success and failure criteria).
+**Gate:** ≥ 2 primary hypotheses; ≥ 1 alternative; all falsifiable; each hypothesis states which novelty dimension(s) it claims.
 
-**Agents:** `hypothesis-generator` (opus, extended thinking), `novelty-assessment` skill
+**Agents:** `hypothesis-generator` (opus, extended thinking), `hypothesis-formulation` skill
 
-**Failure mode:** Hypotheses are too broad to falsify, leading to an unfalsifiable research design.
+**Failure mode:** Hypotheses are too broad; Pass 2 decomposition fails; novelty gate has nothing to evaluate.
 
 ---
 
-### Phase 2: Experiment Design (Day 4–5)
+#### Step 4: `/claim-search` — Claim-Level Decomposition and Search (Pass 2) [NEW]
 
-#### Step 4: `/design-experiments` — Experiment Planning
+**Function:** Decompose the primary hypothesis into its atomic claims (method, task/domain, result, mechanism). Run a separate targeted search for each component. Find papers that overlap on 2+ components — the highest novelty threats. Output: `claim-overlap-report.md`.
 
-**Function:** Full experiment plan: baselines, ablations, sample size, resource estimation, statistical power analysis, success criteria, failure criteria. This step is the target of the Analysis→Design feedback loop and may be re-entered.
+**Inputs:** `hypotheses.md`, `research-landscape.md`, `.epistemic/citation_ledger.json`
 
-**Inputs:** `hypotheses.md`, `competitive-landscape.md`
+**Outputs:**
+- `$PROJECT_DIR/claim-overlap-report.md` — per-component threat assessment, HIGH/MEDIUM/LOW overlap papers, composite threat level, kill signal flags
+- Updated `.epistemic/citation_ledger.json` with `claim_overlap_level` fields
+
+**Gate:** ≥ 2 queries per decomposition component; all HIGH/MEDIUM papers read in full; differential statement written for each HIGH paper; composite threat assessment produced.
+
+**Script:** `scripts/dedup_papers.py` for de-duplication against existing ledger.
+
+**Failure mode:** Claim decomposition is too coarse; misses a paper that overlaps on 2 components.
+
+**Command:** `/claim-search`
+
+---
+
+#### Step 5: `/citation-traversal` — Citation Graph Exploration (Pass 3) [NEW]
+
+**Function:** Take the 10–20 most relevant papers from Steps 1–4. Retrieve their forward citations and backward references. Scan second-order papers ranked by citation overlap. Finds papers that keyword search misses.
+
+**Inputs:** `research-landscape.md` (Tier 1 seeds), `claim-overlap-report.md` (HIGH overlap seeds)
+
+**Outputs:**
+- `$PROJECT_DIR/citation-traversal-report.md`
+- Appended findings in `claim-overlap-report.md`
+- Updated `research-landscape.md`
+- Updated `.epistemic/citation_ledger.json`
+
+**Gate:** ≥ 10 seed papers; forward + backward citations retrieved for each; all HIGH-score second-order papers scanned.
+
+**Cache:** `$PROJECT_DIR/.cache/citation_graphs/{cite_key}.json`
+
+**Failure mode:** Seed selection is too narrow; misses an entire citation cluster connected to the research.
+
+**Command:** `/citation-traversal`
+
+---
+
+#### Step 6: `/adversarial-search` — Adversarial Novelty Attack (Pass 6) [NEW]
+
+**Function:** Actively attempt to destroy the project's novelty claim. Execute 5 attack types: survey attack (fit into existing taxonomy?), "already done" attack (generic restatement search), closest-prior-work attack (identify and characterize the single most dangerous paper), incremental-variation attack, cross-field anticipation attack. Write the adversarial argument + rebuttal. Issue kill signals if rebuttal cannot be written.
+
+**Inputs:** `hypotheses.md`, `claim-overlap-report.md`, `research-landscape.md`
+
+**Outputs:**
+- `$PROJECT_DIR/adversarial-novelty-report.md` — 5 attack verdicts, adversarial argument + rebuttal, rebuttal strength assessment, kill signal summary, Gate N1 verdict
+
+**Gate:** All 5 attacks executed; closest prior work read in full; adversarial argument + rebuttal written; kill signal assessment produced.
+
+**Failure mode:** Adversarial search is superficial; misses a survey that classifies the contribution as incremental.
+
+**Command:** `/adversarial-search`
+**Agent:** `skeptic-agent` (opus) + `novelty-assessment` skill
+
+---
+
+#### Step 7: `/novelty-gate gate=N1` — Gate N1: Full Novelty Evaluation [NEW]
+
+**Function:** Synthesize all search pass outputs. Run contribution decomposition (7 dimensions), per-dimension prior art assessment, differential articulation, significance assessment, kill criteria evaluation. Produce a structured PROCEED/REPOSITION/PIVOT/KILL decision.
+
+**Inputs:** `hypotheses.md`, `claim-overlap-report.md`, `adversarial-novelty-report.md`, `concurrent-work-report.md` (Sweep 1), `cross-field-report.md`
+
+**Outputs:**
+- `$PROJECT_DIR/novelty-assessment.md` — structured gate output (machine-readable + human-readable)
+- `$PROJECT_DIR/kill-decision.json` (if KILL)
+- Updated `pipeline-state.json` → Gate N1 status and decision
+
+**Gate (hard block):** This is the primary kill-or-continue gate. PROCEED → Phase 2. REPOSITION → back to Step 3 (max 2 loops). PIVOT → back to Step 1 (max 1). KILL → project terminates.
+
+**Script:** `scripts/kill_decision.py` for kill criteria evaluation; `scripts/novelty_assess.py` for structured output.
+
+**Loop termination:**
+- REPOSITION: max 2 loops back to Step 3. Third failure → KILL.
+- PIVOT: max 1 loop back to Step 1. No second pivot.
+
+**Agents:** `hypothesis-generator` (opus, extended thinking) + `novelty-assessment` skill + `skeptic-agent` (opus)
+**Command:** `/novelty-gate gate=N1`
+
+---
+
+#### Step 8: `/recency-sweep sweep_id=1` — First Recency Sweep (Pass 5) [NEW]
+
+**Function:** Targeted search for work published in the last 90 days. Specifically monitors arXiv, OpenReview, and lab blogs. Establishes the concurrent work baseline before project execution begins.
+
+**Inputs:** `hypotheses.md`, `novelty-assessment.md`
+
+**Outputs:**
+- `$PROJECT_DIR/concurrent-work-report.md` — new papers with severity classification
+- Updated `.epistemic/citation_ledger.json`
+- Watchlist cached at `$PROJECT_DIR/.cache/recency_sweeps/`
+
+**Gate:** All source types searched; all relevant papers classified by severity; `blocks_project` papers escalated immediately.
+
+**Script:** `scripts/recency_sweep.py record`
+
+**Command:** `/recency-sweep sweep_id=1`
+
+---
+
+### Phase 2: Experiment Design (Day 5–6)
+
+#### Step 9: `/design-experiments` — Experiment Planning [renumbered from Step 4]
+
+**Function:** Full experiment plan: baselines, ablations, sample size, resource estimation, statistical power analysis, success criteria, failure criteria. Baselines must include the closest prior work identified in `claim-overlap-report.md`. This step is the target of the Analysis→Design feedback loop and Gate N2 loop.
+
+**Inputs:** `hypotheses.md`, `novelty-assessment.md`, `claim-overlap-report.md`, `competitive-landscape.md`
 
 **Outputs:**
 - `$PROJECT_DIR/experiment-plan.md` — complete experiment matrix
 - `$PROJECT_DIR/experiment-state.json` — initialized with all planned runs
 - Ablation coverage matrix: for each hypothesis, which ablations test which components
 
-**Gate:** Every hypothesis has at least one primary experiment and one ablation; sample size is justified by power analysis; compute budget is estimated.
+**Gate:** Every hypothesis has at least one primary experiment and one ablation; sample size justified by power analysis; compute budget estimated; HIGH-overlap papers from `claim-overlap-report.md` included as baselines or documented as justified exclusions.
 
 **Epistemic updates:** Evidence Registry updated with planned experiment IDs (type: `planned_result`, status: `pending`).
 
-**Failure mode:** Under-designed ablations — the paper has results but can't attribute them to the right component.
+**Failure mode:** Missing baseline for a HIGH-overlap paper; reviewer asks "why didn't you compare against [closest prior work]?"
 
-**Re-entry:** If Gap Detection (Step 15) routes back here, the experiment plan is amended with newly identified required experiments. Version control: `experiment-plan-v{N}.md`. Maximum 2 re-entries from the analysis loop; 3rd failure escalates to human review.
+**Re-entry:** If Gap Detection (Step 21) routes back here, or Gate N2 (Step 10) blocks, the experiment plan is amended. Version control: `experiment-plan-v{N}.md`. Maximum 2 re-entries from analysis loop; 3rd failure escalates to human.
 
 ---
 
-### Phase 3: Implementation (Day 5–9)
+#### Step 10: `/design-novelty-check` — Gate N2: Design-Novelty Alignment [NEW]
+
+**Function:** Verify the experimental design actually tests the novelty claim. Check 5 things: (1) every claimed novelty dimension has an experiment, (2) all HIGH-overlap papers are baselines, (3) metrics match field standards, (4) ablations isolate each claimed component, (5) power analysis supports detection of claimed effect size.
+
+**Inputs:** `experiment-plan.md`, `hypotheses.md`, `novelty-assessment.md`, `claim-overlap-report.md`
+
+**Outputs:**
+- `$PROJECT_DIR/design-novelty-check.md` — structured pass/fail per check, decision, specific fix instructions
+- Updated `pipeline-state.json` → Gate N2 status
+
+**Gate:** PASS decision → proceed to Phase 3. REVISE/BLOCK → route back to Step 9 with specific instructions.
+
+**Loop termination:** Max 2 loops back to Step 9. Third failure → escalate to human (CRITICAL) or document as limitation and proceed (MAJOR only).
+
+**Command:** `/design-novelty-check`
+**Agent:** `experiment-design` skill + `scope-agent` (sonnet)
+
+---
+
+### Phase 3: Implementation (Day 6–10)
 
 #### Step 5: `/scaffold` — Project Structure
 
@@ -456,7 +606,7 @@ Phase 5 is structured as two sub-phases: **5A: Analysis & Grounding** (Steps 14�
 
 ---
 
-#### Step 15: `/gap-detection` — Analysis-to-Design Feedback [WP3 — NEW]
+#### Step 21: `/gap-detection` — Analysis-to-Design Feedback [WP3 — renumbered]
 
 **Function:** Given the analysis results, systematically identify missing experiments. Executed by the `gap_detector.py` script followed by an LLM synthesis pass.
 
@@ -478,7 +628,7 @@ Phase 5 is structured as two sub-phases: **5A: Analysis & Grounding** (Steps 14�
 
 ---
 
-#### Step 16: `/post-results-novelty` — Post-Results Novelty Reassessment [WP6 — NEW]
+#### Step 22: `/novelty-gate gate=N3` — Gate N3: Post-Results Novelty Reassessment [WP6 — renumbered and formalized as gate]
 
 **Function:** Re-evaluate the actual novelty of the contribution given what the experiments showed, not what was hypothesized. Compare actual results against initial hypotheses. Identify whether the real contribution is (a) the hypothesized contribution, (b) a surprising finding that emerged from the data, or (c) a negative result with important implications.
 
@@ -500,7 +650,25 @@ Phase 5 is structured as two sub-phases: **5A: Analysis & Grounding** (Steps 14�
 
 ---
 
-#### Step 17: `/literature-rescan` — Results-Contextualized Literature Re-scan [WP4 — NEW]
+#### Step 23: `/recency-sweep sweep_id=2` — Second Recency Sweep [WP4 — NEW]
+
+**Function:** Run Pass 5 again targeting concurrent work that appeared since Sweep 1. Uses the actual contribution framing from `novelty-reassessment.md` (not just the original hypothesis). Compare against watchlist from Sweep 1 to identify papers published during execution.
+
+**Inputs:** `novelty-reassessment.md`, `competitive-landscape.md`, Sweep 1 watchlist cache
+
+**Outputs:**
+- Updated `$PROJECT_DIR/concurrent-work-report.md` (Sweep 2 section appended)
+- Updated `.epistemic/citation_ledger.json`
+
+**Gate:** All query categories executed with actual contribution framing; `blocks_project` papers escalated immediately; watchlist updated with new queries.
+
+**Script:** `scripts/recency_sweep.py record --sweep-id 2`
+
+**Command:** `/recency-sweep sweep_id=2`
+
+---
+
+#### Step 24: `/literature-rescan` — Results-Contextualized Literature Re-scan [WP4 — renumbered]
 
 **Function:** Perform a targeted literature re-scan focused on the *actual findings*, not the original hypothesis. Search for papers that: (a) have been published since the initial review, (b) are now relevant given what was actually found, (c) provide better baselines or comparison points for the real contribution.
 
@@ -522,7 +690,7 @@ Phase 5 is structured as two sub-phases: **5A: Analysis & Grounding** (Steps 14�
 
 ---
 
-#### Step 18: `/method-code-reconciliation` — Method-Code Consistency Check [WP5 — NEW]
+#### Step 25: `/method-code-reconciliation` — Method-Code Consistency Check [WP5 — renumbered]
 
 **Function:** Extract all methodological claims that will go into the manuscript (hyperparameters, architectures, training procedures, preprocessing steps, evaluation protocols) and cross-reference against the actual config files, training logs, and `experiment-state.json`. Flag every discrepancy.
 
@@ -549,7 +717,7 @@ The steps below (19–27) form the **Phase 5 Revision Cycle** [A2]. After an ini
 
 ---
 
-#### Step 19: `/map-claims` — Claim-Evidence Architecture [WP10 updated]
+#### Step 26: `/map-claims` — Claim-Evidence Architecture [WP10 — renumbered]
 
 **Function:** Map every claim the paper will make to its evidence sources. Populate the Claim Dependency Graph. Read the Confidence Tracker and assign hedging levels. Run the Skeptic Agent on the primary claims.
 
@@ -573,7 +741,7 @@ The steps below (19–27) form the **Phase 5 Revision Cycle** [A2]. After an ini
 
 ---
 
-#### Step 20: `/position` — Contribution Positioning
+#### Step 27: `/position` — Contribution Positioning [renumbered]
 
 **Function:** Position the contribution against the competitive landscape and related work. Use the reassessed novelty (Step 16) and the results-contextualized literature (Step 17) as the primary inputs — not the original competitive landscape alone.
 
@@ -591,7 +759,7 @@ The steps below (19–27) form the **Phase 5 Revision Cycle** [A2]. After an ini
 
 ---
 
-#### Step 21: `/story` — Narrative Arc and Paper Blueprint
+#### Step 28: `/story` — Narrative Arc and Paper Blueprint [renumbered]
 
 **Function:** Define the narrative arc, triage results (which go in main paper vs. appendix), create the figure plan (which figures tell which part of the story), and produce the paper blueprint.
 
@@ -609,7 +777,7 @@ The steps below (19–27) form the **Phase 5 Revision Cycle** [A2]. After an ini
 
 ---
 
-#### Step 22: `/narrative-gap-detect` — Writing→Analysis Feedback [WP3 — NEW]
+#### Step 29: `/narrative-gap-detect` — Writing→Analysis Feedback [WP3 — renumbered]
 
 **Function:** Before generating prose, check whether the paper blueprint requires evidence that does not exist. This is the writing-to-analysis feedback trigger.
 
@@ -633,7 +801,7 @@ The steps below (19–27) form the **Phase 5 Revision Cycle** [A2]. After an ini
 
 ---
 
-#### Step 23: `/argument-figure-align` — Figure-Argument Alignment [WP7 — NEW]
+#### Step 30: `/argument-figure-align` — Figure-Argument Alignment [WP7 — renumbered]
 
 **Function:** For each major claim in the paper blueprint, evaluate whether the assigned figure is the most convincing visual evidence for that claim. Apply the "one figure, one point" principle. Redesign or regenerate figures that do not serve their assigned argument role.
 
@@ -650,7 +818,7 @@ The steps below (19–27) form the **Phase 5 Revision Cycle** [A2]. After an ini
 
 ---
 
-#### Step 24: `/produce-manuscript` — Manuscript Generation with Citation Audit [WP10 updated]
+#### Step 31: `/produce-manuscript` — Manuscript Generation with Citation Audit [WP10 — renumbered]
 
 **Function:** Generate full prose manuscript: all sections in LaTeX, publication-quality figures (polished from Step 23 output), submission package. The Confidence Tracker is read before generating each claim's prose to calibrate hedging language. Related work is drafted using both the early outline from Step 20 and the rescan findings from Step 17. After prose generation, run the Citation Audit.
 
@@ -674,7 +842,7 @@ The steps below (19–27) form the **Phase 5 Revision Cycle** [A2]. After an ini
 
 ---
 
-#### Step 25: `/cross-section-consistency` — Cross-Section Coherence Check [WP9 — NEW]
+#### Step 32: `/cross-section-consistency` — Cross-Section Coherence Check [WP9 — renumbered]
 
 **Function:** Extract the core claims from each section (abstract, introduction, methods, results, discussion, conclusion) and verify bidirectional alignment. Check terminology consistency throughout. Verify all figure/table references.
 
@@ -697,7 +865,7 @@ The steps below (19–27) form the **Phase 5 Revision Cycle** [A2]. After an ini
 
 ---
 
-#### Step 26: `/claim-source-align` — Claim-Source Alignment Verifier [WP1 — NEW]
+#### Step 33: `/claim-source-align` — Claim-Source Alignment Verifier [WP1 — renumbered]
 
 **Function:** Extract every factual claim and causal assertion from the manuscript prose. Trace each to a specific result in the Evidence Registry or a specific citation in the Citation Provenance Ledger. Flag any claim that (a) cannot be traced, (b) is stronger than its evidence warrants given the Confidence Tracker, or (c) drops hedging language that the Confidence Tracker requires.
 
@@ -722,66 +890,53 @@ The steps below (19–27) form the **Phase 5 Revision Cycle** [A2]. After an ini
 
 ---
 
-#### Step 27: `/multi-dimensional-review` — Review Battery [WP2 — replaces /quality-review]
+#### Step 34: `/verify-paper` — 7-Dimensional Paper Quality Verifier [WP2 — replaces /quality-review and /multi-dimensional-review]
 
-**Function:** Four independent reviewers evaluate the manuscript along distinct dimensions. Each reviewer can independently block progression with specific remediation instructions routed to the appropriate upstream step.
+**Function:** The final arbiter of paper quality before Phase 6. Evaluates the manuscript across 7 independent dimensions, each with its own scoring criteria (41 individual criteria total), auto-BLOCK conditions, and remediation routing. This supersedes the 4-reviewer battery from the original v3 draft — the 7-dimension structure provides finer-grained routing and adds Claim-Evidence Alignment, Presentation Quality, and Reproducibility as first-class gates.
 
-**Reviewer 1 — Methodological Reviewer:**
-- Does the experimental design support the stated claims?
-- Is the statistical methodology appropriate? Are multiple comparisons corrected?
-- Are effect sizes reported? Are confidence intervals appropriate?
-- Are there confounds that are acknowledged but not controlled?
-- Score: 1–10. Block threshold: < 7.
+**The Novelty dimension** (D1) uses `claim-overlap-report.md`, `adversarial-novelty-report.md`, and `concurrent-work-report.md` directly — making the verifier aware of the full multi-pass research system findings.
 
-**Reviewer 2 — Argument Structure Reviewer:**
-- Does the introduction's framing lead to the correct research questions?
-- Do the results address the stated research questions?
-- Does the discussion overreach? Are limitations adequately stated?
-- Is the related work section fair to competing approaches?
-- Score: 1–10. Block threshold: < 7.
+**Blocking rules:**
+- Any CRITICAL issue from any dimension → BLOCK
+- 3+ MAJOR issues from any single dimension → BLOCK
+- 5+ MAJOR issues total → BLOCK
+- Any dimension score < 5 → BLOCK
+- Average score < 7.0 → REVISE
 
-**Reviewer 3 — Coherence Reviewer:**
-- Is terminology consistent throughout?
-- Does the abstract match the conclusions?
-- Are all figure/table references valid? (Cross-checks Step 25 output)
-- Is the paper self-contained (does not require external knowledge to follow)?
-- Score: 1–10. Block threshold: < 7.
-
-**Reviewer 4 — Novelty/Positioning Reviewer:**
-- Given the actual results, is the claimed contribution novel?
-- Does the related work fairly represent the state of the art?
-- Is the contribution undersold or oversold relative to the evidence?
-- Score: 1–10. Block threshold: < 7.
-
-**Inputs:** Manuscript LaTeX, `claim-alignment-report.md`, `cross-section-report.md`, `review-battery-report.md` from previous cycles (if any)
+**Inputs:** Manuscript LaTeX, `claim-alignment-report.md` (Step 33), `cross-section-report.md` (Step 32), `claim-overlap-report.md`, `adversarial-novelty-report.md`, `concurrent-work-report.md`, `.epistemic/confidence_tracker.json`, `experiment-state.json`, config files, target venue guidelines
 
 **Outputs:**
-- `$PROJECT_DIR/review-battery-report.md` — four independent score sheets with specific line-referenced objections
-- Per-dimension remediation routing table: each objection mapped to the step it routes back to
+- `$PROJECT_DIR/manuscript/paper-quality-report.md` — scores, issue list (CRITICAL/MAJOR/MINOR), route_to per issue, acceptance probability estimate (HIGH/MEDIUM/LOW)
+- Updated `pipeline-state.json` → `verify_paper_cycle`, `verify_paper_decision`
 
-**Gate:** All four reviewers score ≥ 7/10. Any reviewer scoring < 7 blocks with specific remediation instructions.
-
-**Remediation Routing:**
+**Dimension → Routing table:**
 | Dimension | Typical routing target |
 |-----------|----------------------|
-| Methodological failure | Step 4 (design) or Step 14 (re-analysis) |
-| Argument failure | Step 21 (story) or Step 24 (manuscript) |
-| Coherence failure | Step 24 (manuscript revision) or Step 25 (re-check) |
-| Novelty/positioning failure | Step 20 (position) or Step 24 (related work revision) |
+| D1 Novelty | Step 3 (hypotheses) or Step 27 (position) |
+| D2 Methodological Rigor | Step 9 (design) or Step 20 (re-analysis) |
+| D3 Claim-Evidence Alignment | Step 26 (map-claims) or Step 31 (manuscript) |
+| D4 Argument Structure | Step 28 (story) or Step 31 (manuscript) |
+| D5 Cross-Section Coherence | Step 31 (manuscript) — consumes cross-section-report |
+| D6 Presentation Quality | Step 31 (manuscript) or Step 38 (compile) |
+| D7 Reproducibility | Step 31 (manuscript) or Step 20 (additional runs) |
 
-**Agents:** Four independent LLM invocations with reviewer-specific system prompts (do not share context during the review pass — each reviewer sees only the manuscript, not other reviewers' scores)
+**Phase 5B Revision Cycle termination [A2]:**
+- **PASS** → proceed to Phase 6.
+- **REVISE/BLOCK** → route to upstream step, re-run affected dimensions only (`/verify-paper --dimensions N,M`).
+- **Max revision cycles:** 3. After cycle 3: CRITICAL → escalate to human; MAJOR only → document in cover letter, proceed.
+- **Reset condition:** If revision causes a passing dimension to drop, revert draft and take targeted fix.
 
-**Phase 5 Revision Cycle termination [A2]:**
-- **Pass:** All four dimensions ≥ 7 → proceed to Phase 6.
-- **Soft failure:** 1–2 dimensions < 7 → route to specific upstream step, revise, re-run affected checks (Steps 25–27). Track revision cycle count.
-- **Max revision cycles:** 3 complete passes through Steps 19–27. After cycle 3, any remaining dimension failures < 5 are escalated to human review. Failures in range 5–6.9 are documented as known weaknesses in a cover letter and the pipeline proceeds.
-- **Reset condition:** If a revision introduces new coherence or claim failures (score decreases), revert to previous draft and take a more targeted fix.
+**Partial re-runs:** `/verify-paper --dimensions 2,3` re-runs only D2 and D3 after a targeted method fix.
+
+**Agents:** D1, D2, D3, D4 run in parallel as independent LLM invocations; D5 consumes `cross-section-report.md`; D7 runs `reproducibility-agent` (sonnet); D6 runs independently.
+
+**Command:** `/verify-paper`
 
 ---
 
-### Phase 6: Pre-Submission and Publication (Day 26–32)
+### Phase 6: Pre-Submission and Publication (Day 29–38)
 
-#### Step 28: `/adversarial-review` — Pre-Submission Adversarial Review [WP8 — restructured]
+#### Step 35: `/adversarial-review` — Pre-Submission Adversarial Review [WP8 — renumbered]
 
 **Function:** Simulate 2–3 hostile-but-fair reviewers before compilation. Each simulated reviewer is distinct in priority. Weaknesses identified here are routed back upstream — the paper is revised before compilation, not after.
 
@@ -816,7 +971,41 @@ This step replaces the old Step 21 (`/rebuttal`). The rebuttal module (preparing
 
 ---
 
-#### Step 29: `/concurrent-work-check` — Final Concurrent Work Check [WP4 — NEW]
+#### Step 36: `/recency-sweep sweep_id=final` — Final Recency Sweep [WP4 — renumbered and formalized]
+
+**Function:** Run Pass 5 one final time within 48 hours of submission. Uses the `concurrent_work_check.py` script to generate targeted arXiv queries from the actual contribution terms. Checks lab blogs and OpenReview for the upcoming submission cycle.
+
+**Inputs:** `novelty-reassessment.md`, `competitive-landscape.md`, Sweep 2 watchlist cache
+
+**Outputs:**
+- Updated `$PROJECT_DIR/concurrent-work-report.md` (Sweep Final section)
+- Updated `.epistemic/citation_ledger.json`
+
+**Gate:** Run within 48 hours of submission. `blocks_project` paper → escalate to human immediately (do not attempt autonomous repositioning on submission timeline).
+
+**Script:** `scripts/recency_sweep.py record --sweep-id final`; `scripts/concurrent_work_check.py` for query generation
+
+**Command:** `/recency-sweep sweep_id=final`
+
+---
+
+#### Step 37: `/novelty-gate gate=N4` — Gate N4: Pre-Submission Novelty Confirmation [NEW]
+
+**Function:** Final novelty confirmation incorporating the latest recency sweep. Verify the contribution is still novel given everything found since Gate N1. If concurrent work appeared: classify as direct competition / independent confirmation / superset / subset and respond accordingly.
+
+**Inputs:** `concurrent-work-report.md` (all sweeps), `novelty-reassessment.md`, `adversarial-novelty-report.md`
+
+**Outputs:**
+- Updated `$PROJECT_DIR/novelty-assessment.md` with Gate N4 section
+- Updated `pipeline-state.json` → Gate N4 status
+
+**Gate:** PROCEED → compile. REPOSITION (1 attempt only) → update positioning + related work. KILL → escalate to human (no autonomous kill on N4 — human decides whether to submit with adjusted claims or withdraw).
+
+**Command:** `/novelty-gate gate=N4`
+
+---
+
+#### Step 38: `/compile-manuscript` — LaTeX Compilation [renumbered from Step 30]
 
 **Function:** Within 48 hours of target submission date, run a targeted search for any papers posted to arXiv or published since Step 17 (literature re-scan) that are directly competitive or closely related. This is the last opportunity to update the related work section before submission.
 
@@ -832,7 +1021,7 @@ This step replaces the old Step 21 (`/rebuttal`). The rebuttal module (preparing
 
 ---
 
-#### Step 30: `/compile-manuscript` — LaTeX Compilation
+#### Step 38: `/compile-manuscript` — LaTeX Compilation
 
 **Function:** Compile LaTeX to PDF. Run `biber`/`bibtex`. Run `chktex`. Generate Overleaf-ready ZIP package. Verify PDF page count against venue limits.
 
@@ -876,13 +1065,49 @@ This step replaces the old Step 21 (`/rebuttal`). The rebuttal module (preparing
 
 ## Part 5: All Feedback Loops
 
+### Loop 0: Novelty Gate N1 — REPOSITION [NEW]
+
+**Trigger step:** Step 7 (`/novelty-gate gate=N1`)
+**Trigger condition:** Gate N1 decision is REPOSITION
+**Routing target:** Step 3 (`/formulate-hypotheses`) with specific repositioning guidance from `novelty-assessment.md`
+**Termination conditions:**
+1. Gate N1 returns PROCEED on re-run
+2. Max 2 REPOSITION loops. Third failure → KILL.
+**State tracking:** `pipeline-state.json` → `reposition_count`
+
+---
+
+### Loop 0b: Novelty Gate N1 — PIVOT [NEW]
+
+**Trigger step:** Step 7 (`/novelty-gate gate=N1`)
+**Trigger condition:** Gate N1 decision is PIVOT
+**Routing target:** Step 1 (`/research-landscape`) with specific pivot direction from `novelty-assessment.md`
+**Termination conditions:**
+1. Gate N1 returns PROCEED after new landscape + hypotheses
+2. Max 1 PIVOT. Second failure → KILL.
+**State tracking:** `pipeline-state.json` → `pivot_count`
+
+---
+
+### Loop 0c: Gate N2 — Design-Novelty Loop [NEW]
+
+**Trigger step:** Step 10 (`/design-novelty-check`)
+**Trigger condition:** Gate N2 decision is REVISE or BLOCK
+**Routing target:** Step 9 (`/design-experiments`) with specific fix instructions from `design-novelty-check.md`
+**Termination conditions:**
+1. Gate N2 returns PASS
+2. Max 2 loops. Third failure: CRITICAL → human escalation; MAJOR only → document as limitation, proceed.
+**State tracking:** `pipeline-state.json` → `design_novelty_loops`
+
+---
+
 ### Loop 1: Analysis → Experiment Design [WP3]
 
-**Trigger step:** Step 15 (`/gap-detection`)
+**Trigger step:** Step 21 (`/gap-detection`)
 **Trigger condition:** At least one gap classified as `Critical` in `gap-detection-report.md`
-**Routing target:** Step 4 (`/design-experiments`), then Steps 5–9 (implementation, if needed), then Steps 10–13 (execution), then re-run Step 14 and Step 15
+**Routing target:** Step 9 (`/design-experiments`), then Steps 11–15 (implementation, if needed), then Steps 16–19 (execution), then re-run Steps 20 and 21
 **Termination conditions:**
-1. No `Critical` gaps remain in the re-run of Step 15
+1. No `Critical` gaps remain in the re-run of Step 21
 2. Required experiment exceeds remaining compute budget AND the gap is documented as a limitation → do not loop, continue forward
 3. Max 2 iterations of this loop. Third occurrence: all remaining Critical gaps are documented as limitations. Human escalation flag set.
 **State tracking:** `pipeline-state.json` records loop count at `gap_detection_loops`.
@@ -891,44 +1116,48 @@ This step replaces the old Step 21 (`/rebuttal`). The rebuttal module (preparing
 
 ### Loop 2: Writing → Analysis [WP3]
 
-**Trigger step:** Step 22 (`/narrative-gap-detect`)
+**Trigger step:** Step 29 (`/narrative-gap-detect`)
 **Trigger condition:** At least one gap classified as `Evidence missing: Critical` in `narrative-gap-report.md`
 **Routing target:**
-- If missing evidence is derivable from existing results → Step 14 (`/analyze-results`), then re-run Steps 15–22
-- If missing evidence requires new experiments → Step 4 (`/design-experiments`), then Phase 3/4, then re-run Steps 14–22
+- If missing evidence is derivable from existing results → Step 20 (`/analyze-results`), then re-run Steps 21–29
+- If missing evidence requires new experiments → Step 9 (`/design-experiments`), then Phase 3/4, then re-run Steps 20–29
 **Termination conditions:**
 1. No `Evidence missing: Critical` gaps remain
 2. The required evidence is genuinely unobtainable → claim removed from blueprint or moved to Limitations
-3. Max 1 iteration back to Step 14; max 1 iteration back to Phase 4. Beyond this, escalate to human researcher.
+3. Max 1 iteration back to Step 20; max 1 iteration back to Phase 4. Beyond this, escalate to human researcher.
 **State tracking:** `pipeline-state.json` records loop count at `narrative_gap_loops`.
 
 ---
 
-### Loop 3: Phase 5 Revision Cycle [A2 / WP2]
+### Loop 3: Phase 5B Revision Cycle [A2 / WP2]
 
-**Trigger step:** Step 27 (`/multi-dimensional-review`)
-**Trigger condition:** Any of the four reviewers scores < 7/10
+**Trigger step:** Step 34 (`/verify-paper`)
+**Trigger condition:** Any dimension scores below threshold or any CRITICAL/MAJOR issue found
 **Routing targets (per dimension):**
-- Methodological failure → Step 4 (design) or Step 14 (analysis), then re-run Steps 19–27
-- Argument failure → Step 21 (story) or Step 24 (manuscript prose), then re-run Steps 22–27
-- Coherence failure → Step 24 (manuscript revision), then re-run Steps 25–27
-- Novelty/positioning failure → Step 20 (position), then re-run Steps 21–27
+- D1 Novelty failure → Step 3 (hypotheses) or Step 27 (position), then re-run Steps 28–34
+- D2 Methodological failure → Step 9 (design) or Step 20 (analysis), then re-run Steps 26–34
+- D3 Claim-Evidence failure → Step 26 (map-claims) or Step 31 (manuscript), then re-run Steps 32–34
+- D4 Argument failure → Step 28 (story) or Step 31 (manuscript prose), then re-run Steps 29–34
+- D5 Coherence failure → Step 31 (manuscript revision), then re-run Steps 32–34
+- D6 Presentation failure → Step 31 (manuscript), then re-run Step 34 D6 only
+- D7 Reproducibility failure → Step 31 (manuscript) or Step 20 (runs), then re-run Step 34 D7 only
 **Termination conditions:**
-1. All four reviewers score ≥ 7/10
-2. Max 3 complete passes through Steps 19–27. After cycle 3: scores < 5 → escalate to human; scores 5–6.9 → document as known weakness in cover letter, proceed to Phase 6
-**State tracking:** `pipeline-state.json` records `revision_cycle_count` and per-reviewer scores per cycle. If a revision causes a previously-passing dimension to drop, revert to previous draft version.
+1. All 7 dimensions pass (PASS decision)
+2. Max 3 complete revision cycles through Steps 26–34. After cycle 3: CRITICAL → escalate to human; MAJOR only (5–6.9 score) → document as known weakness in cover letter, proceed to Phase 6.
+**State tracking:** `pipeline-state.json` records `verify_paper_cycle` and per-dimension scores per cycle. If revision causes a passing dimension to drop, revert and take targeted fix.
+**Partial re-runs:** Use `/verify-paper --dimensions N,M` to re-run only affected dimensions after a targeted fix.
 
 ---
 
 ### Loop 4: Adversarial Review → Upstream [WP8]
 
-**Trigger step:** Step 28 (`/adversarial-review`)
+**Trigger step:** Step 35 (`/adversarial-review`)
 **Trigger condition:** At least one item classified as `Critical` in `adversarial-review-report.md`
 **Routing targets:**
-- Missing experiment → Step 4 (compute permitting); else document as limitation
-- Framing weakness → Step 20, then re-run Steps 21–28
-- Writing/clarity → Step 24, then re-run Steps 25–28
-- Statistical challenge → Step 14, then re-run Steps 15–28
+- Missing experiment → Step 9 (compute permitting); else document as limitation
+- Framing weakness → Step 27 (position), then re-run Steps 28–35
+- Writing/clarity → Step 31 (manuscript), then re-run Steps 32–35
+- Statistical challenge → Step 20 (re-analysis), then re-run Steps 21–35
 **Termination conditions:**
 1. No `Critical` items remain unaddressed
 2. Max 2 routing cycles. After cycle 2, remaining Critical items escalate to human researcher. Important and Minor items are logged but do not block.
@@ -940,17 +1169,22 @@ This step replaces the old Step 21 (`/rebuttal`). The rebuttal module (preparing
 
 ### Main Forward Flow
 
-Phase 1 (Steps 1–3) → Phase 2 (Step 4) → Phase 3 (Steps 5–9) → Phase 4 (Steps 10–13) → Phase 5A (Steps 14–18) → Phase 5B initial pass (Steps 19–27) → Phase 6 (Steps 28–33).
+Phase 1 (Steps 1–8) → Phase 2 (Steps 9–10) → Phase 3 (Steps 11–15) → Phase 4 (Steps 16–19) → Phase 5A (Steps 20–25) → Phase 5B initial pass (Steps 26–34) → Phase 6 (Steps 35–38).
 
-Epistemic infrastructure (Evidence Registry, Claim Dependency Graph, Confidence Tracker, Citation Provenance Ledger) is initialized during Phase 1 and updated at every result-producing or claim-generating step throughout. The Consistency Oracle is queryable at any stage and is run in full sweep mode before Steps 24 and 28.
+Epistemic infrastructure (Evidence Registry, Claim Dependency Graph, Confidence Tracker, Citation Provenance Ledger) is initialized during Phase 1 and updated at every result-producing or claim-generating step throughout. The Consistency Oracle is queryable at any stage and is run in full sweep mode before Steps 31 and 35.
+
+Multi-pass research system produces: `research-landscape.md` (Step 1), `cross-field-report.md` (Step 2), `claim-overlap-report.md` (Steps 4–5), `adversarial-novelty-report.md` (Step 6), `novelty-assessment.md` (Step 7). These feed directly into the Paper Quality Verifier's Dimension 1 at Step 34.
 
 ### Feedback Loops (upstream routing)
 
 ```
-Step 15 (gap-detection)         → Step 4  [loop 1: missing experiments]
-Step 22 (narrative-gap-detect)  → Step 14 or Step 4  [loop 2: evidence gaps]
-Step 27 (multi-dim-review)      → Steps 4/14/20/21/24  [loop 3: revision cycle]
-Step 28 (adversarial-review)    → Steps 4/14/20/24  [loop 4: pre-submission fixes]
+Step 7  (novelty-gate N1, REPOSITION) → Step 3  [loop 0: hypothesis reformulation]
+Step 7  (novelty-gate N1, PIVOT)      → Step 1  [loop 0b: territory pivot]
+Step 10 (design-novelty-check, BLOCK) → Step 9  [loop 0c: design fix]
+Step 21 (gap-detection)              → Step 9  [loop 1: missing experiments]
+Step 29 (narrative-gap-detect)       → Step 20 or Step 9  [loop 2: evidence gaps]
+Step 34 (verify-paper)               → Steps 9/20/26/27/28/31  [loop 3: revision cycle]
+Step 35 (adversarial-review)         → Steps 9/20/27/31  [loop 4: pre-submission fixes]
 ```
 
 Phase 4 also has its own internal loop (PRESET/PROGRESSION/CORRECTION/ABANDON) for execution failures, unchanged from v2.
@@ -961,13 +1195,15 @@ The following modules can independently block pipeline progression without requi
 
 | Module | Step | Blocks if... |
 |--------|------|-------------|
-| Pre-flight validation | Step 9 | Any smoke test fails |
-| Method-Code Reconciliation | Step 18 | Any discrepancy found |
-| Claim-Source Alignment Verifier | Step 26 | Any untraced or overclaimed claim |
-| Cross-Section Consistency Checker | Step 25 | Any cross-section alignment failure |
-| Multi-Dimensional Review (any dimension) | Step 27 | Any reviewer scores < 7 |
-| Citation Audit | Step 24 (sub-step) | Any misrepresented citation |
-| Concurrent Work Check | Step 29 | Direct competitive paper found (routes to human, not block) |
+| Novelty Gate N1 | Step 7 | KILL decision triggered |
+| Gate N2 Design-Novelty | Step 10 | Any CRITICAL check fails |
+| Pre-flight validation | Step 15 | Any smoke test fails |
+| Method-Code Reconciliation | Step 25 | Any discrepancy found |
+| Claim-Source Alignment Verifier | Step 33 | Any untraced or overclaimed claim |
+| Cross-Section Consistency Checker | Step 32 | Any of 5 sub-checks fails |
+| Paper Quality Verifier (any dimension) | Step 34 | CRITICAL issue or dimension < 5 |
+| Citation Audit | Step 31 (sub-step) | Any misrepresented citation |
+| Final Recency Sweep | Step 36 | `blocks_project` paper found (routes to human) |
 
 ### Persistent Services vs. Phase-Specific Steps
 
@@ -994,16 +1230,22 @@ All Steps 1–33
 
 | Phase | Days | Notes |
 |-------|------|-------|
-| Phase 1: Ideation | Day 1–4 | +1 day for Citation Provenance Ledger initialization |
-| Phase 2: Design | Day 4–5 | Unchanged |
-| Phase 3: Implementation | Day 5–9 | Unchanged |
-| Phase 4: Execution | Day 9–18 | Unchanged (SLURM-bound) |
-| Phase 5A: Analysis & Grounding | Day 18–21 | +2 days for Steps 15–18 (gap detection, novelty reassessment, lit rescan, method reconciliation) |
-| Phase 5B: Writing & Review Cycle | Day 21–27 | +3 days for new steps + revision cycle (budget 2 revision cycles) |
-| Phase 6: Pre-Submission | Day 27–32 | Adversarial review moved before compilation; +1 day for concurrent work check |
-| **Total** | **Day 1–32** | **+4 days over v2 baseline** |
+| Phase 1: Research & Novelty Assessment | Day 1–5 | +4 days over v2 (expanded from 3 steps to 8; multi-pass search + Gate N1) |
+| Phase 2: Design + Gate N2 | Day 5–6 | +0.5 day for design-novelty-check |
+| Phase 3: Implementation | Day 6–10 | Unchanged |
+| Phase 4: Execution | Day 10–19 | Unchanged (SLURM-bound) |
+| Phase 5A: Analysis & Grounding | Day 19–23 | +2 days for Steps 21–25 (gap detection, Gate N3, recency sweep 2, lit rescan, method reconciliation) |
+| Phase 5B: Writing & Review Cycle | Day 23–29 | +3 days for new steps + 7-dim verifier + revision cycle (budget 2 cycles) |
+| Phase 6: Pre-Submission | Day 29–38 | Adversarial review before compilation; recency sweep final; Gate N4; +2 days |
+| **Total (baseline)** | **Day 1–38** | **+8 days over v2 baseline** |
 
-Iteration time: each full Phase 5B revision cycle adds 1–2 days. Each loop back to Phase 4 adds 3–5 days (SLURM execution). The timeline above budgets for 2 Phase 5B revision cycles and no Phase 4 re-runs. A full Phase 4 re-run would extend the timeline by 5–9 days.
+Iteration time:
+- Each Phase 5B revision cycle adds 1–2 days.
+- Each Gate N1 REPOSITION loop adds 1–2 days.
+- Each loop back to Phase 4 (execution) adds 3–5 days (SLURM).
+- The timeline above budgets for: Gate N1 PROCEED on first attempt, Gate N2 PASS on first attempt, 2 Phase 5B revision cycles, no Phase 4 re-runs.
+- A full Phase 4 re-run would extend the timeline by 5–9 days.
+- Multi-pass search (Steps 4, 5, 6 in parallel) is designed to complete within 24 hours total wall time.
 
 ---
 
@@ -1056,4 +1298,32 @@ All changes organized by which critique item they address.
 
 ---
 
-*Pipeline v3 — 33 steps across 6 phases. 11 new modules. 4 feedback loops. 6 persistent epistemic infrastructure components. 4 verification agents. 10 new deterministic scripts.*
+| Multi-pass research architecture (6 search passes): territorial mapping, claim-level, citation graph, cross-field, recency sweeps, adversarial | Steps 1–8 (Phase 1 expansion) | research-system-spec.md Part 1 |
+| Novelty evaluation framework: 7-dimension contribution decomposition, per-dimension prior art assessment, differential articulation, significance scoring | Step 7 `/novelty-gate` | research-system-spec.md Part 2 |
+| Gate N1 (post-hypothesis): full novelty evaluation before experiment design; PROCEED/REPOSITION/PIVOT/KILL with explicit termination | Step 7 | research-system-spec.md Part 3 |
+| Gate N2 (post-design): design-novelty alignment check; 5 checks; loops back to design-experiments | Step 10 | research-system-spec.md Part 3 |
+| Gate N3 (post-results): formalized as `/novelty-gate gate=N3`; detects contribution shift; re-runs claim-level and adversarial search if shifted | Step 22 | research-system-spec.md Part 3 |
+| Gate N4 (pre-submission): final novelty confirmation incorporating recency sweep final | Step 37 | research-system-spec.md Part 3 |
+| Search agent architecture: Keyword, Semantic, Citation, Cross-Field, Recency, Adversarial agents with de-duplication and disagreement flagging | Steps 1–8 agent design | research-system-spec.md Part 4 |
+| Kill criteria: 5 explicit kill conditions; `kill_decision.py` evaluates deterministically; kills are logged and human-reversible | Step 7 + `kill_decision.py` | research-system-spec.md Part 6 |
+| Three recency sweeps (sweep-1, sweep-2, sweep-final) at pipeline checkpoints using watchlist caching | Steps 8, 23, 36 | research-system-spec.md Part 5 |
+| `claim-overlap-report.md` as ground truth for Novelty dimension in Paper Quality Verifier | Step 34 D1 + Step 7 | research-system-spec.md integration |
+| Paper Quality Verifier (7 dimensions, 41 criteria): replaces `/quality-review` and `/multi-dimensional-review` | Step 34 | Paper quality verifier.md |
+| PQV Dimension 1 (Novelty): connected to multi-pass search outputs; criterion N3 checks claim-overlap-report | Step 34 D1 | Paper quality verifier.md |
+| PQV Dimension 2 (Methodological Rigor): M8 criterion consumes method-reconciliation-report | Step 34 D2 | Paper quality verifier.md |
+| PQV Dimension 3 (Claim-Evidence Alignment): consumes claim-alignment-report from Step 33 | Step 34 D3 | Paper quality verifier.md |
+| PQV Dimension 5 (Cross-Section Coherence): consumes cross-section-report from Step 32 | Step 34 D5 | Paper quality verifier.md |
+| PQV acceptance probability estimator: HIGH/MEDIUM/LOW rating informs submit/hold decision | Step 34 | Paper quality verifier.md |
+| PQV partial re-runs: `/verify-paper --dimensions N,M` for targeted post-fix re-evaluation | Step 34 | Paper quality verifier.md |
+| PQV self-calibration log: verifier scores vs. actual review outcomes tracked over multiple projects | Step 34 | Paper quality verifier.md |
+| `dedup_papers.py`: de-duplicate search results using DOI, arXiv ID, title overlap; merge additive fields | New script | research-system-spec.md Part 4 |
+| `kill_decision.py`: evaluate 5 kill criteria from report files; log/override kills | New script | research-system-spec.md Part 6 |
+| `novelty_assess.py`: produce machine-readable novelty assessment JSON from report files | New script | research-system-spec.md Part 2 |
+| `recency_sweep.py`: manage sweep state, query caching, watchlist for 3 sweep checkpoints | New script | research-system-spec.md Part 5 |
+| `search_quality.py`: measure recall, precision, cluster coverage, threat detection rate | New script | research-system-spec.md Part 4 |
+| Citation search caching at `$PROJECT_DIR/.cache/` for citation graphs and recency sweeps | Infrastructure | research-system-spec.md Part 4 |
+| Novelty gate loops (N1 REPOSITION → Step 3, PIVOT → Step 1; N2 → Step 9) added to feedback loop inventory | Loops 0, 0b, 0c | research-system-spec.md Part 3 |
+
+---
+
+*Pipeline v3 — 38 steps across 6 phases. 16 new modules. 6+ feedback loops (4 from critique + 3 novelty gate loops). 8 persistent epistemic infrastructure components. 4 verification agents + 6 search agents. 15 new deterministic scripts. 4 novelty gates (N1–N4).*
