@@ -318,6 +318,33 @@ else:
 
 ---
 
+## Self-Calibration Log
+
+After each revision cycle, record the predicted acceptance probability and the actual outcome of that cycle's review. This allows the verifier to track whether its estimates are systematically optimistic or pessimistic over time.
+
+Append one entry to `$PROJECT_DIR/.epistemic/verifier_calibration_log.json` after writing `paper-quality-report.md`:
+
+```json
+{
+  "cycle": 1,
+  "date": "YYYY-MM-DD",
+  "predicted_probability": "MEDIUM",
+  "decision": "REVISE",
+  "critical_issues": 2,
+  "major_issues": 4,
+  "resolved_in_next_cycle": null,
+  "actual_outcome": null
+}
+```
+
+Fields `resolved_in_next_cycle` and `actual_outcome` are filled in on subsequent cycles:
+- `resolved_in_next_cycle`: set to `true`/`false` at the start of the next cycle's run, based on whether the issues flagged in this cycle were fixed.
+- `actual_outcome`: filled in after submission — accepted/rejected/withdrawn (never filled by the pipeline; requires human update).
+
+If the log shows a systematic pattern (e.g., PASS predictions consistently followed by REVISE outcomes), flag this to the user as: `[CALIBRATION WARNING] Verifier has over-predicted PASS N consecutive times. Apply additional scrutiny.`
+
+---
+
 ## Gate Criteria
 
 Before marking complete:
@@ -328,6 +355,7 @@ Before marking complete:
 - [ ] `paper-quality-report.md` written to `$PROJECT_DIR/manuscript/`
 - [ ] `pipeline-state.json` updated with cycle count and decision
 - [ ] If BLOCK: specific re-run instructions provided
+- [ ] Self-calibration log entry appended to `.epistemic/verifier_calibration_log.json`
 
 ---
 

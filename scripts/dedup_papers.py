@@ -61,11 +61,43 @@ def extract_arxiv_id(url_or_id: str) -> str | None:
     return m.group(1) if m else None
 
 
+def author_year_firstword_key(paper: dict) -> str | None:
+    """
+    Build a dedup key from first author last name + year + first content word of title.
+    e.g., "vaswani_2017_attention"
+    Returns None if any component is missing.
+    """
+    # Extract first author last name
+    authors = paper.get("authors") or paper.get("author") or ""
+    if isinstance(authors, list):
+        first_author = authors[0] if authors else ""
+    else:
+        first_author = str(authors).split(",")[0].strip()
+    # Take last name (last token before comma or last word)
+    last_name = first_author.split()[-1].lower() if first_author else ""
+    last_name = re.sub(r"[^\w]", "", last_name)
+
+    year = str(paper.get("year") or paper.get("published_year") or "").strip()[:4]
+    if not re.match(r"\d{4}", year):
+        year = ""
+
+    title = paper.get("title") or ""
+    # First content word of title (skip stopwords/articles)
+    _stop = {"a", "an", "the", "on", "in", "of", "for", "with", "and", "or", "is", "are"}
+    words = [w for w in normalize_title(title).split() if w not in _stop and len(w) > 2]
+    first_word = words[0] if words else ""
+
+    if last_name and year and first_word:
+        return f"{last_name}_{year}_{first_word}"
+    return None
+
+
 def build_ledger_index(ledger: dict) -> dict:
     """Build fast-lookup indices from citation ledger."""
     by_doi: dict[str, str] = {}
     by_arxiv: dict[str, str] = {}
     by_title: list[tuple[str, str]] = []  # (normalized_title, cite_key)
+    by_author_year_firstword: dict[str, str] = {}
 
     for cite_key, entry in ledger.items():
         doi = (entry.get("doi") or "").strip().lower()
@@ -82,7 +114,16 @@ def build_ledger_index(ledger: dict) -> dict:
         if title:
             by_title.append((normalize_title(title), cite_key))
 
-    return {"doi": by_doi, "arxiv": by_arxiv, "titles": by_title}
+        ayfk = author_year_firstword_key(entry)
+        if ayfk:
+            by_author_year_firstword[ayfk] = cite_key
+
+    return {
+        "doi": by_doi,
+        "arxiv": by_arxiv,
+        "titles": by_title,
+        "author_year_firstword": by_author_year_firstword,
+    }
 
 
 def find_duplicate(
@@ -108,6 +149,11 @@ def find_duplicate(
         for norm_existing, cite_key in index["titles"]:
             if token_overlap_ratio(norm_new, norm_existing) >= threshold:
                 return cite_key
+
+    # 4. Author + year + first-word-of-title exact match
+    ayfk = author_year_firstword_key(paper)
+    if ayfk and ayfk in index["author_year_firstword"]:
+        return index["author_year_firstword"][ayfk]
 
     return None
 

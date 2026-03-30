@@ -395,13 +395,162 @@ Then run `python scripts/pipeline_state.py status` and display the result.
 
 If aborted, remind the user: `Resume later with: /run-pipeline --resume`
 
+## Inline Step Output Templates
+
+These are the required output formats for the inline steps (steps with `—` in the Command column). The orchestrator must produce these files before reading gate decisions.
+
+---
+
+### Step 24: literature-rescan.md
+
+```markdown
+# Literature Re-scan Report (Step 24)
+
+**Date:** YYYY-MM-DD
+**Scope:** Papers published since [Step 1 date] relevant to actual findings
+**Databases searched:** [list]
+
+## New Papers Found
+
+### [Author et al., YYYY] — [Title]
+- **URL / arXiv ID:** ...
+- **Why now relevant:** [connection to actual results, not original hypothesis]
+- **Overlap with contribution:** [direct competition / complementary / cites differently]
+- **Action required:** [cite and differentiate / add to related work / no action]
+- **cite_key:** [added to citation_ledger.json as: key]
+
+## Updated Positioning
+[How the related work section will change given new papers]
+
+## Related Work Delta
+[Diff from what the related work section would have said after Step 1]
+
+## Gate Status
+- Databases searched: ≥ 2 ✓/✗
+- Time window covers post-Step-1 papers ✓/✗
+- At least one query derived from actual findings ✓/✗
+- New papers added to citation_ledger.json ✓/✗ (N added)
+```
+
+---
+
+### Step 30: figure-alignment-report.md
+
+```markdown
+# Figure-Argument Alignment Report (Step 30)
+
+**Date:** YYYY-MM-DD
+**Figures evaluated:** N
+
+## Figure Inventory
+
+| Figure | Assigned Claim | Takeaway Message | Alignment | Action |
+|--------|---------------|-----------------|-----------|--------|
+| fig_1.pdf | C3: method outperforms baselines | Bar chart shows +4.2% | aligned | none |
+| fig_2.pdf | C5: ablation isolates component X | Table hard to read | misaligned | redesign |
+
+## Misaligned Figures (redesign required)
+
+### [Figure filename]
+- **Assigned claim:** [claim from paper-blueprint.md]
+- **Current takeaway:** [what the figure currently communicates]
+- **Required takeaway:** [what it should communicate to support the claim]
+- **Redesign instruction:** [specific change: rotate axes / highlight bar / add CI / change color]
+- **Status after redesign:** [pending / complete]
+
+## Gate Status
+- All figures rated aligned ✓/✗
+- Redesigned figures written to figures/ ✓/✗ (N redesigned)
+- figure-plan.md updated ✓/✗
+```
+
+---
+
+### Step 35: adversarial-review-report.md (with 3 reviewer profiles)
+
+```markdown
+# Adversarial Review Report (Step 35)
+
+**Date:** YYYY-MM-DD
+**Reviewer profiles:** Novelty Skeptic, Methods Pedant, Clarity Judge
+**Revision cycle:** N
+
+## Reviewer 1: Novelty Skeptic
+
+**Profile:** Hostile reviewer who questions contribution novelty; cites obscure prior work.
+
+### Major Objections
+
+#### [OBJ-1] [Short title of objection]
+- **Severity:** Critical / Major / Minor
+- **Objection:** "[Verbatim simulated reviewer text — write as hostile peer reviewer]"
+- **Basis:** [Which prior work or observation supports this objection]
+- **Route to:** [step number — e.g., Step 3 (hypotheses), Step 27 (position)]
+- **Recommended response:** [Specific manuscript change that addresses this objection]
+- **Status:** Unresolved / Resolved (see [section/file])
+
+---
+
+## Reviewer 2: Methods Pedant
+
+**Profile:** Demands methodological rigor; flags every statistical weakness.
+
+### Major Objections
+
+#### [OBJ-2] [Short title]
+- **Severity:** Critical / Major / Minor
+- **Objection:** "..."
+- **Basis:** ...
+- **Route to:** [e.g., Step 9 (design), Step 20 (re-analysis)]
+- **Recommended response:** ...
+- **Status:** Unresolved / Resolved
+
+---
+
+## Reviewer 3: Clarity Judge
+
+**Profile:** Evaluates whether a reader unfamiliar with the subfield can follow the paper.
+
+### Major Objections
+
+#### [OBJ-3] [Short title]
+- **Severity:** Critical / Major / Minor
+- **Objection:** "..."
+- **Basis:** ...
+- **Route to:** [e.g., Step 31 (manuscript revision)]
+- **Recommended response:** ...
+- **Status:** Unresolved / Resolved
+
+---
+
+## Aggregated Critical Items
+
+| ID | Reviewer | Severity | Route to | Status |
+|----|----------|----------|----------|--------|
+| OBJ-1 | Novelty Skeptic | Critical | Step 27 | Unresolved |
+| OBJ-2 | Methods Pedant | Major | Step 9 | Unresolved |
+
+## Loop Routing
+
+```bash
+python scripts/pipeline_state.py increment-counter adversarial_review_cycles --max 2
+# Exit 0: route to earliest Critical item's route_to step
+# Exit 1: document remaining weaknesses and continue to Step 36
+```
+
+## Known Weaknesses for Cover Letter
+[Critical/Major items that could not be resolved — document here for cover letter]
+```
+
+---
+
 ## Important Rules
 
 1. **Never duplicate command logic.** Always invoke the actual slash command via the Skill tool. The orchestrator only manages sequencing and state.
 2. **Always update pipeline-state.json** before and after each step.
 3. **Always create log files** for each step.
 4. **Respect the user's choice** in interactive mode. If they say abort, stop immediately.
-5. **Steps marked with `—` in the Command column** (gap-detection, narrative-gap-detect, literature-rescan, method-code-reconciliation, argument-figure-align, cross-section-consistency, claim-source-align, adversarial-review) are invoked inline by the orchestrator — they do not have separate slash commands. Run them as structured sub-tasks.
+5. **Steps marked with `—` in the Command column** (gap-detection, narrative-gap-detect, literature-rescan, method-code-reconciliation, argument-figure-align, cross-section-consistency, claim-source-align, adversarial-review) are invoked inline by the orchestrator — they do not have separate slash commands. Run them as structured sub-tasks using the output templates defined in "Inline Step Output Templates" above.
 6. **Epistemic infrastructure** (`$PROJECT_DIR/.epistemic/`) is initialized at Step 1 and updated throughout. Check that `evidence_registry.json`, `citation_ledger.json`, `claim_graph.json`, and `confidence_tracker.json` are being updated at each evidence-producing step.
 
 ## Examples

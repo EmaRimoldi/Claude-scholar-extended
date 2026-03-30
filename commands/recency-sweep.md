@@ -114,11 +114,11 @@ Only "direct competition" and "supersets" are blocking. Independent confirmation
 Cache the queries and date ranges used in this sweep so they can be re-run efficiently in subsequent sweeps:
 
 ```bash
-python scripts/recency_sweep.py \
+python scripts/recency_sweep.py record \
   --sweep-id $sweep_id \
+  --project $PROJECT_DIR \
   --queries queries_used.json \
-  --results concurrent_work_raw.json \
-  --cache $PROJECT_DIR/.cache/recency_sweeps/
+  --results concurrent_work_raw.json
 ```
 
 For Sweep 2 and Final: compare against Sweep 1 (or Sweep 2) cache to identify papers that appeared *after* the previous sweep.

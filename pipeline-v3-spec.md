@@ -892,7 +892,7 @@ The steps below (19–27) form the **Phase 5 Revision Cycle** [A2]. After an ini
 
 #### Step 34: `/verify-paper` — 7-Dimensional Paper Quality Verifier [WP2 — replaces /quality-review and /multi-dimensional-review]
 
-**Function:** The final arbiter of paper quality before Phase 6. Evaluates the manuscript across 7 independent dimensions, each with its own scoring criteria (41 individual criteria total), auto-BLOCK conditions, and remediation routing. This supersedes the 4-reviewer battery from the original v3 draft — the 7-dimension structure provides finer-grained routing and adds Claim-Evidence Alignment, Presentation Quality, and Reproducibility as first-class gates.
+**Function:** The final arbiter of paper quality before Phase 6. Evaluates the manuscript across 7 independent dimensions, each with its own scoring criteria (45 individual criteria total), auto-BLOCK conditions, and remediation routing. This supersedes the 4-reviewer battery from the original v3 draft — the 7-dimension structure provides finer-grained routing and adds Claim-Evidence Alignment, Presentation Quality, and Reproducibility as first-class gates.
 
 **The Novelty dimension** (D1) uses `claim-overlap-report.md`, `adversarial-novelty-report.md`, and `concurrent-work-report.md` directly — making the verifier aware of the full multi-pass research system findings.
 
@@ -1002,22 +1002,6 @@ This step replaces the old Step 21 (`/rebuttal`). The rebuttal module (preparing
 **Gate:** PROCEED → compile. REPOSITION (1 attempt only) → update positioning + related work. KILL → escalate to human (no autonomous kill on N4 — human decides whether to submit with adjusted claims or withdraw).
 
 **Command:** `/novelty-gate gate=N4`
-
----
-
-#### Step 38: `/compile-manuscript` — LaTeX Compilation [renumbered from Step 30]
-
-**Function:** Within 48 hours of target submission date, run a targeted search for any papers posted to arXiv or published since Step 17 (literature re-scan) that are directly competitive or closely related. This is the last opportunity to update the related work section before submission.
-
-**Inputs:** `novelty-reassessment.md`, `competitive-landscape.md`, submission date
-
-**Script:** `concurrent_work_check.py` generates targeted arXiv search queries from the key terms of the actual contribution (not the original hypothesis).
-
-**Outputs:** `$PROJECT_DIR/concurrent-work-report.md` — new papers found with their relevance classification
-
-**Gate:** Search is run within 48 hours of submission. If a directly competing paper is found: (a) update the related work section to cite and differentiate, (b) update `positioning.md`, and (c) if the paper fully scoops the contribution, escalate to human researcher for go/no-go decision.
-
-**Failure mode:** A reviewer is an author of a paper posted 2 weeks ago that directly competes; the paper ignores it. Instant desk rejection or a hostile review.
 
 ---
 
@@ -1308,7 +1292,7 @@ All changes organized by which critique item they address.
 | Kill criteria: 5 explicit kill conditions; `kill_decision.py` evaluates deterministically; kills are logged and human-reversible | Step 7 + `kill_decision.py` | research-system-spec.md Part 6 |
 | Three recency sweeps (sweep-1, sweep-2, sweep-final) at pipeline checkpoints using watchlist caching | Steps 8, 23, 36 | research-system-spec.md Part 5 |
 | `claim-overlap-report.md` as ground truth for Novelty dimension in Paper Quality Verifier | Step 34 D1 + Step 7 | research-system-spec.md integration |
-| Paper Quality Verifier (7 dimensions, 41 criteria): replaces `/quality-review` and `/multi-dimensional-review` | Step 34 | Paper quality verifier.md |
+| Paper Quality Verifier (7 dimensions, 45 criteria): replaces `/quality-review` and `/multi-dimensional-review` | Step 34 | Paper quality verifier.md |
 | PQV Dimension 1 (Novelty): connected to multi-pass search outputs; criterion N3 checks claim-overlap-report | Step 34 D1 | Paper quality verifier.md |
 | PQV Dimension 2 (Methodological Rigor): M8 criterion consumes method-reconciliation-report | Step 34 D2 | Paper quality verifier.md |
 | PQV Dimension 3 (Claim-Evidence Alignment): consumes claim-alignment-report from Step 33 | Step 34 D3 | Paper quality verifier.md |
