@@ -4,7 +4,7 @@ kill_decision.py — Evaluate kill criteria for a research project.
 
 Reads structured reports from the multi-pass search system and evaluates
 whether any hard kill criterion has been triggered. Produces a machine-readable
-JSON result for use by the novelty-gate command.
+JSON result for use by the novelty-gate command and pipeline orchestrator.
 
 Usage:
     # Evaluate kill criteria
@@ -15,15 +15,26 @@ Usage:
         --pipeline-state $PROJECT_DIR/pipeline-state.json \
         --output $PROJECT_DIR/kill-decision.json
 
-    # Log a kill decision
+    # Log a kill decision (and terminate pipeline)
     python scripts/kill_decision.py --log-kill \
         --project $PROJECT_DIR \
         --reason "Full anticipation by [Author et al. 2025]"
+
+    # Trigger a specific criterion directly (used by orchestrator for loop termination)
+    python scripts/kill_decision.py --log-kill \
+        --criterion failed_reposition \
+        --project $PROJECT_DIR \
+        --reason "Gate N1 failed after 2 repositioning attempts"
 
     # Override a kill (human override)
     python scripts/kill_decision.py --override-kill \
         --project $PROJECT_DIR \
         --justification "Results are 40% better despite overlap; contribution is scale novelty"
+
+    # Human override for significance_collapse specifically
+    python scripts/kill_decision.py --override-kill --human-override \
+        --project $PROJECT_DIR \
+        --justification "Effect size is large enough for the venue despite weak rebuttal"
 
 Kill criteria (from research-system-spec.md Part 6):
   1. full_anticipation    — prior paper: same method + same task + comparable results
@@ -34,9 +45,11 @@ Kill criteria (from research-system-spec.md Part 6):
                             (1 emergency reposition allowed)
 
 Exit codes:
-  0 — No kill criteria triggered (PROCEED or REPOSITION)
-  1 — Kill criteria triggered
-  2 — Error reading input files
+  0 — PROCEED: no kill criteria triggered
+  1 — KILL: kill criteria triggered (hard stop)
+  2 — REPOSITION: marginal differentiation or concurrent scoop (loop back to Step 3 with counter)
+  3 — PIVOT: insufficient novelty, adjacent open problem identified (loop back to Step 1)
+  4 — Error reading input files
 """
 
 import argparse
@@ -250,12 +263,21 @@ def evaluate_kill_criteria(
         warnings.append(f"Reposition count: {reposition_count}/2 — one more failed reposition triggers KILL")
 
     # --- Criterion 4: Significance collapse ---
-    # Cannot be fully automated — flag for human evaluation if rebuttal is weak
+    # Weak rebuttal strength is treated as a significance_collapse KILL signal.
+    # Use --human-override / --override-kill if the human researcher judges the
+    # effect size is large enough despite a weak rebuttal.
     if adversarial.get("rebuttal_strength") in ("WEAK", "UNABLE_TO_WRITE") and not triggered:
-        warnings.append(
-            "Weak rebuttal strength may indicate significance collapse — "
-            "human evaluation recommended before proceeding"
-        )
+        triggered.append({
+            "criterion": "significance_collapse",
+            "description": (
+                "Adversarial rebuttal is weak or could not be written, indicating the "
+                "contribution may not be significant enough to publish. "
+                "Human override available via: "
+                "python scripts/kill_decision.py --override-kill --human-override "
+                "--project $PROJECT_DIR --justification '...'"
+            ),
+            "evidence": {"rebuttal_strength": adversarial.get("rebuttal_strength")},
+        })
 
     # --- Criterion 5: Concurrent scoop ---
     if concurrent.get("scoop_detected"):
@@ -278,12 +300,21 @@ def evaluate_kill_criteria(
 
     # --- Build verdict ---
     if triggered:
-        # Determine if any criterion is overridable
-        overridable = all(
-            t["criterion"] in ("marginal_differentiation", "concurrent_scoop")
-            for t in triggered
-        )
-        recommendation = "REPOSITION" if overridable else "KILL"
+        triggered_names = {t["criterion"] for t in triggered}
+        # REPOSITION: only marginal_differentiation or concurrent_scoop (single attempt allowed)
+        reposition_only = triggered_names <= {"marginal_differentiation", "concurrent_scoop"}
+        # PIVOT: adversarial recommendation says PIVOT and no hard-kill criterion
+        hard_kill_criteria = {
+            "full_anticipation", "failed_reposition", "rebuttal_failure", "significance_collapse"
+        }
+        has_hard_kill = bool(triggered_names & hard_kill_criteria)
+
+        if reposition_only and not has_hard_kill:
+            recommendation = "REPOSITION"
+        else:
+            recommendation = "KILL"
+    elif adversarial.get("recommendation") == "PIVOT" and not triggered:
+        recommendation = "PIVOT"
     elif warnings:
         recommendation = "PROCEED_WITH_CAUTION"
     else:
@@ -304,13 +335,15 @@ def evaluate_kill_criteria(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate kill criteria for a research project")
-    parser.add_argument("--claim-overlap", help="Path to claim-overlap-report.md")
-    parser.add_argument("--adversarial", help="Path to adversarial-novelty-report.md")
-    parser.add_argument("--concurrent", help="Path to concurrent-work-report.md")
-    parser.add_argument("--pipeline-state", help="Path to pipeline-state.json")
-    parser.add_argument("--output", help="Output path for kill-decision.json")
-    parser.add_argument("--log-kill", action="store_true", help="Log a KILL decision")
+    parser.add_argument("--claim-overlap", default="", help="Path to claim-overlap-report.md")
+    parser.add_argument("--adversarial", default="", help="Path to adversarial-novelty-report.md")
+    parser.add_argument("--concurrent", default="", help="Path to concurrent-work-report.md")
+    parser.add_argument("--pipeline-state", default="", help="Path to pipeline-state.json")
+    parser.add_argument("--output", default="", help="Output path for kill-decision.json")
+    parser.add_argument("--log-kill", action="store_true", help="Log a KILL decision and terminate pipeline (exit 1)")
     parser.add_argument("--override-kill", action="store_true", help="Override a KILL decision (human)")
+    parser.add_argument("--human-override", action="store_true", help="Flag override as human-initiated (used with --override-kill for significance_collapse)")
+    parser.add_argument("--criterion", help="Directly trigger a specific kill criterion (e.g. failed_reposition). Used with --log-kill by orchestrator.")
     parser.add_argument("--project", help="Project directory (for --log-kill / --override-kill)")
     parser.add_argument("--reason", help="Kill reason (for --log-kill)")
     parser.add_argument("--justification", help="Override justification (for --override-kill)")
@@ -320,21 +353,27 @@ def main() -> None:
     if args.log_kill:
         if not args.project:
             print("ERROR: --project required with --log-kill", file=sys.stderr)
-            sys.exit(2)
+            sys.exit(4)
         project = Path(args.project)
         state_path = project / "pipeline-state.json"
         state = json.loads(state_path.read_text()) if state_path.exists() else {}
         state["status"] = "killed"
         state["kill_reason"] = args.reason or "Not specified"
+        state["kill_criterion"] = args.criterion or "not_specified"
         state["killed_at"] = datetime.utcnow().isoformat() + "Z"
         state_path.write_text(json.dumps(state, indent=2))
 
+        criterion_note = f"\n**Criterion:** `{args.criterion}`\n" if args.criterion else ""
         kill_log = project / "kill-justification.md"
         kill_log.write_text(
             f"# Project Kill Justification\n\n"
-            f"**Date:** {datetime.utcnow().date()}\n\n"
-            f"**Reason:** {args.reason or 'Not specified'}\n\n"
-            f"**Artifacts preserved:** All files in {project} are retained for future reuse.\n"
+            f"**Date:** {datetime.utcnow().date()}\n"
+            f"{criterion_note}"
+            f"\n**Reason:** {args.reason or 'Not specified'}\n\n"
+            f"**Artifacts preserved:** All files in {project} are retained for future reuse.\n\n"
+            f"**To override (human):** "
+            f"`python scripts/kill_decision.py --override-kill --human-override "
+            f"--project {project} --justification '...'`\n"
         )
         print(f"Project killed. Justification written to {kill_log}")
         sys.exit(1)
@@ -343,13 +382,15 @@ def main() -> None:
     if args.override_kill:
         if not args.project or not args.justification:
             print("ERROR: --project and --justification required with --override-kill", file=sys.stderr)
-            sys.exit(2)
+            sys.exit(4)
         project = Path(args.project)
         state_path = project / "pipeline-state.json"
         state = json.loads(state_path.read_text()) if state_path.exists() else {}
         state["status"] = "kill_overridden"
         state["kill_override_justification"] = args.justification
         state["kill_overridden_at"] = datetime.utcnow().isoformat() + "Z"
+        if args.human_override:
+            state["human_override"] = True
         state_path.write_text(json.dumps(state, indent=2))
         print(f"Kill override logged. Project status: kill_overridden")
         sys.exit(0)
@@ -357,7 +398,7 @@ def main() -> None:
     # Standard evaluation
     if not args.output:
         print("ERROR: --output required for evaluation mode", file=sys.stderr)
-        sys.exit(2)
+        sys.exit(4)
 
     claim_overlap = parse_claim_overlap(Path(args.claim_overlap)) if args.claim_overlap else {}
     adversarial = parse_adversarial(Path(args.adversarial)) if args.adversarial else {}
@@ -365,7 +406,7 @@ def main() -> None:
     reposition_count = get_reposition_count(Path(args.pipeline_state)) if args.pipeline_state else 0
 
     for name, data in [("claim_overlap", claim_overlap), ("adversarial", adversarial), ("concurrent", concurrent)]:
-        if "error" in data:
+        if isinstance(data, dict) and "error" in data:
             print(f"WARNING: {name}: {data['error']}", file=sys.stderr)
 
     verdict = evaluate_kill_criteria(claim_overlap, adversarial, concurrent, reposition_count)
@@ -388,7 +429,15 @@ def main() -> None:
         print(f"  [WARNING] {w}")
     print(f"Output written to {output_path}")
 
-    sys.exit(1 if verdict["kill_criteria_triggered"] and verdict["recommendation"] == "KILL" else 0)
+    recommendation = verdict["recommendation"]
+    if recommendation == "KILL":
+        sys.exit(1)
+    elif recommendation == "REPOSITION":
+        sys.exit(2)
+    elif recommendation == "PIVOT":
+        sys.exit(3)
+    else:
+        sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -64,12 +64,12 @@ Execute the following steps **in this exact order**. This is the canonical v3 se
 | # | Step ID | Command | Description | Prerequisite Files | Online? |
 |---|---------|---------|-------------|-------------------|---------|
 | 1 | research-landscape | `/research-landscape` | Pass 1: Broad territory mapping, 50–100 papers, cluster analysis, initialize Citation Ledger | — | Yes |
-| 2 | check-competition | `/check-competition` | Competitive landscape + Pass 4 cross-field search | research-landscape.md | Yes |
+| 2 | cross-field-search | `/cross-field-search` | Pass 4: Abstract problem to domain-agnostic terms, identify 3–5 adjacent fields, search with field-specific terminology, produce cross-field-report.md | research-landscape.md | Yes |
 | 3 | formulate-hypotheses | `/research-init` | Hypothesis generation from gaps (hypothesis-generator agent, opus) | research-landscape.md | No |
 | 4 | claim-search | `/claim-search` | Pass 2: Decompose hypothesis into atomic claims, search each independently | hypotheses.md | Yes |
 | 5 | citation-traversal | `/citation-traversal` | Pass 3: Citation graph from top seed papers | research-landscape.md | Yes |
 | 6 | adversarial-search | `/adversarial-search` | Pass 6: Actively attempt to kill novelty claim | claim-overlap-report.md | Yes |
-| 7 | novelty-gate-n1 | `/novelty-gate gate=N1` | Gate N1: Full novelty evaluation. PROCEED/REPOSITION/PIVOT/KILL | adversarial-novelty-report.md | No |
+| 7 | novelty-gate-n1 | `/novelty-gate gate=N1` | Gate N1: Full novelty evaluation. PROCEED/REPOSITION/PIVOT/KILL | adversarial-novelty-report.md, **cross-field-report.md** | No |
 | 8 | recency-sweep-1 | `/recency-sweep sweep_id=1` | Pass 5: First recency check for concurrent work | hypotheses.md | Yes |
 
 **Phase 2: Experiment Design (Days 5–6)**
@@ -127,7 +127,7 @@ Execute the following steps **in this exact order**. This is the canonical v3 se
 
 | # | Step ID | Command | Description | Prerequisite Files | Online? |
 |---|---------|---------|-------------|-------------------|---------|
-| 35 | adversarial-review | — | Pre-submission adversarial review: 3 hostile simulated reviewers, routes upstream | manuscript/, review-battery-report.md | No |
+| 35 | adversarial-review | — | Pre-submission adversarial review: 3 hostile simulated reviewers, routes upstream | manuscript/, paper-quality-report.md | No |
 | 36 | recency-sweep-final | `/recency-sweep sweep_id=final` | Pass 5 final: last concurrent work check within 48h of submission | novelty-reassessment.md | Yes |
 | 37 | novelty-gate-n4 | `/novelty-gate gate=N4` | Gate N4: Final novelty confirmation before compilation | concurrent-work-report.md | No |
 | 38 | compile-manuscript | `/compile-manuscript` | Compile LaTeX to PDF, Overleaf ZIP, chktex | manuscript/ | No |
@@ -220,26 +220,166 @@ After each step completes, display a brief status line:
      Next: <next_command> — <next_description>
 ```
 
-## Feedback Loop Routing
+### 7. Gate Decision Reading and Loop Counter Management
 
-The following steps may route backward. When a step triggers a loop:
+**This section defines how to handle all 7 feedback loops.** After every gate step, read the gate's structured output and route accordingly. Do not rely solely on exit codes — also read the recommendation field from the output file.
 
-1. Log the loop in `pipeline-state.json` under the appropriate counter.
-2. Re-run the routing target step.
-3. Re-run all steps from the target to the triggering step.
-4. Check the termination condition before looping again.
+**Counter management pattern** (same for all loops):
+```bash
+# Before routing backward, increment the counter:
+python scripts/pipeline_state.py increment-counter <field> --max <N>
+# Exit 0: counter incremented, still within limit → route backward
+# Exit 1: counter has reached max → do NOT route backward, escalate instead
+```
 
-| Loop | Trigger | Target | Max Iterations | Termination |
-|------|---------|--------|---------------|-------------|
-| Gap Detection | Step 21 (critical gap found) | Step 9 (design-experiments) | 2 | No critical gaps remain |
-| Narrative Gap | Step 29 (evidence missing) | Step 20 or Step 9 | 1 per direction | No evidence-missing critical gaps |
-| Revision Cycle | Step 34 (any dimension < 7) | Step 26–33 (targeted) | 3 | All dimensions ≥ 7 |
-| Adversarial Review | Step 35 (critical item found) | Step 9/20/27/31 (routed) | 2 | No critical items unaddressed |
-| Novelty Gate N1 | Step 7 (REPOSITION) | Step 3 (formulate-hypotheses) | 2 | Gate N1 passes |
-| Novelty Gate N1 | Step 7 (PIVOT) | Step 1 (research-landscape) | 1 | Gate N1 passes |
-| Design Novelty | Step 10 (REVISE/BLOCK) | Step 9 (design-experiments) | 2 | Gate N2 passes |
+---
 
-**Kill decision:** If `/novelty-gate` returns KILL at any point, the pipeline terminates. All artifacts are preserved. Human can override with `python scripts/kill_decision.py --override-kill`.
+#### Loop 0: Gate N1 REPOSITION (Step 7 → Step 3)
+
+After Step 7 (`/novelty-gate gate=N1`) completes:
+
+1. Read `$PROJECT_DIR/docs/novelty-assessment.md` → look for `Decision: REPOSITION` or `Decision: PIVOT` or `Decision: KILL` or `Decision: PROCEED`.
+2. Also check the exit code of `scripts/kill_decision.py` (called inside `/novelty-gate`):
+   - Exit 0 → PROCEED
+   - Exit 1 → KILL (see Kill Decision below)
+   - Exit 2 → REPOSITION
+   - Exit 3 → PIVOT
+
+**If PROCEED:** Continue to Step 8.
+
+**If REPOSITION:**
+```bash
+python scripts/pipeline_state.py increment-counter reposition_count --max 2
+```
+- Exit 0 (counter now 1 or 2, still within limit): Route back to Step 3. Re-execute Steps 3–7. Log: `[LOOP] Novelty gate N1: REPOSITION #N — routing to formulate-hypotheses.`
+- Exit 1 (counter reached max = 2): Do NOT loop again. Run:
+  ```bash
+  python scripts/kill_decision.py --log-kill --criterion failed_reposition \
+    --project $PROJECT_DIR \
+    --reason "Gate N1 failed after 2 repositioning attempts. No viable novel angle found."
+  ```
+  Pipeline terminates (exit 1 from kill_decision.py). Log: `[KILL] Novelty gate N1: failed after 2 repositioning attempts.`
+
+**If PIVOT:**
+```bash
+python scripts/pipeline_state.py increment-counter pivot_count --max 1
+```
+- Exit 0 (first pivot): Route back to Step 1. Re-execute Steps 1–7. Log: `[LOOP] Novelty gate N1: PIVOT #1 — routing to research-landscape.`
+- Exit 1 (already pivoted once): Run `--log-kill --criterion failed_reposition`. Pipeline terminates.
+
+**If KILL:** Run `kill_decision.py --log-kill` and terminate immediately.
+
+---
+
+#### Loop 0c: Gate N2 Design-Novelty (Step 10 → Step 9)
+
+After Step 10 (`/design-novelty-check`) completes:
+
+1. Read `$PROJECT_DIR/docs/design-novelty-check.md` → look for `Decision:` field (PASS / REVISE / BLOCK).
+
+**If PASS:** Continue to Step 11.
+
+**If REVISE or BLOCK:**
+```bash
+python scripts/pipeline_state.py increment-counter design_novelty_loops --max 2
+```
+- Exit 0: Route back to Step 9. Re-execute Steps 9–10. Log: `[LOOP] Gate N2: REVISE #N — routing to design-experiments.`
+- Exit 1: Do NOT loop. In interactive mode: halt and require human review. In auto mode: log `[BLOCK] Gate N2 failed after 2 attempts. Human review required.` and stop.
+
+---
+
+#### Loop 1: Gap Detection (Step 21 → Step 9)
+
+Step 21 is an inline orchestrator sub-task. After running it:
+
+1. Check `$PROJECT_DIR/docs/gap-detection-report.md` for `critical_gaps_found: true` or presence of any CRITICAL severity gap entries.
+
+**If no critical gaps:** Continue to Step 22.
+
+**If critical gaps found:**
+```bash
+python scripts/pipeline_state.py increment-counter gap_detection_loops --max 2
+```
+- Exit 0: Route back to Step 9. Re-execute Steps 9–21. Log: `[LOOP] Gap detection: critical gaps found, loop #N — routing to design-experiments.`
+- Exit 1: Do NOT loop. Continue forward with gaps noted as limitations. Log: `[WARN] Gap detection triggered 2 loops. Proceeding with current evidence; remaining gaps documented as limitations.`
+
+---
+
+#### Loop 2: Narrative Gap Detection (Step 29 → Step 20 or Step 9)
+
+Step 29 is an inline orchestrator sub-task. After running it:
+
+1. Check `$PROJECT_DIR/docs/narrative-gap-report.md` for any gap with `severity: Critical` and `type: Evidence missing`.
+
+**If no critical evidence-missing gaps:** Continue to Step 30.
+
+**If critical evidence-missing gaps:**
+```bash
+python scripts/pipeline_state.py increment-counter narrative_gap_loops --max 2
+```
+- Exit 0: Determine routing:
+  - If gap's `route_to` field is `experiments` (requires new data): Route to Step 9. Re-execute Steps 9–29. Log: `[LOOP] Narrative gap: missing evidence requires new experiments, loop #N — routing to design-experiments.`
+  - If gap's `route_to` is `analysis` (can be derived from existing results): Route to Step 20. Re-execute Steps 20–29. Log: `[LOOP] Narrative gap: missing evidence requires re-analysis, loop #N — routing to analyze-results.`
+- Exit 1: Do NOT loop. Document remaining critical gaps as Limitations. Log: `[WARN] Narrative gap loops exhausted. Proceeding with gaps documented as limitations.`
+
+---
+
+#### Loop 3: Phase 5B Revision Cycle (Step 34 → Steps 26–33)
+
+This loop is already correctly implemented by `/verify-paper`. The `verify_paper_cycle` counter is written by the command itself. The orchestrator should:
+
+1. After Step 34 completes, read `$PROJECT_DIR/manuscript/paper-quality-report.md` for `Overall Decision:`.
+2. Also read `pipeline-state.json` → `verify_paper_decision` and `verify_paper_cycle`.
+
+**If PASS:** Continue to Step 35.
+
+**If REVISE or BLOCK:**
+```bash
+python scripts/pipeline_state.py get-field verify_paper_cycle
+```
+- Value < 3: Route to the upstream step indicated in the report's `route_to` field. Re-run affected steps. Re-run `/verify-paper --dimensions X,Y` on affected dimensions only.
+- Value >= 3: CRITICAL remaining → halt and escalate to human. MAJOR only → document in cover letter and continue.
+
+---
+
+#### Loop 4: Adversarial Review (Step 35 → varies)
+
+Step 35 is an inline orchestrator sub-task. After running it:
+
+1. Check `$PROJECT_DIR/adversarial-review-report.md` for findings with `severity: Critical` or `severity: Major`.
+
+**If no Critical/Major findings:** Continue to Step 36.
+
+**If Critical/Major findings:**
+```bash
+python scripts/pipeline_state.py increment-counter adversarial_review_cycles --max 2
+```
+- Exit 0: Find the earliest `route_to` step among Critical findings. Route there. Re-execute forward through Step 35. Log: `[LOOP] Adversarial review: critical finding, cycle #N — routing to step N.`
+- Exit 1: Do NOT loop. Continue to Step 36. Log critical/major findings in `adversarial-review-report.md` as known weaknesses for cover letter.
+
+---
+
+**Kill decision (any gate, any loop):** If `kill_decision.py` exits 1 (KILL) at any point:
+1. Print: `[KILL] Project terminated at step N. Reason: <reason>. Artifacts preserved in $PROJECT_DIR.`
+2. Run `python scripts/pipeline_state.py status` and display.
+3. Print: `Human override: python scripts/kill_decision.py --override-kill --human-override --project $PROJECT_DIR --justification "..."`
+4. Stop pipeline execution.
+
+## Feedback Loop Routing Reference
+
+Summary table for quick reference. For full logic, see "Gate Decision Reading" section above.
+
+| Loop | Counter field | Trigger step | Target | Max | Termination on exceed |
+|------|--------------|-------------|--------|-----|----------------------|
+| N1 REPOSITION | `reposition_count` | Step 7 | Step 3 | 2 | `kill_decision.py --criterion failed_reposition` |
+| N1 PIVOT | `pivot_count` | Step 7 | Step 1 | 1 | `kill_decision.py --criterion failed_reposition` |
+| N2 Design-Novelty | `design_novelty_loops` | Step 10 | Step 9 | 2 | Halt, human review required |
+| Gap Detection | `gap_detection_loops` | Step 21 | Step 9 | 2 | Continue with gaps as limitations |
+| Narrative Gap | `narrative_gap_loops` | Step 29 | Step 20 or 9 | 2 | Continue with gaps as limitations |
+| Phase 5B Revision | `verify_paper_cycle` | Step 34 | Steps 26–33 | 3 | CRITICAL→escalate; MAJOR→cover letter |
+| Adversarial Review | `adversarial_review_cycles` | Step 35 | varies | 2 | Continue with weaknesses documented |
+
+**Kill decision:** If `kill_decision.py` exits 1 (KILL) at any point, the pipeline terminates. Human override: `python scripts/kill_decision.py --override-kill --human-override --project $PROJECT_DIR --justification "..."`
 
 ## Pipeline Completion
 

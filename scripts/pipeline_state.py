@@ -35,151 +35,297 @@ STATE_FILE = "pipeline-state.json"
 PROJECT_SUBDIRS = ["docs", "configs", "src", "data", "results", "results/tables",
                    "results/figures", "manuscript", "logs", "notebooks"]
 
-# Canonical pipeline steps in execution order.
+# Canonical v3 pipeline steps in execution order (38 steps across 6 phases).
 # Each tuple: (step_id, slash_command, description, prerequisite_files, needs_online)
 # prerequisite_files are relative to project_dir (e.g. "docs/hypotheses.md").
+# Steps with command "—" are inline orchestrator sub-tasks (no separate slash command).
 PIPELINE_STEPS = [
+    # --- Phase 1: Research & Novelty Assessment (Days 1–5) ---
     (
-        "research-init",
+        "research-landscape",
+        "/research-landscape",
+        "Pass 1: Broad territory mapping, 50–100 papers, Citation Ledger init",
+        [],
+        True,
+    ),
+    (
+        "cross-field-search",
+        "/cross-field-search",
+        "Pass 4: Abstract problem, identify adjacent fields, produce cross-field-report.md",
+        ["docs/research-landscape.md"],
+        True,
+    ),
+    (
+        "formulate-hypotheses",
         "/research-init",
-        "Literature review, gap analysis, hypothesis formulation",
-        [],
-        True,
-    ),
-    (
-        "check-competition",
-        "/check-competition",
-        "Competitive landscape check",
-        [],
-        True,
-    ),
-    (
-        "design-experiments",
-        "/design-experiments",
-        "Experiment plan from hypotheses",
-        ["docs/hypotheses.md"],
+        "Hypothesis generation from gaps (hypothesis-generator agent)",
+        ["docs/research-landscape.md"],
         False,
     ),
     (
+        "claim-search",
+        "/claim-search",
+        "Pass 2: Decompose hypothesis into atomic claims, search each",
+        ["docs/hypotheses.md"],
+        True,
+    ),
+    (
+        "citation-traversal",
+        "/citation-traversal",
+        "Pass 3: Citation graph traversal from top seed papers",
+        ["docs/research-landscape.md"],
+        True,
+    ),
+    (
+        "adversarial-search",
+        "/adversarial-search",
+        "Pass 6: Actively attempt to kill novelty claim",
+        ["docs/claim-overlap-report.md"],
+        True,
+    ),
+    (
+        "novelty-gate-n1",
+        "/novelty-gate gate=N1",
+        "Gate N1: Full novelty evaluation. PROCEED/REPOSITION/PIVOT/KILL",
+        ["docs/adversarial-novelty-report.md", "docs/cross-field-report.md"],
+        False,
+    ),
+    (
+        "recency-sweep-1",
+        "/recency-sweep sweep_id=1",
+        "Pass 5: First recency check for concurrent work",
+        ["docs/hypotheses.md"],
+        True,
+    ),
+    # --- Phase 2: Experiment Design (Days 5–6) ---
+    (
+        "design-experiments",
+        "/design-experiments",
+        "Full experiment plan with baselines, ablations, power analysis",
+        ["docs/hypotheses.md", "docs/novelty-assessment.md"],
+        False,
+    ),
+    (
+        "design-novelty-check",
+        "/design-novelty-check",
+        "Gate N2: Does design test the novelty claim? Baselines correct?",
+        ["docs/experiment-plan.md", "docs/claim-overlap-report.md"],
+        False,
+    ),
+    # --- Phase 3: Implementation (Days 6–10) ---
+    (
         "scaffold",
         "/scaffold",
-        "Generate runnable project structure",
+        "Generate project structure",
         ["docs/experiment-plan.md"],
         False,
     ),
     (
         "build-data",
         "/build-data",
-        "Create dataset generators and loaders",
+        "Dataset generators and loaders",
         ["docs/experiment-plan.md"],
         False,
     ),
     (
         "setup-model",
         "/setup-model",
-        "Load, configure, introspect models",
+        "Load and configure models",
         ["docs/experiment-plan.md"],
         False,
     ),
     (
         "implement-metrics",
         "/implement-metrics",
-        "Implement metrics and statistical tests",
+        "Metrics and statistical tests",
         ["docs/experiment-plan.md"],
         False,
     ),
     (
         "validate-setup",
         "/validate-setup",
-        "Pre-flight validation checklist",
+        "Pre-flight validation checklist (hard block)",
         [],
         False,
     ),
+    # --- Phase 4: Execution (Days 10–19, SLURM) ---
     (
         "download-data",
         "/download-data",
-        "Download datasets and models to local cache",
+        "Download datasets/models to cluster cache",
         ["docs/experiment-plan.md"],
         True,
     ),
     (
         "plan-compute",
         "/plan-compute",
-        "GPU estimation and SLURM script generation",
+        "GPU estimation, SLURM scripts",
         ["docs/experiment-plan.md"],
         False,
     ),
     (
         "run-experiment",
         "/run-experiment",
-        "Submit experiment matrix via SLURM",
+        "Submit experiment matrix, monitor, recover",
         [],
         False,
     ),
     (
         "collect-results",
         "/collect-results",
-        "Aggregate run outputs into structured tables",
+        "Aggregate outputs into structured tables",
         [],
         False,
     ),
+    # --- Phase 5A: Analysis & Epistemic Grounding (Days 19–23) ---
     (
         "analyze-results",
         "/analyze-results",
-        "Statistical analysis and figure generation",
+        "Statistical analysis, figures, hypothesis outcomes",
         [],
         False,
     ),
     (
+        "gap-detection",
+        "—",
+        "Gap Detection: missing ablations/baselines (inline; may loop back to step 9)",
+        ["docs/analysis-report.md"],
+        False,
+    ),
+    (
+        "post-results-novelty",
+        "/novelty-gate gate=N3",
+        "Gate N3: Re-evaluate novelty given actual results",
+        ["docs/analysis-report.md", "docs/hypothesis-outcomes.md"],
+        False,
+    ),
+    (
+        "recency-sweep-2",
+        "/recency-sweep sweep_id=2",
+        "Pass 5 again: concurrent work during execution",
+        ["docs/novelty-reassessment.md"],
+        True,
+    ),
+    (
+        "literature-rescan",
+        "—",
+        "Results-contextualized literature re-scan (inline)",
+        ["docs/analysis-report.md", "docs/novelty-reassessment.md"],
+        True,
+    ),
+    (
+        "method-code-reconciliation",
+        "—",
+        "Method-Code consistency check (hard block on discrepancy; inline)",
+        ["experiment-state.json"],
+        False,
+    ),
+    # --- Phase 5B: Claim Architecture & Writing Cycle (Days 23–29) ---
+    (
         "map-claims",
         "/map-claims",
-        "Map paper claims to experimental evidence",
-        [],
+        "Claim-evidence architecture, Claim Dependency Graph, Skeptic Agent",
+        ["docs/analysis-report.md"],
         False,
     ),
     (
         "position",
         "/position",
-        "Contribution positioning against prior work",
-        [],
+        "Contribution positioning using novelty-reassessment.md as primary input",
+        ["docs/novelty-reassessment.md", "docs/claim-ledger.md"],
         False,
     ),
     (
         "story",
         "/story",
-        "Narrative arc, figure plan, paper blueprint",
-        [],
+        "Narrative arc, paper blueprint, figure plan",
+        ["docs/positioning.md"],
+        False,
+    ),
+    (
+        "narrative-gap-detect",
+        "—",
+        "Narrative Gap Detector: may loop back to Step 20 or Step 9 (inline)",
+        ["docs/paper-blueprint.md"],
+        False,
+    ),
+    (
+        "argument-figure-align",
+        "—",
+        "Figure-argument alignment; redesign figures that don't serve their claim (inline)",
+        ["docs/figure-plan.md"],
         False,
     ),
     (
         "produce-manuscript",
         "/produce-manuscript",
-        "Generate figures, prose, LaTeX, submission package",
-        [],
+        "Full prose + Citation Audit sub-step",
+        ["docs/paper-blueprint.md"],
         False,
     ),
     (
-        "quality-review",
-        "/quality-review",
-        "Quality gate: claim-evidence, statistical rigor, baselines",
-        [],
+        "cross-section-consistency",
+        "—",
+        "5-check cross-section consistency (hard block on failure; inline)",
+        ["manuscript/"],
+        False,
+    ),
+    (
+        "claim-source-align",
+        "—",
+        "Claim-Source Alignment Verifier (hard block on untraced claims; inline)",
+        ["manuscript/"],
+        False,
+    ),
+    (
+        "verify-paper",
+        "/verify-paper",
+        "7-dimensional quality verifier (45 criteria)",
+        ["docs/claim-alignment-report.md", "docs/cross-section-report.md"],
+        False,
+    ),
+    # --- Phase 6: Pre-Submission & Publication (Days 29–38) ---
+    (
+        "adversarial-review",
+        "—",
+        "3 hostile simulated reviewers, routes upstream (inline)",
+        ["manuscript/"],
+        False,
+    ),
+    (
+        "recency-sweep-final",
+        "/recency-sweep sweep_id=final",
+        "Pass 5 final: last concurrent work check within 48h of submission",
+        ["docs/novelty-reassessment.md"],
+        True,
+    ),
+    (
+        "novelty-gate-n4",
+        "/novelty-gate gate=N4",
+        "Gate N4: Final novelty confirmation before compilation",
+        ["docs/concurrent-work-report.md"],
         False,
     ),
     (
         "compile-manuscript",
         "/compile-manuscript",
-        "Compile LaTeX to PDF and create Overleaf package",
-        [],
-        False,
-    ),
-    (
-        "rebuttal",
-        "/rebuttal",
-        "Systematic reviewer response",
-        [],
+        "Compile LaTeX to PDF, Overleaf ZIP, chktex",
+        ["manuscript/"],
         False,
     ),
 ]
+
+# Loop counter fields tracked in pipeline-state.json.
+# These are incremented by the orchestrator when a feedback loop fires.
+LOOP_COUNTERS = {
+    "reposition_count":       {"max": 2, "loop": "N1 REPOSITION → Step 3"},
+    "pivot_count":            {"max": 1, "loop": "N1 PIVOT → Step 1"},
+    "design_novelty_loops":   {"max": 2, "loop": "N2 REVISE → Step 9"},
+    "gap_detection_loops":    {"max": 2, "loop": "Gap Detection → Step 9"},
+    "narrative_gap_loops":    {"max": 2, "loop": "Narrative Gap → Step 20 or Step 9"},
+    "verify_paper_cycle":     {"max": 3, "loop": "Phase 5B Revision → Steps 26–33"},
+    "adversarial_review_cycles": {"max": 2, "loop": "Adversarial Review → upstream"},
+}
 
 
 def now_iso():
@@ -402,6 +548,24 @@ def main():
 
     sub.add_parser("steps", help="List all step IDs")
 
+    p_inc = sub.add_parser(
+        "increment-counter",
+        help="Increment a feedback loop counter field in pipeline-state.json. "
+             "Exits 0 if counter is below max, exits 1 if counter has reached or exceeded max.",
+    )
+    p_inc.add_argument("field", help="Counter field name (e.g. reposition_count)")
+    p_inc.add_argument(
+        "--max", type=int, default=0,
+        help="Maximum allowed value (0 = no limit). Exits 1 if current >= max before incrementing.",
+    )
+
+    p_get = sub.add_parser(
+        "get-field",
+        help="Print the value of a top-level field in pipeline-state.json. "
+             "Exits 0 if found, 1 if missing.",
+    )
+    p_get.add_argument("field", help="Field name to read")
+
     args = parser.parse_args()
 
     if args.action == "init":
@@ -476,6 +640,43 @@ def main():
     elif args.action == "steps":
         for step_id in get_step_order():
             print(step_id)
+
+    elif args.action == "increment-counter":
+        field = args.field
+        max_val = args.max
+        current = int(state.get(field, 0))
+
+        if max_val > 0 and current >= max_val:
+            print(
+                f"Counter '{field}' has reached maximum ({current}/{max_val}). "
+                f"Loop termination condition met.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        state[field] = current + 1
+        state["updated_at"] = now_iso()
+        save_state(args.dir, state)
+
+        new_val = state[field]
+        limit_note = f"/{max_val}" if max_val > 0 else ""
+        print(f"Counter '{field}' incremented to {new_val}{limit_note}")
+
+        # Warn if one step below the limit
+        if max_val > 0 and new_val >= max_val:
+            print(
+                f"WARNING: '{field}' is now at maximum ({new_val}/{max_val}). "
+                f"Next loop trigger will terminate.",
+                file=sys.stderr,
+            )
+
+    elif args.action == "get-field":
+        field = args.field
+        if field not in state:
+            print(f"Field '{field}' not found in pipeline-state.json", file=sys.stderr)
+            sys.exit(1)
+        value = state[field]
+        print(json.dumps(value) if not isinstance(value, str) else value)
 
 
 if __name__ == "__main__":

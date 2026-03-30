@@ -27,6 +27,7 @@ Read `pipeline-state.json` → `project_dir`.
 - `$PROJECT_DIR/hypotheses.md`
 - `$PROJECT_DIR/claim-overlap-report.md` (Pass 2 output)
 - `$PROJECT_DIR/research-landscape.md`
+- `$PROJECT_DIR/docs/cross-field-report.md` (Pass 4 output — used to seed Step 6)
 
 **Outputs:**
 - `$PROJECT_DIR/adversarial-novelty-report.md`
@@ -106,11 +107,17 @@ This targets papers that are technically different from the proposed contributio
 
 ### Step 6: The Cross-Field Anticipation Attack
 
-Search in adjacent fields using abstract problem descriptions (same as Pass 4, but now targeted at killing novelty rather than finding baselines):
+**First, read `cross-field-report.md`** (produced by `/cross-field-search`, Step 2). The cross-field search has already identified adjacent fields and found relevant papers. Do not duplicate that work.
 
+From `cross-field-report.md`:
+1. Read the "Gate N1 Input Summary" section for cross-field kill signals.
+2. For every paper with `prior_art_threat: HIGH` or `prior_art_threat: MEDIUM`, attack the contribution using that paper as ammunition — construct the adversarial argument "this work is just [adjacent-field paper] repackaged in [source field] vocabulary."
+3. If `cross-field-report.md` recommendation is `blocks_novelty_claim` or `reposition_needed`, this attack is already pre-loaded — use the exact paper and field as the attack vector.
+
+If `cross-field-report.md` shows `no_impact` or `cite_and_differentiate` for all fields, then construct a fresh cross-field attack:
 1. Abstract the proposed contribution to its mathematical or computational core.
-2. Identify 2–3 adjacent fields where this core problem might be "solved."
-3. Search each field.
+2. Select 1–2 additional adjacent fields NOT already covered in `cross-field-report.md`.
+3. Search each field with field-specific terminology.
 
 Example: "We propose sparse attention for long sequences" → abstract to "sparse approximation of quadratic kernel" → search in: kernel methods literature, randomized algorithms, signal processing.
 
