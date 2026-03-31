@@ -301,7 +301,79 @@ def classify_gaps(
             "route_to": "analysis",
         })
 
-    # --- Gap 5: Hypothesis coverage ---
+    # --- Gap 5: Replication fidelity ---
+    # If experiment plan contains conditions explicitly labeled as replications of
+    # prior work, flag missing citation of source conditions (MAJOR) and metric
+    # differences (MAJOR). Does not produce CRITICAL — replication issues are
+    # important but do not block the pipeline.
+    _REPLICATION_PATTERN = re.compile(
+        r"\breplicat[ei]|\breplication\b|\bre-implement|\bre.implement",
+        re.IGNORECASE,
+    )
+    if _REPLICATION_PATTERN.search(plan_text):
+        # Extract lines mentioning replication to identify the conditions
+        replication_lines = [
+            line.strip()
+            for line in plan_text.splitlines()
+            if _REPLICATION_PATTERN.search(line)
+        ]
+        # Check 1: Is there a citation / source reference for the replication?
+        citation_pattern = re.compile(r"\(\w+\s*\d{4}|\[.*?\]|\barXiv\b|cite_key", re.IGNORECASE)
+        has_citation = any(citation_pattern.search(ln) for ln in replication_lines)
+        if not has_citation:
+            gaps.append({
+                "name": "Replication condition lacks source citation",
+                "severity": "Important",
+                "description": (
+                    "experiment-plan.md contains replication condition(s) but does not cite "
+                    "the original paper's hyperparameters or experimental setup. "
+                    "Uncited replications may use different settings and invalidate comparisons."
+                ),
+                "action": (
+                    "For each replication condition, cite the source paper and specify "
+                    "which hyperparameters / data splits are taken from the original work. "
+                    "Note any intentional deviations (e.g., different dataset, annotation subset)."
+                ),
+                "route_to": "experiments",
+            })
+        # Check 2: Are the evaluation metrics the same as the original?
+        # Heuristic: if analysis report uses metrics not mentioned in replication lines, flag.
+        replication_context = " ".join(replication_lines)
+        standard_metrics = re.findall(
+            r"\bF1\b|\baccuracy\b|\bAUC\b|\bMCC\b|\bcomprehensiveness\b|\bsufficiency\b"
+            r"|\bIoU\b|\bspearman\b|\bpearson\b",
+            analysis_text,
+            re.IGNORECASE,
+        )
+        original_metrics = re.findall(
+            r"\bF1\b|\baccuracy\b|\bAUC\b|\bMCC\b|\bcomprehensiveness\b|\bsufficiency\b"
+            r"|\bIoU\b|\bspearman\b|\bpearson\b",
+            replication_context,
+            re.IGNORECASE,
+        )
+        # Only flag if replication context mentions specific metrics and analysis differs
+        if original_metrics and standard_metrics:
+            orig_set = {m.lower() for m in original_metrics}
+            anal_set = {m.lower() for m in standard_metrics}
+            metrics_only_in_analysis = anal_set - orig_set
+            if metrics_only_in_analysis:
+                gaps.append({
+                    "name": "Replication evaluated on different metrics than original",
+                    "severity": "Important",
+                    "description": (
+                        f"Replication condition references metrics {sorted(orig_set)} but "
+                        f"analysis uses additional metrics {sorted(metrics_only_in_analysis)}. "
+                        "This may indicate the comparison is not apples-to-apples with the "
+                        "original paper."
+                    ),
+                    "action": (
+                        "Verify that the replication evaluation protocol matches the original "
+                        "paper's evaluation. Document any intentional differences explicitly."
+                    ),
+                    "route_to": "analysis",
+                })
+
+    # --- Gap 7 (renumbered from 5): Hypothesis coverage ---
     if hypotheses_text and planned["hypotheses"]:
         # Count how many hypotheses are mentioned in analysis
         h_lines = [
@@ -328,7 +400,7 @@ def classify_gaps(
                     "route_to": "analysis",
                 })
 
-    # --- Gap 6: Missing primary experiments ---
+    # --- Gap 8 (renumbered from 6): Missing primary experiments ---
     if planned["primary"]:
         missing_primary = [
             exp for exp in planned["primary"]

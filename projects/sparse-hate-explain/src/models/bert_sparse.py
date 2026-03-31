@@ -58,6 +58,8 @@ class BertSparseForClassification(nn.Module):
         supervised_heads: Sequence[tuple[int, int]] | str = "all",
         attention_transform: str = "softmax",
         lambda_attn: float = 1.0,
+        attn_loss_type: str = "kl",
+        entmax_alpha: float = 1.5,
     ) -> None:
         super().__init__()
 
@@ -68,12 +70,19 @@ class BertSparseForClassification(nn.Module):
         self.num_labels = num_labels
         self.lambda_attn = lambda_attn
 
-        if attention_transform not in ("softmax", "sparsemax"):
+        if attention_transform not in ("softmax", "sparsemax", "entmax"):
             raise ValueError(
-                f"attention_transform must be 'softmax' or 'sparsemax', "
+                f"attention_transform must be 'softmax', 'sparsemax', or 'entmax', "
                 f"got '{attention_transform}'"
             )
         self.attention_transform = attention_transform
+        self.entmax_alpha = entmax_alpha
+
+        if attn_loss_type not in ("kl", "mse"):
+            raise ValueError(
+                f"attn_loss_type must be 'kl' or 'mse', got '{attn_loss_type}'"
+            )
+        self.attn_loss_type = attn_loss_type
 
         # Resolve supervised head indices.
         n_layers = self.config.num_hidden_layers
@@ -193,6 +202,9 @@ class BertSparseForClassification(nn.Module):
         # Apply configured transform to create a valid distribution.
         if self.attention_transform == "sparsemax":
             target_dist = sparsemax(target_scores, dim=-1)
+        elif self.attention_transform == "entmax":
+            from .entmax import entmax_bisect
+            target_dist = entmax_bisect(target_scores, alpha=self.entmax_alpha, dim=-1)
         else:
             # Softmax: use large negative for masked positions.
             neg_inf = torch.finfo(target_scores.dtype).min
@@ -219,25 +231,26 @@ class BertSparseForClassification(nn.Module):
             # attn_weights: (B, H, L, L) -> select head -> (B, L, L)
             head_attn = attentions[layer_idx][:, head_idx]  # (B, L, L)
 
-            # Clamp for numerical stability in log.
-            head_attn_clamped = head_attn.clamp(min=1e-12).float()
             target_expanded = target_dist[:, 0, 0, :].unsqueeze(1).expand_as(head_attn)  # (B, L, L)
-            target_expanded = target_expanded.clamp(min=1e-12).float()
 
-            # KL(target || head_attn) = sum target * log(target / head_attn)
-            kl = target_expanded * (target_expanded.log() - head_attn_clamped.log())
-
-            # Mask padding query positions: only compute loss for real tokens.
+            # Padding masks.
             query_mask = attention_mask.float().unsqueeze(-1)  # (B, L, 1)
-            kl = kl * query_mask
-
-            # Also mask padding key positions.
             key_mask = attention_mask.float().unsqueeze(1)  # (B, 1, L)
-            kl = kl * key_mask
-
-            # Mean over non-padding entries.
             n_valid = (query_mask * key_mask).sum().clamp(min=1.0)
-            loss_accum = loss_accum + kl.sum() / n_valid
+
+            if self.attn_loss_type == "mse":
+                # MSE between predicted and target attention distributions.
+                diff = (head_attn.float() - target_expanded.float()) ** 2
+                diff = diff * query_mask * key_mask
+                loss_accum = loss_accum + diff.sum() / n_valid
+            else:
+                # KL(target || head_attn) — default.
+                head_attn_clamped = head_attn.clamp(min=1e-12).float()
+                target_clamped = target_expanded.clamp(min=1e-12).float()
+                kl = target_clamped * (target_clamped.log() - head_attn_clamped.log())
+                kl = kl * query_mask * key_mask
+                loss_accum = loss_accum + kl.sum() / n_valid
+
             n_heads += 1
 
         if n_heads > 0:

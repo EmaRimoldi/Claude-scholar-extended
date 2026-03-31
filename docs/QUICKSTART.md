@@ -478,7 +478,7 @@ source, and a submission-ready package. All outputs go to
 ```
 
 The Paper Quality Verifier (PQV) is the peer-review gate before submission.
-It evaluates the manuscript across **7 dimensions with 45 criteria**:
+It evaluates the manuscript across **7 dimensions with 46 criteria**:
 
 | # | Dimension | Criteria |
 |---|-----------|---------|
@@ -835,7 +835,7 @@ if any are found outside the project directory.
 | `/position` | Position contribution against prior work | Before writing |
 | `/story` | Build narrative arc and paper blueprint | Before writing |
 | `/produce-manuscript` | Generate figures, prose, LaTeX, submission package | Writing phase |
-| `/verify-paper` | 7-dimension PQV (45 criteria), acceptance probability estimate | After produce-manuscript |
+| `/verify-paper` | 7-dimension PQV (46 criteria), acceptance probability estimate | After produce-manuscript |
 | `/compile-manuscript` | Compile LaTeX to PDF, create Overleaf ZIP | After verify-paper passes |
 | `/rebuttal` | Write systematic reviewer responses | After receiving reviews |
 | `/presentation` | Create conference presentation | Post-acceptance |

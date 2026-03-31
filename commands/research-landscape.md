@@ -68,6 +68,26 @@ Expand `$topic` into a query matrix covering:
 [topic] limitations open problems
 ```
 
+### Step 1b: Recency-Boosted Core Topic Search
+
+**Run immediately after Step 1, before triage.** After generating the initial query matrix, run a second set of date-filtered queries targeting the last 6 months to catch very recent concurrent work that may not yet have high citation counts but is directly relevant.
+
+For each major cluster identified in Step 1 (especially HIGH-relevance clusters), generate 1–2 queries restricted to recent papers:
+
+```
+[cluster key terms] 2025 2026 site:arxiv.org
+[exact topic phrase] arXiv 2025
+[method] [task] 2026 NeurIPS ICML ICLR ACL
+```
+
+**Sources:** arXiv (date-filtered search or `arxiv.org/search/?searchtype=all&query=...&start=0&order=-announced_date_first`), Semantic Scholar (year filter: 2025, 2026)
+
+**Triage rule:** Any paper published in the last 6 months in a HIGH-relevance cluster is automatically Tier 1 — read in full. Do NOT defer these to later passes. Concurrent work threats from the last 6 months missed at Pass 1 are not recoverable until Pass 5 (recency sweep), which is after hypothesis formulation and experiment design.
+
+**Minimum:** 4 date-filtered queries (1 per HIGH-relevance cluster).
+
+---
+
 ### Step 2: Multi-Source Search
 
 Search the following sources in order. Do not skip a source unless it fails with an error.

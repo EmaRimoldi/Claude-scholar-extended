@@ -103,7 +103,7 @@ Rating: BROAD / MODERATE / NARROW
 **Insight value:** Does this teach something about the problem, or is it purely mechanical?
 Rating: HIGH / MEDIUM / LOW
 
-### Phase 5: Gate N3 Special Logic — Contribution Shift Detection
+### Phase 5: Gate N3 Special Logic — Contribution Shift Detection and Venue Fit
 
 *Only for Gate N3.*
 
@@ -120,6 +120,32 @@ If the actual contribution has shifted from the hypothesis:
 - Update the novelty assessment
 
 Write `novelty-reassessment.md` with the updated contribution framing.
+
+### Phase 5b: Venue Appropriateness Check (N3 only)
+
+After assessing novelty, evaluate venue fit based on the final contribution shape:
+
+**Trigger conditions (ALL must be true to emit the warning):**
+1. `target_venue` in `pipeline-state.json` is a top-tier ML venue (NeurIPS, ICML, ICLR)
+2. The primary novelty dimension is empirical (not theoretical) — i.e., no formal proposition with proof is present
+3. The evaluation covers a single dataset in a single task domain
+
+**If triggered, emit this warning in `novelty-reassessment.md`:**
+
+```
+[VENUE WARNING] Single-dataset empirical NLP contribution submitted to [venue].
+NeurIPS/ICML/ICLR reviewers typically expect either:
+  (a) a theoretical contribution that generalizes across domains, or
+  (b) evaluation on multiple datasets and/or modalities.
+The current contribution may be better suited for ACL / EMNLP / NAACL, where
+single-dataset NLP results are an accepted community norm.
+Recommendation: Either (1) strengthen the theoretical contribution so it is
+the primary vehicle for novelty, or (2) add a second dataset, or (3) redirect
+to ACL/EMNLP.
+This is a WARNING, not a BLOCK. The venue decision belongs to the researcher.
+```
+
+This warning is propagated into the adversarial review (Step 35) so the adversarial reviewer considers the venue fit as a potential weakness.
 
 ### Phase 6: Kill Criteria Evaluation
 
@@ -160,6 +186,26 @@ Recommendation: PROCEED / REPOSITION / PIVOT / KILL
 Confidence: HIGH / MEDIUM / LOW
 Evidence: [list of passes and reports contributing to this verdict]
 ```
+
+### Phase 6b: Theoretical Claim Heuristic (N1 only)
+
+*Run during reposition instruction generation whenever the gate is N1.*
+
+Scan the contribution statement and hypotheses for keywords related to attention mechanism theory:
+
+**Trigger keywords:** "attention faithfulness", "attention explanation", "decision boundary", "information flow", "causal role of attention", "attention swap", "attention invariance", "value subspace", "functional equivalence under attention", "attention does not affect"
+
+**If any trigger keyword is present:**
+1. Flag that the Jain & Wallace (2019) / Wiegreffe & Pinter (2019) debate (attention-is-not-explanation) is established and well-covered ground
+2. Add to the REPOSITION instructions:
+   - "The theoretical claim about attention mechanisms must be explicitly differentiated from Jain & Wallace (2019) adversarial swap and Wiegreffe & Pinter (2019) counter-argument. Simply showing that attention distributions can be exchanged without affecting predictions restates a known result."
+   - "For the theoretical contribution to count at a venue like NeurIPS, it must be formalized as a proposition with a proof sketch, not stated as an empirical observation. State the sufficient condition precisely, prove it analytically, then validate empirically."
+   - "Add this differentiation requirement to the contribution statement revision."
+3. Include this in the reposition routing instructions sent back to Step 3 (`formulate-hypotheses`)
+
+This heuristic prevents a wasted adversarial review cycle (Step 35) by surfacing the attention-theory differentiation requirement at the earliest opportunity.
+
+---
 
 **Decision rules:**
 - **PROCEED:** CLEAR novelty on primary dimension + at least MEDIUM significance on ≥ 2 significance dimensions. No kill signals.

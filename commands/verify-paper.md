@@ -1,6 +1,6 @@
 ---
 name: verify-paper
-description: 7-dimensional paper quality verifier. Replaces /quality-review. Evaluates the manuscript across independent dimensions (Novelty, Methodological Rigor, Claim-Evidence Alignment, Argument Structure, Cross-Section Coherence, Presentation Quality, Reproducibility). Each dimension can independently block. Produces structured PASS/REVISE/BLOCK decision with routed remediation.
+description: 7-dimensional paper quality verifier. Replaces /quality-review. Evaluates the manuscript across independent dimensions (Novelty, Methodological Rigor, Claim-Evidence Alignment, Argument Structure, Cross-Section Coherence, Presentation Quality, Reproducibility). Each dimension can independently block. Produces structured PASS/REVISE/BLOCK decision with routed remediation. 46 individual criteria total.
 args:
   - name: dimensions
     description: "Comma-separated list of dimensions to run (1–7). Default: all. Example: '2,3' to re-run only Methodological Rigor and Claim-Evidence after a targeted fix."
@@ -79,6 +79,7 @@ Score each criterion 0–10:
 | N4 | The novelty differential vs. closest prior work is explicitly articulated |
 | N5 | The significance of the contribution is argued, not just asserted |
 | N6 | Related work covers all major threads from `research-landscape.md` |
+| N7 | Prior art is credited honestly and proportionally: the paper acknowledges what it borrows (method, framing, experimental setup); overlapping prior work is discussed in sufficient detail, not dismissed in a clause; language does not minimize overlap (e.g., "unlike X" when difference is minor) |
 
 **CRITICAL auto-BLOCK:**
 - A HIGH-overlap paper from `claim-overlap-report.md` is not cited or discussed

@@ -120,7 +120,7 @@
 | `/recency-sweep` | Pass 5: Recency sweep (sweep_id=1/2/final) for concurrent work detection with watchlist caching |
 | `/novelty-gate` | Novelty gate N1/N3/N4 — 7-dimension novelty evaluation, PROCEED/REPOSITION/PIVOT/KILL decision |
 | `/design-novelty-check` | Gate N2: Verify experiment design tests the novelty claim, baselines are complete |
-| `/verify-paper` | 7-dimension Paper Quality Verifier (45 criteria) with acceptance probability estimate; replaces /quality-review |
+| `/verify-paper` | 7-dimension Paper Quality Verifier (46 criteria) with acceptance probability estimate; replaces /quality-review |
 | `/research-init` | Start Zotero-integrated research ideation workflow (auto-create collections, import papers, full-text analysis) |
 | `/zotero-review` | Read papers from Zotero collection, synthesize into Obsidian literature review and downstream project notes |
 | `/zotero-notes` | Batch read Zotero papers, create/update detailed Obsidian paper notes and refresh `Maps/literature.canvas` |
