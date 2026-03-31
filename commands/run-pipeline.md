@@ -292,7 +292,7 @@ python scripts/pipeline_state.py increment-counter design_novelty_loops --max 2
 
 Step 21 is an inline orchestrator sub-task. After running it:
 
-1. Check `$PROJECT_DIR/docs/gap-detection-report.md` for `critical_gaps_found: true` or presence of any CRITICAL severity gap entries.
+1. Check `$PROJECT_DIR/gap-detection-report.md` for `critical_gaps_found: true` or presence of any CRITICAL severity gap entries.
 
 **If no critical gaps:** Continue to Step 22.
 
@@ -309,7 +309,7 @@ python scripts/pipeline_state.py increment-counter gap_detection_loops --max 2
 
 Step 29 is an inline orchestrator sub-task. After running it:
 
-1. Check `$PROJECT_DIR/docs/narrative-gap-report.md` for any gap with `severity: Critical` and `type: Evidence missing`.
+1. Check `$PROJECT_DIR/narrative-gap-report.md` for any gap with `severity: Critical` and `type: Evidence missing`.
 
 **If no critical evidence-missing gaps:** Continue to Step 30.
 
@@ -395,9 +395,31 @@ Then run `python scripts/pipeline_state.py status` and display the result.
 
 If aborted, remind the user: `Resume later with: /run-pipeline --resume`
 
-## Inline Step Output Templates
+## Inline Step Invocations and Output Templates
 
-These are the required output formats for the inline steps (steps with `—` in the Command column). The orchestrator must produce these files before reading gate decisions.
+These are the execution instructions for the inline steps (steps with `—` in the Command column). Steps that have a deterministic Python script **must** invoke the script — do not LLM-generate the output. Steps without a script use the output template as the generation format.
+
+All output paths are in `$PROJECT_DIR/` (project root). No `docs/` prefix.
+
+---
+
+### Step 21: gap-detection-report.md (deterministic script)
+
+**REQUIRED: Run the script. Do not generate this output manually.**
+
+```bash
+python scripts/gap_detector.py \
+  --experiment-plan $PROJECT_DIR/experiment-plan.md \
+  --analysis-report $PROJECT_DIR/analysis-report.md \
+  --hypotheses      $PROJECT_DIR/hypotheses.md \
+  --landscape       $PROJECT_DIR/competitive-landscape.md \
+  --output          $PROJECT_DIR/gap-detection-report.md
+```
+
+Exit codes:
+- `0` → No critical gaps. Continue to Step 22.
+- `1` → Critical gaps found. Read `gap-detection-report.md` → run Loop 1 counter logic (see Loop 1 section).
+- `2` → Input file error. Check prerequisite files before retrying.
 
 ---
 
@@ -434,6 +456,47 @@ These are the required output formats for the inline steps (steps with `—` in 
 
 ---
 
+### Step 25: method-reconciliation-report.md (deterministic script)
+
+**REQUIRED: Run the script. Hard block on any CRITICAL discrepancy.**
+
+```bash
+python scripts/method_reconcile.py \
+  --experiment-plan   $PROJECT_DIR/experiment-plan.md \
+  --configs           $PROJECT_DIR/configs/ \
+  --runs              $PROJECT_DIR/runs/ \
+  --experiment-state  $PROJECT_DIR/experiment-state.json \
+  --output            $PROJECT_DIR/method-reconciliation-report.md
+```
+
+Exit codes:
+- `0` → No discrepancies. Continue to Step 26.
+- `1` → CRITICAL discrepancy found (manuscript says X, config/log says Y). **Hard block.** Resolve all discrepancies before proceeding — either update the config or update the planned manuscript description. Rerun until exit 0.
+- `2` → Input file error.
+
+---
+
+### Step 29: narrative-gap-report.md (deterministic script)
+
+**REQUIRED: Run the script. Do not generate this output manually.**
+
+```bash
+python scripts/narrative_gap_detector.py \
+  --blueprint         $PROJECT_DIR/paper-blueprint.md \
+  --figure-plan       $PROJECT_DIR/figure-plan.md \
+  --claim-graph       $PROJECT_DIR/.epistemic/claim_graph.json \
+  --evidence-registry $PROJECT_DIR/.epistemic/evidence_registry.json \
+  --figures-dir       $PROJECT_DIR/figures/ \
+  --output            $PROJECT_DIR/narrative-gap-report.md
+```
+
+Exit codes:
+- `0` → No critical evidence-missing gaps. Continue to Step 30.
+- `1` → Critical evidence-missing gaps found. Read `narrative-gap-report.md` → run Loop 2 counter logic (see Loop 2 section).
+- `2` → Input file error.
+
+---
+
 ### Step 30: figure-alignment-report.md
 
 ```markdown
@@ -463,6 +526,23 @@ These are the required output formats for the inline steps (steps with `—` in 
 - Redesigned figures written to figures/ ✓/✗ (N redesigned)
 - figure-plan.md updated ✓/✗
 ```
+
+---
+
+### Step 32: cross-section-report.md (deterministic script)
+
+**REQUIRED: Run the script. Hard block if any of the 5 sub-checks fail.**
+
+```bash
+python scripts/cross_section_check.py \
+  --manuscript $PROJECT_DIR/manuscript/ \
+  --output     $PROJECT_DIR/cross-section-report.md
+```
+
+Exit codes:
+- `0` → All 5 sub-checks pass. Continue to Step 33.
+- `1` → One or more sub-checks FAIL. **Hard block.** Read `cross-section-report.md` for specific failure locations. Fix in manuscript and rerun until exit 0.
+- `2` → No `.tex` files found in manuscript directory.
 
 ---
 
@@ -544,13 +624,71 @@ python scripts/pipeline_state.py increment-counter adversarial_review_cycles --m
 
 ---
 
+## Deterministic Guards
+
+These three checks are not pipeline steps — they are mandatory guards that run at specific transition points. They do not appear in the step table but must be executed at the indicated points.
+
+---
+
+### Guard G1: Epistemic Registry Freshness — run before Step 26 (map-claims)
+
+Step 26 reads all four `.epistemic/` files heavily. Run this guard after Step 25 completes and before starting Step 26.
+
+```bash
+python scripts/check_registry_freshness.py --project $PROJECT_DIR
+```
+
+- **Exit 0** → `.epistemic/` files are consistent. Proceed to Step 26.
+- **Exit 1** → Stale or inconsistent entries found. First attempt auto-repair:
+  ```bash
+  python scripts/check_registry_freshness.py --project $PROJECT_DIR --fix
+  ```
+  Re-run the check. If still exit 1, halt and investigate manually — do not proceed to Step 26 with a corrupt epistemic layer.
+- **Exit 2** → `.epistemic/` directory missing. Re-run from Step 1 or initialize manually.
+
+---
+
+### Guard G2: Consistency Oracle Sweep — run after Step 31 (produce-manuscript)
+
+After the manuscript is generated, verify that all claim confidence levels are reflected correctly in the prose.
+
+```bash
+python scripts/consistency_oracle.py sweep \
+  --project    $PROJECT_DIR \
+  --manuscript $PROJECT_DIR/manuscript/ \
+  --output     $PROJECT_DIR/.epistemic/consistency_ledger.json \
+  --report     $PROJECT_DIR/consistency-report.md
+```
+
+- **Exit 0** → No critical confidence-hedging mismatches. Proceed to Step 32.
+- **Exit 1** → Critical mismatches found (assertive prose for low-confidence claims). Read `consistency-report.md` for specific sentences. Route back to Step 31 for targeted rewrite of the flagged sentences. Rerun until exit 0.
+
+---
+
+### Guard G3: Consistency Oracle Sweep (refresh) — run before Step 35 (adversarial-review)
+
+After the Phase 5B revision cycle, re-sweep to ensure no consistency regressions were introduced during manuscript edits.
+
+```bash
+python scripts/consistency_oracle.py sweep \
+  --project    $PROJECT_DIR \
+  --manuscript $PROJECT_DIR/manuscript/ \
+  --output     $PROJECT_DIR/.epistemic/consistency_ledger.json \
+  --report     $PROJECT_DIR/consistency-report.md
+```
+
+- **Exit 0** → Consistent. Proceed to Step 35.
+- **Exit 1** → Regressions found. Route back to the earliest step indicated in `consistency-report.md`. Fix and re-sweep before running adversarial review.
+
+---
+
 ## Important Rules
 
 1. **Never duplicate command logic.** Always invoke the actual slash command via the Skill tool. The orchestrator only manages sequencing and state.
 2. **Always update pipeline-state.json** before and after each step.
 3. **Always create log files** for each step.
 4. **Respect the user's choice** in interactive mode. If they say abort, stop immediately.
-5. **Steps marked with `—` in the Command column** (gap-detection, narrative-gap-detect, literature-rescan, method-code-reconciliation, argument-figure-align, cross-section-consistency, claim-source-align, adversarial-review) are invoked inline by the orchestrator — they do not have separate slash commands. Run them as structured sub-tasks using the output templates defined in "Inline Step Output Templates" above.
+5. **Steps marked with `—` in the Command column** (gap-detection, narrative-gap-detect, literature-rescan, method-code-reconciliation, argument-figure-align, cross-section-consistency, claim-source-align, adversarial-review) are invoked inline by the orchestrator — they do not have separate slash commands. For steps with a deterministic script, invoke the script as specified in "Inline Step Invocations and Output Templates". For LLM-generated steps, use the output template as the generation format.
 6. **Epistemic infrastructure** (`$PROJECT_DIR/.epistemic/`) is initialized at Step 1 and updated throughout. Check that `evidence_registry.json`, `citation_ledger.json`, `claim_graph.json`, and `confidence_tracker.json` are being updated at each evidence-producing step.
 
 ## Examples

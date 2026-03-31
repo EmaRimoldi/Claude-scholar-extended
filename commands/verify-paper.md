@@ -29,7 +29,7 @@ Read `pipeline-state.json` → `project_dir`.
 - `$PROJECT_DIR/manuscript/` — LaTeX source
 - `$PROJECT_DIR/analysis-report.md`
 - `$PROJECT_DIR/claim-alignment-report.md` (from Step 26 `/claim-source-align`)
-- `$PROJECT_DIR/cross-section-report.md` (from Step 25 `/cross-section-consistency`)
+- `$PROJECT_DIR/cross-section-report.md` (from Step 32 `/cross-section-consistency`)
 - `$PROJECT_DIR/claim-overlap-report.md` (from Pass 2)
 - `$PROJECT_DIR/adversarial-novelty-report.md` (from Pass 6)
 - `$PROJECT_DIR/concurrent-work-report.md` (from recency sweeps)
@@ -362,11 +362,11 @@ Before marking complete:
 ## Integration
 
 **Position in pipeline (Phase 5B revision cycle):**
-1. `/produce-manuscript` (Step 24)
-2. `/cross-section-consistency` (Step 25 — its output feeds Dimension 5)
-3. `/claim-source-align` (Step 26 — its output feeds Dimension 3)
-4. **`/verify-paper`** (replaces old Step 27 `/multi-dimensional-review`)
-5. If PASS → `/adversarial-review` (Step 28)
+1. `/produce-manuscript` (Step 31)
+2. `/cross-section-consistency` (Step 32 — its output feeds Dimension 5)
+3. `/claim-source-align` (Step 33 — its output feeds Dimension 3)
+4. **`/verify-paper`** (Step 34, replaces old `/multi-dimensional-review`)
+5. If PASS → `/adversarial-review` (Step 35)
 6. If REVISE/BLOCK → route to specific upstream step → re-run affected dimensions only
 
 **Callable independently:** `/verify-paper --dimensions 2,3` re-runs only Dimensions 2 and 3 after a targeted fix.
