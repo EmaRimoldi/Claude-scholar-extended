@@ -1,7 +1,9 @@
 model_name: bert-base-uncased
 num_labels: 3
-attention_transform: softmax
-supervised_heads: "all"
+attention_transform: softmax    # softmax | sparsemax | entmax
+supervised_heads: "all"         # "all" | "top_k" | "random" | [[layer,head],...]
 lambda_attn: 0.0
+attn_loss_type: kl              # kl | mse
+entmax_alpha: 1.5               # only used when attention_transform=entmax
 top_k: 24
 head_importance_path: results/head_importance/head_importance.json

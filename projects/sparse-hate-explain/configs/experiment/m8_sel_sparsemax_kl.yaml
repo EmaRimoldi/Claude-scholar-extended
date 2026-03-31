@@ -1,0 +1,8 @@
+# @package _global_
+# 2x2x2 ablation condition: target=selective transform=sparsemax loss=kl
+model:
+  attention_transform: sparsemax
+  supervised_heads: "top_k"
+  lambda_attn: 1.0
+  attn_loss_type: kl
+  top_k: 24

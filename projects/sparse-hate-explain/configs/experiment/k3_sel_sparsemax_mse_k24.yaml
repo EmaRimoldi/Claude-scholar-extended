@@ -1,0 +1,9 @@
+# @package _global_
+# K-sweep: selective-head sparsemax MSE with top_k=24 heads (K3)
+# Feeds H5 value-subspace span condition analysis.
+model:
+  attention_transform: sparsemax
+  supervised_heads: "top_k"
+  lambda_attn: 1.0
+  attn_loss_type: mse
+  top_k: 24

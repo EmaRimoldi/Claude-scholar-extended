@@ -1,0 +1,10 @@
+# @package _global_
+# B2: SRA replication — sparsemax supervision, all heads, KL loss.
+# Replicates arXiv:2511.07065 setup on HateXplain.
+# Source paper: Ahmad et al. (2025), arXiv:2511.07065
+# Deviation from original: different dataset (HateXplain vs. IMDb/SST-2)
+model:
+  attention_transform: sparsemax
+  supervised_heads: "all"
+  lambda_attn: 1.0
+  attn_loss_type: kl
