@@ -28,13 +28,13 @@ Resolve the vault path from one of:
 ## Procedure
 
 1. Identify the repository root.
-2. Run a preflight detect step first:
+2. Run a preflight detect step first (`project_kb.py` needs Python 3.10+; the wrapper prefers `uv`):
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" detect --cwd "$PWD"
+   "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb_run.sh" detect --cwd "$PWD"
    ```
 3. Only if the repo is unbound and should be imported, run bootstrap:
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" bootstrap --cwd "$PWD" --vault-path "$OBSIDIAN_VAULT_PATH"
+   "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb_run.sh" bootstrap --cwd "$PWD" --vault-path "$OBSIDIAN_VAULT_PATH"
    ```
 4. Verify that bootstrap created at least:
    - `.claude/project-memory/registry.yaml`

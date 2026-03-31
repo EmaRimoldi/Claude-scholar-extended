@@ -32,7 +32,7 @@ Use this command when a new Markdown file or folder should be absorbed into the 
    - `stage-to-daily` -> summarize into today's `Daily/` note first
 6. When helpful, use:
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" find-canonical-note --cwd "$PWD" --kind paper --query "keyword"
+   "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb_run.sh" find-canonical-note --cwd "$PWD" --kind paper --query "keyword"
    ```
 7. Update project memory and today's daily note with what was promoted, merged, or staged.
 

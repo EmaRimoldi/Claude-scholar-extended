@@ -27,14 +27,14 @@ Use this command to operate on one canonical note.
 
 Use:
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" find-canonical-note --cwd "$PWD" --kind "$kind" --query "$query"
+"${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb_run.sh" find-canonical-note --cwd "$PWD" --kind "$kind" --query "$query"
 ```
 
 ### Archive / Purge / Rename
 
 Use:
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" note-lifecycle --cwd "$PWD" --mode "$action" --note "$query"
+"${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb_run.sh" note-lifecycle --cwd "$PWD" --mode "$action" --note "$query"
 ```
 
 If `action=rename`, also pass:

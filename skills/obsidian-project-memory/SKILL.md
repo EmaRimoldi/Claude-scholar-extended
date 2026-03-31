@@ -47,14 +47,14 @@ Read [references/SCHEMA.md](references/SCHEMA.md) for the exact structure and no
 Use `scripts/project_kb.py` only for low-freedom operations such as detect, bootstrap, sync, and lifecycle management:
 
 ```bash
-python3 scripts/project_kb.py detect --cwd "$PWD"
-python3 scripts/project_kb.py bootstrap --cwd "$PWD" --vault-path "$OBSIDIAN_VAULT_PATH"
-python3 scripts/project_kb.py sync --cwd "$PWD" --scope auto
-python3 scripts/project_kb.py lifecycle --cwd "$PWD" --mode archive
-python3 scripts/project_kb.py query-context --cwd "$PWD" --kind broad
-python3 scripts/project_kb.py query-context --cwd "$PWD" --kind experiment --query freezing
-python3 scripts/project_kb.py find-canonical-note --cwd "$PWD" --kind experiment --query freezing
-python3 scripts/project_kb.py note-lifecycle --cwd "$PWD" --mode archive --note "Results/Old-Result.md"
+scripts/project_kb_run.sh detect --cwd "$PWD"
+scripts/project_kb_run.sh bootstrap --cwd "$PWD" --vault-path "$OBSIDIAN_VAULT_PATH"
+scripts/project_kb_run.sh sync --cwd "$PWD" --scope auto
+scripts/project_kb_run.sh lifecycle --cwd "$PWD" --mode archive
+scripts/project_kb_run.sh query-context --cwd "$PWD" --kind broad
+scripts/project_kb_run.sh query-context --cwd "$PWD" --kind experiment --query freezing
+scripts/project_kb_run.sh find-canonical-note --cwd "$PWD" --kind experiment --query freezing
+scripts/project_kb_run.sh note-lifecycle --cwd "$PWD" --mode archive --note "Results/Old-Result.md"
 ```
 
 Do **not** expect the script to understand project meaning. It manages state; it does not replace synthesis.

@@ -32,7 +32,7 @@ Use this command to strengthen cross-note navigation for the current project.
    - `Writing/`
 5. When deciding where a new reference belongs, first look for the best existing target note. If needed, use:
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" find-canonical-note --cwd "$PWD" --kind experiment --query "freezing"
+   "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb_run.sh" find-canonical-note --cwd "$PWD" --kind experiment --query "freezing"
    ```
 6. Record any meaningful link repair in today's daily note and project memory.
 7. In the final response, list the affected note paths and optional `obsidian://open` or `obsidian open` shortcuts.

@@ -25,7 +25,7 @@ Manage the lifecycle of the current project's Obsidian knowledge base.
 
 Run:
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" lifecycle --cwd "$PWD" --mode "$action"
+"${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb_run.sh" lifecycle --cwd "$PWD" --mode "$action"
 ```
 
 ### Rebuild

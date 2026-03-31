@@ -23,9 +23,13 @@ Create or import a research project knowledge base for the current repository.
 
 1. Resolve the repository root from the current working directory.
 2. Resolve the vault path from `$vault_path` or `OBSIDIAN_VAULT_PATH`.
-3. Run the helper script from `skills/obsidian-project-memory/scripts/project_kb.py`:
+3. Run the helper script. **`project_kb.py` requires Python 3.10+.** On many Linux hosts the default `python3` is older; use the shell wrapper (prefers `uv`) or call `uv` explicitly:
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" bootstrap --cwd "$PWD" --vault-path "$vault_path"
+   "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb_run.sh" bootstrap --cwd "$PWD" --vault-path "$vault_path"
+   ```
+   Equivalent when `uv` is installed:
+   ```bash
+   uv run --python 3.12 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" bootstrap --cwd "$PWD" --vault-path "$vault_path"
    ```
    If `project` is provided, add `--project-name "$project"`.
 4. Verify that the following exist:

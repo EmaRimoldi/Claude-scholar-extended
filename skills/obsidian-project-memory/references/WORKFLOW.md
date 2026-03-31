@@ -2,10 +2,10 @@
 
 ## 1. Detect
 
-Run:
+Run (requires Python 3.10+; use `scripts/project_kb_run.sh` when the default `python3` is too old):
 
 ```bash
-python3 scripts/project_kb.py detect --cwd "$PWD"
+scripts/project_kb_run.sh detect --cwd "$PWD"
 ```
 
 Use this to decide whether the repo:
@@ -18,7 +18,7 @@ Use this to decide whether the repo:
 Bootstrap only when the repository is a strong research-project candidate and no binding exists yet.
 
 ```bash
-python3 scripts/project_kb.py bootstrap --cwd "$PWD" --vault-path "$OBSIDIAN_VAULT_PATH"
+scripts/project_kb_run.sh bootstrap --cwd "$PWD" --vault-path "$OBSIDIAN_VAULT_PATH"
 ```
 
 Bootstrap should create only the compact schema from `SCHEMA.md`, including `Results/Reports/` for internal experiment reports.
@@ -26,7 +26,7 @@ Bootstrap should create only the compact schema from `SCHEMA.md`, including `Res
 To bootstrap Chinese notes explicitly:
 
 ```bash
-python3 scripts/project_kb.py bootstrap --cwd "$PWD" --vault-path "$OBSIDIAN_VAULT_PATH" --note-language zh-CN
+scripts/project_kb_run.sh bootstrap --cwd "$PWD" --vault-path "$OBSIDIAN_VAULT_PATH" --note-language zh-CN
 ```
 
 Language priority for generated/synced notes:
@@ -41,7 +41,7 @@ Section updates remain compatible with both English and Chinese headings so olde
 Use:
 
 ```bash
-python3 scripts/project_kb.py sync --cwd "$PWD" --scope auto
+scripts/project_kb_run.sh sync --cwd "$PWD" --scope auto
 ```
 
 Use sync for deterministic state maintenance only:
@@ -56,10 +56,10 @@ Do not rely on sync to derive project meaning from raw files.
 For read-side assistance or single-note lifecycle operations, use:
 
 ```bash
-python3 scripts/project_kb.py query-context --cwd "$PWD" --kind broad
-python3 scripts/project_kb.py query-context --cwd "$PWD" --kind result --query "syllable-channel"
-python3 scripts/project_kb.py find-canonical-note --cwd "$PWD" --kind experiment --query "freezing S7 speaking"
-python3 scripts/project_kb.py note-lifecycle --cwd "$PWD" --mode archive --note "Results/Old-Result.md"
+scripts/project_kb_run.sh query-context --cwd "$PWD" --kind broad
+scripts/project_kb_run.sh query-context --cwd "$PWD" --kind result --query "syllable-channel"
+scripts/project_kb_run.sh find-canonical-note --cwd "$PWD" --kind experiment --query "freezing S7 speaking"
+scripts/project_kb_run.sh note-lifecycle --cwd "$PWD" --mode archive --note "Results/Old-Result.md"
 ```
 
 ## 4. Agent-first import or synthesis
@@ -133,7 +133,7 @@ When archiving or purging, repair direct links in `00-Hub.md`, `01-Plan.md`, and
 Default removal behavior is archive:
 
 ```bash
-python3 scripts/project_kb.py lifecycle --cwd "$PWD" --mode archive
+scripts/project_kb_run.sh lifecycle --cwd "$PWD" --mode archive
 ```
 
 Only purge when the user explicitly asks for permanent deletion.

@@ -15,14 +15,14 @@ Use this command when you want to repair, rebuild, or force an incremental sync 
 
 ## Workflow
 
-1. Run project detection:
+1. Run project detection (use `project_kb_run.sh` if the default `python3` is older than 3.10):
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" detect --cwd "$PWD"
+   "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb_run.sh" detect --cwd "$PWD"
    ```
 2. If the project is unbound but is a research-project candidate, bootstrap it first.
 3. Run the real filesystem sync helper:
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb.py" sync --cwd "$PWD" --scope "$scope"
+   "${CLAUDE_PLUGIN_ROOT}/skills/obsidian-project-memory/scripts/project_kb_run.sh" sync --cwd "$PWD" --scope "$scope"
    ```
 4. The helper will always refresh:
    - `Knowledge/Source-Inventory.md`

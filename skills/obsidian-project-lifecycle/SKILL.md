@@ -16,17 +16,17 @@ Use it for project-level state changes and, when needed, note-level removal or r
 ## Project-level commands
 
 ```bash
-python3 ../obsidian-project-memory/scripts/project_kb.py lifecycle --cwd "$PWD" --mode detach
-python3 ../obsidian-project-memory/scripts/project_kb.py lifecycle --cwd "$PWD" --mode archive
-python3 ../obsidian-project-memory/scripts/project_kb.py lifecycle --cwd "$PWD" --mode purge
+../obsidian-project-memory/scripts/project_kb_run.sh lifecycle --cwd "$PWD" --mode detach
+../obsidian-project-memory/scripts/project_kb_run.sh lifecycle --cwd "$PWD" --mode archive
+../obsidian-project-memory/scripts/project_kb_run.sh lifecycle --cwd "$PWD" --mode purge
 ```
 
 ## Note-level command
 
 ```bash
-python3 ../obsidian-project-memory/scripts/project_kb.py note-lifecycle --cwd "$PWD" --mode archive --note "Results/Old-Result.md"
-python3 ../obsidian-project-memory/scripts/project_kb.py note-lifecycle --cwd "$PWD" --mode purge --note "Results/Old-Result.md"
-python3 ../obsidian-project-memory/scripts/project_kb.py note-lifecycle --cwd "$PWD" --mode rename --note "Experiments/Old-Name.md" --dest "Experiments/New-Name.md"
+../obsidian-project-memory/scripts/project_kb_run.sh note-lifecycle --cwd "$PWD" --mode archive --note "Results/Old-Result.md"
+../obsidian-project-memory/scripts/project_kb_run.sh note-lifecycle --cwd "$PWD" --mode purge --note "Results/Old-Result.md"
+../obsidian-project-memory/scripts/project_kb_run.sh note-lifecycle --cwd "$PWD" --mode rename --note "Experiments/Old-Name.md" --dest "Experiments/New-Name.md"
 ```
 
 ## Policy
