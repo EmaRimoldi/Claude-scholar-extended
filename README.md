@@ -30,32 +30,30 @@ Have you ever wondered whether you could start from a **single rough idea** and 
 
 Here is the recipe (you can do this in 3 minutes). 🧪📄
 
-1. **Open the template** [`PIPELINE_INPUTS.json`](PIPELINE_INPUTS.json). Treat it as your kitchen notepad: short, explicit, and easy to edit.
+1. **Open the template** [`RESEARCH_PROPOSAL.md`](RESEARCH_PROPOSAL.md). Treat it as your kitchen notepad: short, explicit, and easy to edit.
 2. **Edit exactly these fields** (this is the part that gives the pipeline your research topic):
-   - **`research.topic`** — your research question (1–3 sentences). This becomes **`research_topic`** in `pipeline-state.json` and is passed to Step 1 (`/research-landscape`).
-   - **`project.slug`** — a short kebab-case name (this becomes `projects/<slug>/` on disk).
+   - **`research_topic`** — your research question (1–3 sentences). This becomes `pipeline-state.json → research_topic` and is passed to Step 1 (`/research-landscape`).
+   - **`project_slug`** — a short kebab-case name (this becomes `projects/<slug>/` on disk).
 
    Example (copy-paste style):
 
 ```json
-{
-  "project": { "slug": "contrastive-rag-eval" },
-  "research": {
-    "topic": "Does contrastive retrieval training improve factual consistency in RAG on PopQA without hurting answer accuracy?"
-  }
-}
+---
+project_slug: contrastive-rag-eval
+research_topic: "Does contrastive retrieval training improve factual consistency in RAG on PopQA without hurting answer accuracy?"
+---
 ```
 3. **Bake it into state** (so `/run-pipeline --auto` can run without guessing). From the repo root, run:
 
    ```bash
-   python scripts/pipeline_state.py init --inputs PIPELINE_INPUTS.json
+   python scripts/pipeline_state.py init --inputs RESEARCH_PROPOSAL.md
    ```
 
    This will automatically create `projects/<slug>/`, and write **`pipeline-state.json`**. ✅
 
 4. **Run** `/run-pipeline` (or `/run-pipeline --auto`) in Claude Code. Your idea is no longer floating in chat—it is anchored in files the workflow reads.
 
-Later, your hypotheses and claims will live in documents under `projects/<slug>/docs/` (for example `hypotheses.md`). The file you touch **at the very beginning** is **`PIPELINE_INPUTS.json`**; `pipeline-state.json` is the machine state the orchestrator uses after you initialize.
+Later, your hypotheses and claims will live in documents under `projects/<slug>/docs/` (for example `hypotheses.md`). The file you touch **at the very beginning** is **`RESEARCH_PROPOSAL.md`**; `pipeline-state.json` is the machine state the orchestrator uses after you initialize.
 
 ---
 
@@ -71,7 +69,7 @@ Before **`/run-pipeline --auto`**, fix a small set of inputs so the orchestrator
 
 - **Machine-readable contract:** [`docs/schemas/pipeline-inputs.schema.json`](docs/schemas/pipeline-inputs.schema.json) (JSON Schema) and example [`examples/pipeline-inputs.min.json`](examples/pipeline-inputs.min.json).
 - **Human-readable spec:** [`docs/PIPELINE_INPUTS.md`](docs/PIPELINE_INPUTS.md) — field definitions, implicit dependencies per phase, and a **schema → step** mapping table.
-- **Minimum at init:** `python scripts/pipeline_state.py init --inputs PIPELINE_INPUTS.json` stores `research_topic` in `pipeline-state.json` for Step 1 (`/research-landscape`). **`--auto` does not invent a topic.**
+- **Minimum at init:** `python scripts/pipeline_state.py init --inputs RESEARCH_PROPOSAL.md` stores `research_topic` in `pipeline-state.json` for Step 1 (`/research-landscape`). **`--auto` does not invent a topic.**
 
 Runtime step status and feedback-loop counters stay in **`pipeline-state.json`** and are *not* part of the input schema.
 
@@ -122,7 +120,7 @@ In Claude Code, either work inside the cloned repo or open your research reposit
 1. Initialize from the human template (recommended):
 
    ```bash
-   python scripts/pipeline_state.py init --inputs PIPELINE_INPUTS.json
+   python scripts/pipeline_state.py init --inputs RESEARCH_PROPOSAL.md
    ```
 
 2. Alternative (manual flags):

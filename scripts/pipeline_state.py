@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Optional
 
 STATE_FILE = "pipeline-state.json"
-DEFAULT_INPUTS_FILE = "PIPELINE_INPUTS.json"
+DEFAULT_INPUTS_FILE = "RESEARCH_PROPOSAL.md"
 
 # Default project directory structure created for each project.
 PROJECT_SUBDIRS = ["docs", "configs", "src", "data", "results", "results/tables",
@@ -370,6 +370,52 @@ def slugify(text: str) -> str:
     return s
 
 
+def parse_frontmatter_md(text: str) -> dict:
+    """
+    Minimal YAML-frontmatter parser for RESEARCH_PROPOSAL.md.
+    Supports:
+    - key: value
+    - key:
+        - item
+        - item
+    - quoted strings
+    This is intentionally tiny (no external deps).
+    """
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    out: dict = {}
+    i = 1
+    current_list_key: Optional[str] = None
+    while i < len(lines):
+        line = lines[i].rstrip("\n")
+        if line.strip() == "---":
+            break
+        if not line.strip() or line.lstrip().startswith("#"):
+            i += 1
+            continue
+
+        if line.startswith("  - ") and current_list_key:
+            out.setdefault(current_list_key, [])
+            out[current_list_key].append(line[4:].strip().strip('"').strip("'"))
+            i += 1
+            continue
+
+        current_list_key = None
+        if ":" in line:
+            key, val = line.split(":", 1)
+            key = key.strip()
+            val = val.strip()
+            if val == "":
+                # start list block (expect indented "- item" lines)
+                current_list_key = key
+                out[current_list_key] = []
+            else:
+                out[key] = val.strip().strip('"').strip("'")
+        i += 1
+    return out
+
+
 def load_inputs(base_dir: str, inputs_path: Optional[str] = None) -> dict:
     """
     Load pre-pipeline inputs (JSON) used to infer project slug and topic.
@@ -391,8 +437,49 @@ def load_inputs(base_dir: str, inputs_path: Optional[str] = None) -> dict:
         return {}
 
     try:
-        with open(str(candidate), "r") as f:
-            return json.load(f)
+        raw = Path(str(candidate)).read_text(encoding="utf-8", errors="replace")
+        if str(candidate).lower().endswith(".json"):
+            return json.loads(raw)
+        if str(candidate).lower().endswith(".md"):
+            fm = parse_frontmatter_md(raw)
+            # Normalize to the same shape as the JSON contract.
+            project = {}
+            research = {}
+            if fm.get("project_slug"):
+                project["slug"] = fm["project_slug"]
+            if fm.get("display_title"):
+                project["display_title"] = fm["display_title"]
+            if fm.get("research_topic"):
+                research["topic"] = fm["research_topic"]
+            if fm.get("domain_hints"):
+                research["domain_hints"] = fm["domain_hints"]
+            out = {"project": project, "research": research}
+            constraints = {}
+            if fm.get("target_venue"):
+                constraints["target_venue"] = fm["target_venue"]
+            if constraints:
+                out["constraints"] = constraints
+            execution_defaults = {}
+            if fm.get("skip_online") != "":
+                if str(fm.get("skip_online", "")).lower() in ("true", "false"):
+                    execution_defaults["skip_online"] = str(fm["skip_online"]).lower() == "true"
+            if execution_defaults:
+                out["execution_defaults"] = execution_defaults
+            compute_defaults = {}
+            if fm.get("seeds_per_condition"):
+                try:
+                    compute_defaults["seeds_per_condition"] = int(fm["seeds_per_condition"])
+                except Exception:
+                    pass
+            if fm.get("gpus_per_job"):
+                try:
+                    compute_defaults["gpus_per_job"] = int(fm["gpus_per_job"])
+                except Exception:
+                    pass
+            if compute_defaults:
+                out["compute_defaults"] = compute_defaults
+            return out
+        return {}
     except Exception as e:
         print(f"WARNING: failed to parse inputs file {candidate}: {e}", file=sys.stderr)
         return {}
