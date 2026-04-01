@@ -109,8 +109,8 @@ Generate a quality report with:
 ## Integration with Pipeline
 
 This skill is automatically invoked by:
-- `/quality-review` command (Step 17 in pipeline)
+- `/verify-paper` command (**pipeline step 34** in v3; replaces `/quality-review`)
 - `/validate-setup` when checking experiment plan quality
 - Any manual invocation
 
-The quality report is saved to `manuscript/quality-review.md` and must PASS before `/compile-manuscript` proceeds.
+The structured verifier writes **`manuscript/paper-quality-report.md`** (see [`commands/verify-paper.md`](../../commands/verify-paper.md)). Legacy `/quality-review` used `manuscript/quality-review.md`; prefer `/verify-paper` before `/compile-manuscript`.

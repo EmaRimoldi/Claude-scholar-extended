@@ -37,22 +37,27 @@
 
 ---
 
-## Research Lifecycle (20-Step Pipeline)
+## Research Lifecycle (v3 Pipeline — 38 Steps)
 
 ```
 Ideation → Validation → Design → Execute → Analyze → [Iterate] → Pre-Write → Write → Review → Submit → Post
 ```
 
-| Stage | Steps | Key Commands |
-|-------|-------|-------------|
-| Ideation & Validation | 1-2 | `/research-init`, `/check-competition` |
-| Experiment Design | 3 | `/design-experiments` |
-| Implementation | 4-8 | `/scaffold`, `/build-data`, `/setup-model`, `/implement-metrics`, `/validate-setup` |
-| Execution | 9-13 | `/download-data`, `/plan-compute`, `/run-experiment`, `/collect-results`, `/analyze-results` |
-| Pre-Writing | 14-16 | `/map-claims`, `/position`, `/story` |
-| Manuscript | 17-20 | `/produce-manuscript`, `/quality-review`, `/compile-manuscript`, `/rebuttal` |
+Canonical step order, novelty gates (N1–N4), and phase tables: [`commands/run-pipeline.md`](commands/run-pipeline.md). Summary:
+
+| Phase | Steps | Representative commands |
+|-------|-------|-------------------------|
+| 1 Research & Novelty | 1–8 | `/research-landscape`, `/claim-search`, `/novelty-gate` (N1), `/recency-sweep` |
+| 2 Experiment Design | 9–10 | `/design-experiments`, `/design-novelty-check` (N2) |
+| 3 Implementation | 11–15 | `/scaffold`, `/build-data`, `/setup-model`, `/implement-metrics`, `/validate-setup` |
+| 4 Execution | 16–19 | `/download-data`, `/plan-compute`, `/run-experiment`, `/collect-results` |
+| 5A Analysis & epistemic | 20–25 | `/analyze-results`, `/novelty-gate` (N3), `/recency-sweep` |
+| 5B Claim & writing cycle | 26–34 | `/map-claims`, `/position`, `/story`, `/produce-manuscript`, `/verify-paper` |
+| 6 Pre-submission | 35–38 | adversarial review, `/recency-sweep`, `/novelty-gate` (N4), `/compile-manuscript` |
 
 **Orchestrator**: `/run-pipeline` (supports `--auto`, `--resume`, `--from <step>`, `--status`, `--reset`, `--skip-online`)
+
+**Manuscript quality gate**: `/verify-paper` (replaces legacy `/quality-review`). **`/rebuttal`** runs after peer reviews, not as a fixed pipeline step before first submission.
 
 ### Supporting Workflows
 

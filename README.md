@@ -12,7 +12,7 @@
   </p>
 
 
-  <strong>Language</strong>: <a href="README.md">English</a> | <a href="README.zh-CN.md">中文</a>
+  <strong>Language</strong>: English
 
 </div>
 

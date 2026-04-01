@@ -6,7 +6,7 @@ Deterministic scripts that automate procedural parts of the research pipeline. T
 
 ### `pipeline_state.py` — Pipeline orchestration state machine
 
-Manages `pipeline-state.json` for the 20-step research pipeline.
+Manages `pipeline-state.json` for the **v3** research pipeline (**38 steps** across six phases). Step IDs and order match [`commands/run-pipeline.md`](../commands/run-pipeline.md).
 
 ```bash
 python scripts/pipeline_state.py init --project <slug>
@@ -93,15 +93,15 @@ python scripts/compile_manuscript.py --project-dir .
 python scripts/compile_manuscript.py --no-compile  # ZIP only
 ```
 
-### `quality_review.py` — Mechanical quality-review extraction
+### `quality_review.py` — Mechanical checks for `/verify-paper`
 
-Extracts programmatically checkable facts from a LaTeX manuscript: title word audit, scope-evidence counts, statistical reporting scan, efficiency claim detection.
+Extracts programmatically checkable facts from a LaTeX manuscript: title word audit, scope-evidence counts, statistical reporting scan, efficiency claim detection. Invoked as a pre-check from [`commands/verify-paper.md`](../commands/verify-paper.md) (legacy [`commands/quality-review.md`](../commands/quality-review.md) may reuse the same script).
 
 ```bash
 python scripts/quality_review.py \
     --manuscript-dir manuscript/ \
     --results analysis-input/results.csv \
-    --output quality-review-data.json
+    --output manuscript/quality-review-data.json
 ```
 
 ## SLURM / Cluster Scripts
@@ -139,6 +139,6 @@ Scripts replace procedural SKILL.md sections. The LLM runs the script first, the
 | `run_statistics.py` | `results-analysis` SKILL.md + `statistical-methods.md` ref | ~660 lines |
 | `generate_figures.py` | `results-analysis` SKILL.md + `visualization-best-practices.md` ref | ~100 lines |
 | `compile_manuscript.py` | `compile-manuscript.md` command | ~100 lines |
-| `quality_review.py` | `quality-review.md` command | ~60 lines |
+| `quality_review.py` | `verify-paper.md` command (mechanical layer); legacy `quality-review.md` | ~60 lines |
 | `check_gates.py` | `experiment-runner` SKILL.md | ~40 lines |
 | `update_experiment_state.py` | `experiment-runner` SKILL.md | ~30 lines |
