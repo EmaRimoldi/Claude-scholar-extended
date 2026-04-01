@@ -4,6 +4,17 @@ Deterministic scripts that automate procedural parts of the research pipeline. T
 
 ## Research Pipeline Scripts
 
+### `sync_command_skill_shims.py` — Slash command ↔ Skill tool parity
+
+Some Claude Code clients resolve `/command-name` via the Skill tool. Each file in `commands/` with a `name:` in YAML frontmatter should have a matching `skills/<name>/SKILL.md` shim that delegates to the command markdown.
+
+```bash
+python3 scripts/sync_command_skill_shims.py          # create missing shims
+python3 scripts/sync_command_skill_shims.py --check  # exit 1 if any missing
+```
+
+`bash scripts/setup.sh` runs the sync automatically. After adding a new command, run the sync again and restart Claude Code.
+
 ### `pipeline_state.py` — Pipeline orchestration state machine
 
 Manages `pipeline-state.json` for the **v3** research pipeline (**38 steps** across six phases). Step IDs and order match [`commands/run-pipeline.md`](../commands/run-pipeline.md).

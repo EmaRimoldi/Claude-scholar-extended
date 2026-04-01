@@ -115,7 +115,25 @@ bash scripts/setup.sh
 
 **Important:** Claude Code only discovers new slash commands, **skills**, and MCP servers at startup. After `setup.sh` (or any change to `~/.claude/settings.json`), **fully quit and restart** the Claude Code CLI (`claude`) or you may see “No commands found” or **`Unknown skill: run-pipeline`**.
 
-**If you see `Unknown skill: run-pipeline`:** this repo ships a **`run-pipeline` skill** (`skills/run-pipeline/SKILL.md`) as a compatibility shim for clients that route slash commands through the Skill tool. Run `bash scripts/setup.sh` again, **restart Claude Code**, then retry `/run-pipeline` or `/run-pipeline --resume`. The orchestrator spec is still [`commands/run-pipeline.md`](commands/run-pipeline.md).
+**If you see `Unknown skill: <something>`** (e.g. `run-pipeline`, `research-landscape`): some Claude Code builds route **`/<command>`** through the **Skill** tool. This repo keeps a **minimal skill shim** next to each slash command so the name always resolves: `skills/<command-name>/SKILL.md` delegates to `commands/<...>.md`.
+
+- **Refresh shims** after `git pull` or when you add a new file under `commands/`:
+
+  ```bash
+  python3 scripts/sync_command_skill_shims.py
+  ```
+
+  `bash scripts/setup.sh` runs this automatically when `python3` is available.
+
+- **Check** that every command has a shim (CI-friendly):
+
+  ```bash
+  python3 scripts/sync_command_skill_shims.py --check
+  ```
+
+  Exit code `0` means all commands with a `name:` in frontmatter have `skills/<name>/SKILL.md`. Then **restart** Claude Code.
+
+The orchestrator spec is unchanged: [`commands/run-pipeline.md`](commands/run-pipeline.md).
 
 ### 2. Open a project and initialize pipeline state
 

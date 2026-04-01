@@ -294,6 +294,17 @@ main() {
   fi
 
   echo ""
+  if command -v python3 >/dev/null 2>&1; then
+    if python3 "$SRC_DIR/scripts/sync_command_skill_shims.py" 2>/dev/null; then
+      info "Synced slash-command → skill shims (prevents Unknown skill for /commands)."
+    else
+      warn "Skill shim sync failed or python3 missing — run: python3 scripts/sync_command_skill_shims.py"
+    fi
+  else
+    warn "python3 not found; skipped skill shim sync. Install Python 3 and run: python3 scripts/sync_command_skill_shims.py"
+  fi
+
+  echo ""
   info "Done! Restart Claude Code CLI to activate."
   echo ""
 }
