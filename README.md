@@ -26,21 +26,32 @@ This repository extends and maintains the workflow originally shaped by the **[C
 
 ## From a simple idea to a paper (start here)
 
-Have you ever wondered whether you could start from a **single rough idea** and still end somewhere that looks like a real paper—literature, experiments, figures, and a manuscript—without losing the plot on day one? The pipeline is built for that: the hard part is not “what button to press,” it is **stating your question clearly once** so every later step has something to lean on.
+Have you ever wondered whether you could start from a **single rough idea** and still end somewhere that looks like a real paper—literature, experiments, figures, and a manuscript—without losing the plot on day one? ✨ The pipeline is built for that: the hard part is not “what button to press,” it is **stating your question clearly once** so every later step has something to lean on.
 
-Here is the recipe.
+Here is the recipe (you can do this in 3 minutes). 🧪📄
 
 1. **Open the template** [`PIPELINE_INPUTS.json`](PIPELINE_INPUTS.json). Treat it as your kitchen notepad: short, explicit, and easy to edit.
-2. **Change two strings** that define your paper before anything else runs:
-   - **`project.slug`** — a short kebab-case name (it becomes `projects/<slug>/` on disk).
-   - **`research.topic`** — your actual research question in one paragraph (this is what Step 1 feeds to `/research-landscape`; be concrete, not poetic).
+2. **Edit exactly these fields** (this is the part that gives the pipeline your research topic):
+   - **`research.topic`** — your research question (1–3 sentences). This becomes **`research_topic`** in `pipeline-state.json` and is passed to Step 1 (`/research-landscape`).
+   - **`project.slug`** — a short kebab-case name (this becomes `projects/<slug>/` on disk).
+
+   Example (copy-paste style):
+
+```json
+{
+  "project": { "slug": "contrastive-rag-eval" },
+  "research": {
+    "topic": "Does contrastive retrieval training improve factual consistency in RAG on PopQA without hurting answer accuracy?"
+  }
+}
+```
 3. **Bake it into state** (so `/run-pipeline --auto` can run without guessing). From the repo root, run:
 
    ```bash
    python scripts/pipeline_state.py init --inputs PIPELINE_INPUTS.json
    ```
 
-   This will automatically infer your project slug, create `projects/<slug>/`, and write **`pipeline-state.json`**. The field the orchestrator reads for Step 1 is **`research_topic`** (copied from `research.topic`).
+   This will automatically create `projects/<slug>/`, and write **`pipeline-state.json`**. ✅
 
 4. **Run** `/run-pipeline` (or `/run-pipeline --auto`) in Claude Code. Your idea is no longer floating in chat—it is anchored in files the workflow reads.
 
