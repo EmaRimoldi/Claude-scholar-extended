@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="960" height="520" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 528" width="960" height="528" role="img" aria-labelledby="title desc">
   <title id="title">ALETHEIA research pipeline v3: phases, scripts vs LLM</title>
-  <desc id="desc">Six phases; legend distinguishes Python scripts and deterministic tooling from Claude slash commands and LLM judgment.</desc>
+  <desc id="desc">Six phases; two-column legend and bottom panels align to the same width as the phase row.</desc>
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#f8fafc"/>
@@ -16,104 +16,102 @@
   </defs>
   <rect width="100%" height="100%" fill="url(#bg)"/>
 
-  <!-- Header -->
-  <text x="480" y="34" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="15" font-weight="600" fill="#1e293b">ALETHEIA &#8212; end-to-end pipeline (v3, 38 steps)</text>
-  <text x="480" y="54" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="11" fill="#64748b">Orchestration: Claude Code /run-pipeline &#183; human checkpoints between phases</text>
+  <!-- Content column: x=24 .. x=936 (width 912). Legend + phases + lower panels share this width. -->
+  <text x="480" y="30" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="15" font-weight="600" fill="#1e293b">ALETHEIA &#8212; end-to-end pipeline (v3, 38 steps)</text>
+  <text x="480" y="48" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="11" fill="#64748b">Orchestration: Claude Code /run-pipeline &#183; human checkpoints between phases</text>
 
-  <!-- Legend keys (top right) -->
-  <rect x="628" y="66" width="300" height="44" rx="6" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1"/>
-  <rect x="638" y="76" width="12" height="12" rx="2" fill="#059669"/>
-  <text x="656" y="86" font-family="Segoe UI, system-ui, sans-serif" font-size="10" font-weight="600" fill="#065f46">Scripts / deterministic</text>
-  <text x="656" y="100" font-family="Segoe UI, system-ui, sans-serif" font-size="9" fill="#047857">Python CLI, fixed rules, reproducible I/O</text>
-  <rect x="760" y="76" width="12" height="12" rx="2" fill="#4f46e5"/>
-  <text x="778" y="86" font-family="Segoe UI, system-ui, sans-serif" font-size="10" font-weight="600" fill="#312e81">LLM (Claude)</text>
-  <text x="778" y="100" font-family="Segoe UI, system-ui, sans-serif" font-size="9" fill="#4338ca">Slash commands, agents, synthesis, gates</text>
+  <!-- Legend: two separate cards (no overlapping text); each half of 912px row minus 24px gap -->
+  <rect x="24" y="58" width="444" height="58" rx="8" fill="#ecfdf5" stroke="#6ee7b7" stroke-width="1.2"/>
+  <rect x="36" y="72" width="12" height="12" rx="2" fill="#059669"/>
+  <text x="54" y="82" font-family="Segoe UI, system-ui, sans-serif" font-size="10" font-weight="600" fill="#065f46">Scripts / deterministic</text>
+  <text x="54" y="98" font-family="Segoe UI, system-ui, sans-serif" font-size="9" fill="#047857">Python CLI, fixed rules, reproducible I/O</text>
 
-  <!-- Phase boxes: dot color = dominant mode -->
+  <rect x="492" y="58" width="444" height="58" rx="8" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1.2"/>
+  <rect x="504" y="72" width="12" height="12" rx="2" fill="#4f46e5"/>
+  <text x="522" y="82" font-family="Segoe UI, system-ui, sans-serif" font-size="10" font-weight="600" fill="#312e81">LLM (Claude Code)</text>
+  <text x="522" y="98" font-family="Segoe UI, system-ui, sans-serif" font-size="9" fill="#4338ca">Slash commands, agents, synthesis, gates</text>
+
+  <!-- Phase boxes: same total width as legend pair (24 + 444 + 24 + 444 + 24 = 960) -->
   <g font-family="Segoe UI, system-ui, sans-serif">
-    <!-- P1 LLM-heavy -->
-    <rect x="24" y="124" width="130" height="108" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#818cf8" stroke-width="2"/>
-    <text x="89" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">1 &#183; Research</text>
-    <text x="89" y="168" text-anchor="middle" font-size="9.5" fill="#475569">Landscape, claims,</text>
-    <text x="89" y="182" text-anchor="middle" font-size="9.5" fill="#475569">citations, search</text>
-    <text x="89" y="204" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Gate N1</text>
-    <text x="89" y="220" text-anchor="middle" font-size="8" fill="#4f46e5">LLM-led</text>
+    <rect x="24" y="128" width="130" height="112" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#818cf8" stroke-width="2"/>
+    <text x="89" y="152" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">1 &#183; Research</text>
+    <text x="89" y="172" text-anchor="middle" font-size="9.5" fill="#475569">Landscape, claims,</text>
+    <text x="89" y="186" text-anchor="middle" font-size="9.5" fill="#475569">citations, search</text>
+    <text x="89" y="208" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Gate N1</text>
+    <text x="89" y="226" text-anchor="middle" font-size="8" fill="#4f46e5">LLM-led</text>
 
-    <!-- P2 LLM -->
-    <rect x="168" y="124" width="130" height="108" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#818cf8" stroke-width="2"/>
-    <text x="233" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">2 &#183; Design</text>
-    <text x="233" y="168" text-anchor="middle" font-size="9.5" fill="#475569">Plan, baselines,</text>
-    <text x="233" y="182" text-anchor="middle" font-size="9.5" fill="#475569">ablations</text>
-    <text x="233" y="204" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Gate N2</text>
-    <text x="233" y="220" text-anchor="middle" font-size="8" fill="#4f46e5">LLM-led</text>
+    <rect x="168" y="128" width="130" height="112" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#818cf8" stroke-width="2"/>
+    <text x="233" y="152" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">2 &#183; Design</text>
+    <text x="233" y="172" text-anchor="middle" font-size="9.5" fill="#475569">Plan, baselines,</text>
+    <text x="233" y="186" text-anchor="middle" font-size="9.5" fill="#475569">ablations</text>
+    <text x="233" y="208" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Gate N2</text>
+    <text x="233" y="226" text-anchor="middle" font-size="8" fill="#4f46e5">LLM-led</text>
 
-    <!-- P3 mixed: codegen LLM + validate -->
-    <rect x="312" y="124" width="130" height="108" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#94a3b8" stroke-width="1.5"/>
-    <text x="377" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">3 &#183; Build</text>
-    <text x="377" y="168" text-anchor="middle" font-size="9.5" fill="#475569">Scaffold, data,</text>
-    <text x="377" y="182" text-anchor="middle" font-size="9.5" fill="#475569">model, metrics</text>
-    <text x="377" y="204" text-anchor="middle" font-size="9" fill="#64748b">/validate-setup</text>
-    <text x="377" y="220" text-anchor="middle" font-size="8" fill="#64748b">LLM + scripts</text>
+    <rect x="312" y="128" width="130" height="112" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="377" y="152" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">3 &#183; Build</text>
+    <text x="377" y="172" text-anchor="middle" font-size="9.5" fill="#475569">Scaffold, data,</text>
+    <text x="377" y="186" text-anchor="middle" font-size="9.5" fill="#475569">model, metrics</text>
+    <text x="377" y="208" text-anchor="middle" font-size="9" fill="#64748b">/validate-setup</text>
+    <text x="377" y="226" text-anchor="middle" font-size="8" fill="#64748b">LLM + scripts</text>
 
-    <!-- P4 script-heavy -->
-    <rect x="456" y="124" width="130" height="108" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#34d399" stroke-width="2"/>
-    <text x="521" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">4 &#183; Execute</text>
-    <text x="521" y="168" text-anchor="middle" font-size="9.5" fill="#475569">Jobs, SLURM,</text>
-    <text x="521" y="182" text-anchor="middle" font-size="9.5" fill="#475569">collect results</text>
-    <text x="521" y="204" text-anchor="middle" font-size="9" fill="#059669">collect_results,</text>
-    <text x="521" y="218" text-anchor="middle" font-size="9" fill="#059669">check_gates, SLURM</text>
+    <rect x="456" y="128" width="130" height="112" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#34d399" stroke-width="2"/>
+    <text x="521" y="150" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">4 &#183; Execute</text>
+    <text x="521" y="168" text-anchor="middle" font-size="9" fill="#475569">SLURM, collect,</text>
+    <text x="521" y="182" text-anchor="middle" font-size="8.5" fill="#059669">5 seeds, 1 GPU/job</text>
+    <text x="521" y="196" text-anchor="middle" font-size="8.5" fill="#059669">array per condition</text>
+    <text x="521" y="212" text-anchor="middle" font-size="9" fill="#059669">collect_results,</text>
+    <text x="521" y="226" text-anchor="middle" font-size="9" fill="#059669">check_gates</text>
 
-    <!-- P5 mixed -->
-    <rect x="600" y="124" width="148" height="108" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#94a3b8" stroke-width="1.5"/>
-    <text x="674" y="144" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">5 &#183; Analyze &#038; write</text>
-    <text x="674" y="164" text-anchor="middle" font-size="9.5" fill="#475569">Stats, figures,</text>
-    <text x="674" y="178" text-anchor="middle" font-size="9.5" fill="#475569">claims, manuscript</text>
-    <text x="674" y="198" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">N3 &#183; /verify-paper</text>
-    <text x="674" y="214" text-anchor="middle" font-size="8" fill="#64748b">scripts + LLM + hybrid</text>
+    <rect x="600" y="128" width="148" height="112" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="674" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">5 &#183; Analyze &#038; write</text>
+    <text x="674" y="168" text-anchor="middle" font-size="9.5" fill="#475569">Stats, figures,</text>
+    <text x="674" y="182" text-anchor="middle" font-size="9.5" fill="#475569">claims, manuscript</text>
+    <text x="674" y="202" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">N3 &#183; /verify-paper</text>
+    <text x="674" y="220" text-anchor="middle" font-size="8" fill="#64748b">scripts + LLM + hybrid</text>
 
-    <!-- P6 mixed -->
-    <rect x="762" y="124" width="174" height="108" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#94a3b8" stroke-width="1.5"/>
-    <text x="849" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">6 &#183; Submit</text>
-    <text x="849" y="168" text-anchor="middle" font-size="9.5" fill="#475569">Review, recency,</text>
-    <text x="849" y="182" text-anchor="middle" font-size="9.5" fill="#475569">novelty, PDF/ZIP</text>
-    <text x="849" y="204" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Gate N4</text>
-    <text x="849" y="220" text-anchor="middle" font-size="8" fill="#64748b">LLM + compile_manuscript</text>
+    <rect x="762" y="128" width="174" height="112" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#94a3b8" stroke-width="1.5"/>
+    <text x="849" y="152" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">6 &#183; Submit</text>
+    <text x="849" y="172" text-anchor="middle" font-size="9.5" fill="#475569">Review, recency,</text>
+    <text x="849" y="186" text-anchor="middle" font-size="9.5" fill="#475569">novelty, PDF/ZIP</text>
+    <text x="849" y="208" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Gate N4</text>
+    <text x="849" y="226" text-anchor="middle" font-size="8" fill="#64748b">LLM + compile_manuscript</text>
   </g>
 
   <g fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)">
-    <path d="M 154 178 L 166 178"/>
-    <path d="M 298 178 L 310 178"/>
-    <path d="M 442 178 L 454 178"/>
-    <path d="M 586 178 L 598 178"/>
-    <path d="M 748 178 L 760 178"/>
+    <path d="M 154 184 L 166 184"/>
+    <path d="M 298 184 L 310 184"/>
+    <path d="M 442 184 L 454 184"/>
+    <path d="M 586 184 L 598 184"/>
+    <path d="M 748 184 L 760 184"/>
   </g>
 
-  <!-- Detailed legend: two columns -->
+  <!-- Bottom panels: exact same width and x as legend row (444 + gap 24 + 444) -->
   <text x="480" y="268" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="12" font-weight="600" fill="#1e293b">What runs as script vs what relies on the LLM</text>
 
-  <rect x="24" y="282" width="448" height="214" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
-  <text x="40" y="304" font-family="Segoe UI, system-ui, sans-serif" font-size="11" font-weight="700" fill="#065f46">Deterministic scripts (Python / shell)</text>
-  <text x="40" y="324" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; pipeline_state.py &#8212; step state, init/status/reset</text>
-  <text x="40" y="340" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; collect_results.py, run_statistics.py, generate_figures.py</text>
-  <text x="40" y="356" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; compile_manuscript.py &#8212; LaTeX build, Overleaf ZIP</text>
-  <text x="40" y="372" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; quality_review.py &#8212; mechanical manuscript checks (for /verify-paper)</text>
-  <text x="40" y="388" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; Audits: audit_citations, audit_claim_coverage, gap_detector,</text>
-  <text x="48" y="402" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">method_reconcile, cross_section_check, check_registry_freshness, ...</text>
-  <text x="40" y="420" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; SLURM: job_builder, submit, cluster_profile; recency_sweep record;</text>
-  <text x="48" y="434" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">dedup_papers, kill_decision (criteria side), update_experiment_state</text>
-  <text x="40" y="452" font-family="Segoe UI, system-ui, sans-serif" font-size="8.8" fill="#15803d" font-style="italic">Invoked by commands or Makefile; same inputs yield same outputs (modulo versions).</text>
+  <rect x="24" y="278" width="444" height="218" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+  <text x="40" y="300" font-family="Segoe UI, system-ui, sans-serif" font-size="11" font-weight="700" fill="#065f46">Deterministic scripts (Python / shell)</text>
+  <text x="40" y="320" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; pipeline_state.py &#8212; step state, init/status/reset</text>
+  <text x="40" y="336" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; collect_results.py, run_statistics.py, generate_figures.py</text>
+  <text x="40" y="352" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; compile_manuscript.py &#8212; LaTeX build, Overleaf ZIP</text>
+  <text x="40" y="368" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; quality_review.py &#8212; mechanical checks (for /verify-paper)</text>
+  <text x="40" y="384" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; Audits: audit_citations, audit_claim_coverage, gap_detector,</text>
+  <text x="48" y="398" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">method_reconcile, cross_section_check, check_registry_freshness, ...</text>
+  <text x="40" y="414" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">&#8226; SLURM helpers: job_builder, submit, cluster_profile;</text>
+  <text x="48" y="428" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">compute_budget_check.py (5 seeds, 1 GPU/job); recency_sweep record;</text>
+  <text x="48" y="442" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#166534">dedup_papers, kill_decision, update_experiment_state</text>
+  <text x="40" y="464" font-family="Segoe UI, system-ui, sans-serif" font-size="8.8" fill="#15803d" font-style="italic">Same inputs yield same outputs. See rules/compute-budget.md.</text>
 
-  <rect x="488" y="282" width="448" height="214" rx="10" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1"/>
-  <text x="504" y="304" font-family="Segoe UI, system-ui, sans-serif" font-size="11" font-weight="700" fill="#312e81">LLM-mediated (Claude Code)</text>
-  <text x="504" y="324" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; /run-pipeline orchestration &#8212; which step next, user checkpoints</text>
-  <text x="504" y="340" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; Slash commands: /research-landscape, /claim-search, /novelty-gate,</text>
-  <text x="512" y="354" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">/design-experiments, /scaffold, /produce-manuscript, ...</text>
-  <text x="504" y="372" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; Agents: hypothesis-generator, literature synthesis, adversarial review</text>
-  <text x="504" y="388" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; Novelty gates N1&#8211;N4 &#8212; structured judgment (PROCEED / PIVOT / KILL)</text>
-  <text x="504" y="404" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; /verify-paper &#8212; dimensions 1&#8211;7 scored by the model after script pre-checks</text>
-  <text x="504" y="424" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; Inline steps without a single script (gap narrative, literature-rescan)</text>
-  <text x="504" y="444" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; All prose reports (.md), hypotheses, and manuscript drafting</text>
-  <text x="504" y="464" font-family="Segoe UI, system-ui, sans-serif" font-size="8.8" fill="#4c1d95" font-style="italic">Hybrid: many steps call a script first, then the LLM interprets and decides.</text>
+  <rect x="492" y="278" width="444" height="218" rx="10" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1"/>
+  <text x="508" y="300" font-family="Segoe UI, system-ui, sans-serif" font-size="11" font-weight="700" fill="#312e81">LLM-mediated (Claude Code)</text>
+  <text x="508" y="320" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; /run-pipeline orchestration &#8212; which step next, user checkpoints</text>
+  <text x="508" y="336" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; Slash commands: /research-landscape, /claim-search, /novelty-gate,</text>
+  <text x="516" y="350" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">/design-experiments, /plan-compute, /scaffold, /produce-manuscript, ...</text>
+  <text x="508" y="368" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; Agents: hypothesis-generator, literature synthesis, adversarial review</text>
+  <text x="508" y="384" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; Novelty gates N1&#8211;N4 &#8212; judgment (PROCEED / PIVOT / KILL)</text>
+  <text x="508" y="400" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; /verify-paper &#8212; dimensions 1&#8211;7 after script pre-checks</text>
+  <text x="508" y="416" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; Inline steps (gap narrative, literature-rescan); all prose .md drafts</text>
+  <text x="508" y="436" font-family="Segoe UI, system-ui, sans-serif" font-size="9.2" fill="#4338ca">&#8226; /plan-compute chooses partitions &amp; time; must follow compute budget</text>
+  <text x="508" y="464" font-family="Segoe UI, system-ui, sans-serif" font-size="8.8" fill="#4c1d95" font-style="italic">Hybrid: script first, then LLM interprets. Phases 1&#8211;2, 5&#8211;6 LLM-heavy.</text>
 
-  <text x="480" y="508" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="10" fill="#475569">/run-pipeline flags: --auto &#183; --resume &#183; --from &lt;step_id&gt; &#183; --status &#183; --reset &#183; --skip-online</text>
+  <text x="480" y="514" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="10" fill="#475569">/run-pipeline flags: --auto &#183; --resume &#183; --from &lt;step_id&gt; &#183; --status &#183; --reset &#183; --skip-online</text>
 </svg>

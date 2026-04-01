@@ -28,16 +28,27 @@ This repository extends and maintains the workflow originally shaped by the **[C
 
 The pipeline is **opinionated and checkpointed**: each phase can stop for your decision before continuing.
 
-![ALETHEIA v3 pipeline — six phases from research to submission](docs/assets/aletheia-workflow.svg)
+The diagram and the summary table below describe the **same six phases** (aligned layout: **960px** wide figure).
 
-| Phase | Focus | Gates / checkpoints |
-|------|--------|----------------------|
-| **1** | Research & novelty — landscape, claims, citations, adversarial search | **N1** |
-| **2** | Experiment design — baselines, ablations, power | **N2** |
-| **3** | Implementation — scaffold, data, model, metrics, validation | — |
-| **4** | Execution — data download, compute plan, runs, collection | — |
-| **5** | Analysis & writing — results, claims, story, manuscript, **/verify-paper** | **N3** |
-| **6** | Pre-submission — reviews, recency, **N4**, compile PDF / Overleaf ZIP | **N4** |
+<div align="center">
+
+<img src="docs/assets/aletheia-workflow.svg" width="960" alt="ALETHEIA v3 pipeline — six phases, scripts vs LLM, compute defaults"/>
+
+<table style="max-width:960px;width:100%;">
+<thead>
+<tr><th align="left">Phase</th><th align="left">Focus</th><th align="left">Gates / checkpoints</th></tr>
+</thead>
+<tbody>
+<tr><td><b>1</b></td><td>Research &amp; novelty — landscape, claims, citations, adversarial search</td><td><b>N1</b></td></tr>
+<tr><td><b>2</b></td><td>Experiment design — baselines, ablations, power (default <b>5 seeds</b> per condition)</td><td><b>N2</b></td></tr>
+<tr><td><b>3</b></td><td>Implementation — scaffold, data, model, metrics, validation</td><td>—</td></tr>
+<tr><td><b>4</b></td><td>Execution — download, <b>/plan-compute</b>, SLURM jobs, collection. Defaults: <b>1 GPU per job</b>, seed sweeps via <b>job arrays</b> (not one job requesting all GPUs). Validate with <code>scripts/compute_budget_check.py</code>; policy in <a href="rules/compute-budget.md"><code>rules/compute-budget.md</code></a>.</td><td>—</td></tr>
+<tr><td><b>5</b></td><td>Analysis &amp; writing — results, claims, story, manuscript, <b>/verify-paper</b></td><td><b>N3</b></td></tr>
+<tr><td><b>6</b></td><td>Pre-submission — reviews, recency, <b>N4</b>, compile PDF / Overleaf ZIP</td><td><b>N4</b></td></tr>
+</tbody>
+</table>
+
+</div>
 
 Details: [`commands/run-pipeline.md`](commands/run-pipeline.md), [`pipeline-v3-spec.md`](pipeline-v3-spec.md). State machine: [`scripts/pipeline_state.py`](scripts/pipeline_state.py).
 
