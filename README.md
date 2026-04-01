@@ -113,6 +113,8 @@ bash scripts/setup.sh
 
 `setup.sh` merges skills, commands, agents, rules, hooks, and scripts into `~/.claude/` (with backups). See [Quick start](#quick-start) for minimal or selective installs.
 
+**Important:** Claude Code only discovers new slash commands and MCP servers at startup. After `setup.sh` (or any change to `~/.claude/settings.json`), **restart your Claude Code CLI/app** or you may see “No commands found” / “Unknown skill”.
+
 ### 2. Open a project and initialize pipeline state
 
 In Claude Code, either work inside the cloned repo or open your research repository that already uses these commands.
@@ -142,6 +144,16 @@ In the Claude Code chat, run:
 | `/run-pipeline --skip-online` | Skip steps that need network access |
 
 The command implementation is [`commands/run-pipeline.md`](commands/run-pipeline.md): Claude follows that spec to invoke each slash command in order (e.g. `/research-landscape`, `/design-experiments`, … `/compile-manuscript`).
+
+### 3b. What “full experiments + paper generation” means (end-to-end)
+
+If you let `/run-pipeline` proceed through all phases, it will:
+
+- **Design experiments (Phase 2)**: `/design-experiments` → `projects/<slug>/docs/experiment-plan.md`
+- **Implement the project (Phase 3)**: `/scaffold`, `/build-data`, `/setup-model`, `/implement-metrics`, `/validate-setup`
+- **Run experiments (Phase 4)**: `/download-data`, `/plan-compute`, `/run-experiment`, `/collect-results`
+- **Analyze + write (Phase 5B)**: `/analyze-results`, `/map-claims`, `/position`, `/story`, `/produce-manuscript`, `/verify-paper`
+- **Compile submission (Phase 6)**: `/compile-manuscript` → PDF + Overleaf-ready zip under `projects/<slug>/manuscript/`
 
 ### 4. Check state from the terminal
 
