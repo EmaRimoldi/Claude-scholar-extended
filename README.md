@@ -63,11 +63,11 @@ Later, your hypotheses and claims will live in documents under `projects/<slug>/
 
 The pipeline is **opinionated and checkpointed**: each phase can stop for your decision before continuing.
 
-The diagrams and the summary table below describe the **same six phases** (aligned layout: **960px** wide figures). The first figure is **sequential** (what runs in order and what is script vs LLM). The second is **dependency-oriented** (which artifacts and gates connect phases—not only the main forward path).
+The diagram and the summary table below describe the **same six phases** (aligned layout: **960px** wide figure).
 
 ### Input contract (schema + artifacts)
 
-Before **`/run-pipeline --auto`**, fix a small set of inputs so the orchestrator does not infer a research question from chat (the “Start here” recipe above is the canonical path):
+Before **`/run-pipeline --auto`**, fix a small set of inputs so the orchestrator does not infer a research question from chat:
 
 - **Machine-readable contract:** [`docs/schemas/pipeline-inputs.schema.json`](docs/schemas/pipeline-inputs.schema.json) (JSON Schema) and example [`examples/pipeline-inputs.min.json`](examples/pipeline-inputs.min.json).
 - **Human-readable spec:** [`docs/PIPELINE_INPUTS.md`](docs/PIPELINE_INPUTS.md) — field definitions, implicit dependencies per phase, and a **schema → step** mapping table.
@@ -78,8 +78,6 @@ Runtime step status and feedback-loop counters stay in **`pipeline-state.json`**
 <div align="center">
 
 <img src="docs/assets/aletheia-workflow.svg" width="960" alt="ALETHEIA v3 pipeline — six phases, scripts vs LLM, compute defaults"/>
-
-<img src="docs/assets/aletheia-pipeline-dependencies.svg" width="960" alt="ALETHEIA v3 — artifact flow and feedback loops between phases"/>
 
 <table style="max-width:960px;width:100%;">
 <thead>
