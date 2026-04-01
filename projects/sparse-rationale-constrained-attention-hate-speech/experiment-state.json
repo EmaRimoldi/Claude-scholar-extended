@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "initialized_at": "2026-04-01",
+  "project_dir": "projects/sparse-rationale-constrained-attention-hate-speech",
+  "pipeline_step": "design-experiments",
+  "experiment_plan": "docs/experiment-plan.md",
+  "status": "running",
+  "phases": {
+    "phase_0_data_analysis": {
+      "status": "completed",
+      "jobs": [
+        "rationale_sparsity",
+        "annotator_agreement"
+      ],
+      "gate": "G0",
+      "gpu_hours": 0,
+      "gate_g0": "PASS"
+    },
+    "phase_1_head_importance": {
+      "status": "running",
+      "jobs": [
+        "compute_importance"
+      ],
+      "gate": "G1",
+      "gpu_hours": 2,
+      "slurm_job_id": 11276908
+    },
+    "phase_2_training_wave1": {
+      "status": "pending",
+      "conditions": [
+        "M0",
+        "M1",
+        "M3",
+        "M4b"
+      ],
+      "seeds_per_condition": 3,
+      "jobs": {
+        "W1-A": {"conditions": ["M0", "M1"], "slurm_job_id": null},
+        "W1-B": {"conditions": ["M3", "M4b"], "slurm_job_id": null}
+      },
+      "gate": "G2",
+      "gpu_hours": 18
+    },
+    "phase_2_training_wave2": {
+      "status": "pending",
+      "conditions": [
+        "M2",
+        "M4a",
+        "M4c",
+        "M5",
+        "M6",
+        "M7"
+      ],
+      "seeds_per_condition": 3,
+      "jobs": {
+        "W2-A": {"conditions": ["M2", "M4a"], "slurm_job_id": null},
+        "W2-B": {"conditions": ["M4c", "M5"], "slurm_job_id": null},
+        "W2-C": {"conditions": ["M6", "M7"], "slurm_job_id": null}
+      },
+      "gpu_hours": 27
+    },
+    "phase_3_attributions": {
+      "status": "pending",
+      "jobs": [
+        "ig_attributions",
+        "lime_attributions",
+        "lime_stability",
+        "lime_ig_agreement"
+      ],
+      "gate": "G3",
+      "gpu_hours": 6
+    },
+    "phase_4_statistics": {
+      "status": "pending",
+      "jobs": [
+        "plausibility_metrics",
+        "faithfulness_metrics",
+        "bootstrap_tests",
+        "effect_sizes",
+        "agreement_stratification",
+        "power_analysis"
+      ],
+      "gate": "G4",
+      "gpu_hours": 2
+    },
+    "phase_5_adversarial": {
+      "status": "pending",
+      "jobs": [
+        "attention_swap",
+        "ig_attention_agreement"
+      ],
+      "gpu_hours": 2
+    }
+  },
+  "conditions": {
+    "M0": {
+      "description": "Softmax baseline (Mathew et al.)",
+      "seeds": 3,
+      "status": "pending"
+    },
+    "M1": {
+      "description": "SRA replication (Eilertsen et al. 2025)",
+      "seeds": 3,
+      "status": "pending"
+    },
+    "M2": {
+      "description": "Softmax all-12 final-layer heads MSE",
+      "seeds": 3,
+      "status": "pending"
+    },
+    "M3": {
+      "description": "Sparsemax all-12 final-layer heads MSE",
+      "seeds": 3,
+      "status": "pending"
+    },
+    "M4a": {
+      "description": "Sparsemax top-3 heads MSE",
+      "seeds": 3,
+      "status": "pending"
+    },
+    "M4b": {
+      "description": "Sparsemax top-6 heads MSE (primary proposed method)",
+      "seeds": 3,
+      "status": "pending"
+    },
+    "M4c": {
+      "description": "Sparsemax top-9 heads MSE",
+      "seeds": 3,
+      "status": "pending"
+    },
+    "M5": {
+      "description": "Sparsemax top-6 heads KL",
+      "seeds": 3,
+      "status": "pending"
+    },
+    "M6": {
+      "description": "Sparsemax top-6 heads sparsemax_loss",
+      "seeds": 3,
+      "status": "pending"
+    },
+    "M7": {
+      "description": "Softmax top-6 heads MSE (head selection without sparsemax)",
+      "seeds": 3,
+      "status": "pending"
+    }
+  },
+  "gates": {
+    "G0": {
+      "description": "Rationale sparsity: median coverage < 0.50",
+      "status": "pending"
+    },
+    "G1": {
+      "description": "Head importance variance > 0.01",
+      "status": "pending"
+    },
+    "G2": {
+      "description": "M4b val IoU-F1 > M1 - 0.02",
+      "status": "pending"
+    },
+    "G3": {
+      "description": "IG convergence delta < 0.01",
+      "status": "pending"
+    },
+    "G4": {
+      "description": "H4 LIME stability verdict",
+      "status": "pending"
+    }
+  },
+  "total_gpu_hours_estimated": 51,
+  "primary_comparison": [
+    "M0",
+    "M4b"
+  ],
+  "secondary_comparison": [
+    "M1",
+    "M4b"
+  ],
+  "notes": "Phase 0 and 1 must complete before head selection configs (M4a/M4b/M4c/M5/M6/M7) can be finalized. Wave 1 results gate wave 2 start.",
+  "code_version": "3d5b8f097e9f1b07b09eb6a2c47fd10771f23bbb"
+}
