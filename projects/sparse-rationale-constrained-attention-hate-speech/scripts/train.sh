@@ -70,6 +70,10 @@ export MKL_NUM_THREADS=4
 source .venv/bin/activate
 mkdir -p logs outputs
 
+echo "=== Pre-flight validation ===" && \
+python scripts/validate_train.py || { echo "[ABORT] validate_train.py failed — job cancelled."; exit 1; }
+echo "=== Validation passed. Starting training ==="
+
 echo "=== Job started: $(date) ==="
 echo "Conditions: ${CONDITIONS[*]}"
 echo "Seeds per condition: ${N_SEEDS} (starting from seed ${START_SEED})"

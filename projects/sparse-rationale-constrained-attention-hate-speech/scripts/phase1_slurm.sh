@@ -15,4 +15,8 @@ export OMP_NUM_THREADS=4
 source .venv/bin/activate
 mkdir -p logs outputs/phase1
 
+echo "=== Pre-flight validation ===" && \
+python scripts/validate_phase1.py || { echo "[ABORT] validate_phase1.py failed — job cancelled."; exit 1; }
+echo "=== Validation passed. Starting Phase 1 ==="
+
 python scripts/phase1_head_importance.py --device cuda --max_batches 200
