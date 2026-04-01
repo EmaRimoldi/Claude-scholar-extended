@@ -67,11 +67,11 @@ The diagrams and the summary table below describe the **same six phases** (align
 
 ### Input contract (schema + artifacts)
 
-Before **`/run-pipeline --auto`**, fix a small set of inputs so the orchestrator does not infer a research question from chat:
+Before **`/run-pipeline --auto`**, fix a small set of inputs so the orchestrator does not infer a research question from chat (the “Start here” recipe above is the canonical path):
 
 - **Machine-readable contract:** [`docs/schemas/pipeline-inputs.schema.json`](docs/schemas/pipeline-inputs.schema.json) (JSON Schema) and example [`examples/pipeline-inputs.min.json`](examples/pipeline-inputs.min.json).
 - **Human-readable spec:** [`docs/PIPELINE_INPUTS.md`](docs/PIPELINE_INPUTS.md) — field definitions, implicit dependencies per phase, and a **schema → step** mapping table.
-- **Minimum at init:** `python scripts/pipeline_state.py init --project <slug> --topic "…"` stores `research_topic` in `pipeline-state.json` for Step 1 (`/research-landscape`). **`--auto` does not invent a topic.**
+- **Minimum at init:** `python scripts/pipeline_state.py init --inputs PIPELINE_INPUTS.json` stores `research_topic` in `pipeline-state.json` for Step 1 (`/research-landscape`). **`--auto` does not invent a topic.**
 
 Runtime step status and feedback-loop counters stay in **`pipeline-state.json`** and are *not* part of the input schema.
 
@@ -121,20 +121,15 @@ bash scripts/setup.sh
 
 In Claude Code, either work inside the cloned repo or open your research repository that already uses these commands.
 
-1. Create a dedicated project directory and state (if you do not already have one):
-
-   ```
-   /new-project "Your research topic"
-   ```
-
-   This sets up `projects/<slug>/` and ties **`pipeline-state.json`** to that folder.
-
-2. Or initialize state manually (include **`--topic`** for deterministic Step 1):
+1. Initialize from the human template (recommended):
 
    ```bash
-   python scripts/pipeline_state.py init --project your-topic-slug \
-     --topic "Your full research question for /research-landscape?"
+   python scripts/pipeline_state.py init --inputs PIPELINE_INPUTS.json
    ```
+
+2. Alternative (manual flags):
+   - `python scripts/pipeline_state.py init --project <slug> --topic "Your research question"`
+   - or in Claude Code: `/new-project "Your research topic"` then set `research_topic` (see `docs/PIPELINE_INPUTS.md`).
 
 ### 3. Run the orchestrator
 
