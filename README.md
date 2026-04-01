@@ -176,6 +176,7 @@ See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md).
 | [docs/CLAUDE_REFERENCE.md](docs/CLAUDE_REFERENCE.md) | Skills, commands, agents |
 | [docs/QUICKSTART.md](docs/QUICKSTART.md) | Researcher onboarding |
 | [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md) | Where paper/project outputs live (`projects/<slug>/`) |
+| [docs/PIPELINE_INPUTS.md](docs/PIPELINE_INPUTS.md) | Prerequisites for `/run-pipeline` and `/run-experiment` (no path in quotes; `phase=N`) |
 | [settings.json.template](settings.json.template) | Hooks, plugins, MCP template |
 
 ---

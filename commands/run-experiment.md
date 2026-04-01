@@ -3,7 +3,7 @@ name: run-experiment
 description: Execute the experiment matrix via SLURM. Submit jobs, monitor progress, handle failures, evaluate phase gates, and update experiment-state.json.
 args:
   - name: phase
-    description: Which phase to run (defaults to next pending phase from experiment-state.json)
+    description: Optional. Use `phase=1`, `phase=2`, … to run a specific execution phase. Omit to run the next pending phase from experiment-state.json. This is not a file path — do not wrap in quotes.
     required: false
 tags: [Research, Execution, SLURM, Experiment]
 ---
@@ -69,10 +69,12 @@ Activates the `experiment-runner` skill to submit SLURM jobs, monitor progress, 
 
 ## Usage
 
-```bash
-/run-experiment              # runs next pending phase
-/run-experiment phase=2      # runs specific phase
+```text
+/run-experiment              # runs next pending phase from experiment-state.json
+/run-experiment phase=2      # runs execution phase 2 explicitly (numeric; not a path)
 ```
+
+There is **no** required string in quotes. The only optional argument is **`phase=<integer>`**, matching the phased structure in `experiment-plan.md` / `experiment-state.json`. See [docs/PIPELINE_INPUTS.md](../docs/PIPELINE_INPUTS.md) for prerequisites and a minimal project layout example.
 
 ## Workflow
 
