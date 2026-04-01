@@ -147,6 +147,24 @@ In the Claude Code chat, run:
 
 The command implementation is [`commands/run-pipeline.md`](commands/run-pipeline.md): Claude follows that spec to invoke each slash command in order (e.g. `/research-landscape`, `/design-experiments`, … `/compile-manuscript`).
 
+### 3a. Interactive mode: what you see at each step
+
+If you run **`/run-pipeline`** without **`--auto`**, the orchestrator stops **before** each step and shows a small menu. That is normal: it is a **human checkpoint**, not an error.
+
+You will typically see:
+
+- **Which step** you are on (e.g. `Step 1/38`) and **which slash command** comes next (e.g. `/research-landscape`), plus your **`research_topic`** from `pipeline-state.json`.
+- A short prompt such as:
+
+| Choice | What it does |
+|--------|----------------|
+| **Continue** | Run the next command now (e.g. `/research-landscape` → writes `research-landscape.md` under your project dir). |
+| **Skip** | Mark this step as skipped and advance to the next one. |
+| **Abort** | Stop the pipeline here. Resume later with **`/run-pipeline --resume`**. |
+| **Type something** | Free text: refine scope, ask questions, or “chat about this step” before you choose Continue. |
+
+Use **`/run-pipeline --auto`** if you want fewer confirmations and fewer of these menus (the model still follows the same step order).
+
 ### 3b. What “full experiments + paper generation” means (end-to-end)
 
 If you let `/run-pipeline` proceed through all phases, it will:
