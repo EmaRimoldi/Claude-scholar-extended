@@ -62,14 +62,20 @@ Also search for papers that overlap on 2+ components — these are the highest n
 
 ### Step 3: Execute Claim-Level Searches
 
-**Mandatory: Use WebSearch for every row in the decomposition table.**
+**Mandatory (MCP-first): For every row in the decomposition table, run at least one MCP-backed search.**
+
+Preferred order:
+1. `semantic-scholar` MCP (paper search / snippet search when available)
+2. `arxiv-mcp-server` search (for preprints / newest work)
+3. `crossref` for DOI/metadata resolution when you have partial references
+4. WebSearch only as fallback (log that MCP could not cover the query)
 
 Do not skip any row. If a search returns zero results, log the query and result explicitly — zero results is a valid finding.
 
 Additional targeted sources:
-- **OpenReview** (`site:openreview.net`): catches submissions under review that may not yet be indexed elsewhere
-- **arXiv recent** (`arxiv.org cs.* 2024 2025`): catches preprints
-- **Semantic Scholar** with the exact method name in quotes
+- **OpenReview** (`site:openreview.net`) via WebSearch fallback: catches submissions under review that may not yet be indexed elsewhere
+- **arXiv recent** via `arxiv-mcp-server` search (preferred) or WebSearch fallback
+- **Semantic Scholar** via MCP (preferred) or `site:semanticscholar.org` fallback
 
 Minimum queries: 2× the number of decomposition rows (run each with at least 2 phrasings).
 

@@ -28,13 +28,19 @@ Read `pipeline-state.json` to resolve `$PROJECT_DIR`. All output files MUST be w
 - `$PROJECT_DIR/.epistemic/citation_ledger.json` (initialize)
 - `$PROJECT_DIR/.epistemic/evidence_registry.json` (seed)
 
-## Mandatory Online Search
+## MCP-first search policy (mandatory)
 
-You MUST use WebSearch and WebFetch. Do NOT skip search or claim offline. If a source fails, log the error and continue with other sources.
+If MCP servers are configured, you MUST use them as the **primary** retrieval layer:
+- `semantic-scholar` for search + citations/references expansion
+- `arxiv-mcp-server` for arXiv search + PDF download + reading
+- `crossref` for DOI/metadata resolution when needed
+- `zotero` to import/organize the final reading set and (when possible) attach PDFs
 
-**Minimum required:**
-- 8+ WebSearch calls with distinct query formulations
-- 3+ full papers read via WebFetch
+**Fallback is allowed and expected**: if MCP is unavailable, rate-limited, or missing a paper, use WebSearch/WebFetch and log the fallback.
+
+**Minimum required (combined MCP + web):**
+- 8+ distinct search queries (via MCP tools and/or WebSearch)
+- 3+ full papers read (via `arxiv-mcp-server` read tool, Zotero fulltext, or WebFetch)
 - 50+ papers scanned at abstract level
 - 15–25 papers read in detail
 
@@ -111,7 +117,7 @@ For each paper found, assign a relevance tier:
 - **Tier 2 (abstract only):** Papers in adjacent areas, older baselines, survey papers. Scan abstract and conclusions. Target: 30–75 papers.
 - **Tier 3 (title only):** Papers that appeared in search results but are clearly tangential. Log for completeness.
 
-Read all Tier 1 papers using WebFetch on their arXiv abstract page or PDF link.
+Read all Tier 1 papers using (in order): `arxiv-mcp-server` (download/read) → Zotero fulltext (if imported) → WebFetch (fallback).
 
 ### Step 4: Cluster Analysis
 

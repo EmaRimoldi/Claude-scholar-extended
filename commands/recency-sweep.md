@@ -70,10 +70,10 @@ Hit all sources that have recency-aware interfaces:
 
 | Source | Method | Date Filter |
 |--------|--------|-------------|
-| arXiv | `WebSearch site:arxiv.org [terms] 2024 2025 2026` | Implicit in date terms |
-| arXiv new submissions | `WebFetch https://arxiv.org/search/?query=[terms]&searchtype=all&start=0` | Sort by submission date |
+| arXiv | `arxiv-mcp-server` search (preferred) or `WebSearch site:arxiv.org ...` (fallback) | Use date window in query |
+| arXiv new submissions | `arxiv-mcp-server` search + download (preferred) or WebFetch arXiv search page (fallback) | Sort by submission date |
 | OpenReview | `WebSearch site:openreview.net [terms] 2025` | Recent submissions |
-| Semantic Scholar | API with `year` filter if available | `year_filter: [current_year-1, current_year]` |
+| Semantic Scholar | `semantic-scholar` MCP (preferred), fallback WebSearch | `year_filter: [current_year-1, current_year]` |
 | Twitter/X (academic) | `WebSearch site:x.com OR site:twitter.com [terms] "arxiv" lang:en` | Recent threads |
 | Research lab blogs | Anthropic, DeepMind, FAIR, Google Research, MSR — check for recent posts | Manual check |
 

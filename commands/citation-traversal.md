@@ -52,13 +52,13 @@ Record the seed list in the report.
 For each seed paper, retrieve:
 
 **Forward citations** (papers that cite the seed):
-- Use Semantic Scholar API if available: `GET https://api.semanticscholar.org/graph/v1/paper/{paperId}/citations`
+- Preferred: `semantic-scholar` MCP (`paper_citations` / equivalent tool)
 - Fallback: WebSearch `"[exact title]" site:semanticscholar.org` → click through to see citing papers
 - Fallback: Google Scholar "Cited by N" link → scrape first 2 pages
 
 **Backward references** (papers cited by the seed):
-- Use Semantic Scholar API: `GET https://api.semanticscholar.org/graph/v1/paper/{paperId}/references`
-- Fallback: Read the paper's reference list from the PDF or arXiv page
+- Preferred: `semantic-scholar` MCP (`paper_references` / equivalent tool)
+- Fallback: read the paper's reference list from the PDF (use `arxiv-mcp-server` read tool if possible) or arXiv page
 
 **Rate limiting:** If using Semantic Scholar API, respect the 100 requests/5 min rate limit. Batch requests where possible. Log any rate limit errors and retry after 60 seconds (max 3 retries per paper).
 

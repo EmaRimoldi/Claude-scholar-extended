@@ -205,6 +205,16 @@ See [docs/ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md).
 - **Zotero** — import, collections, full text via MCP: [docs/MCP_SETUP.md](docs/MCP_SETUP.md)  
 - **Obsidian** — filesystem-first project vault: [docs/OBSIDIAN_SETUP.md](docs/OBSIDIAN_SETUP.md)  
 
+### MCP-first literature retrieval (recommended)
+
+If MCP servers are configured, Phase 1 research steps use an **MCP-first** policy:
+1. Search and citation expansion via **Semantic Scholar MCP**
+2. arXiv search + PDF download/reading via **arXiv MCP**
+3. DOI/metadata resolution via **Crossref MCP**
+4. Import/organize/attach PDFs via **Zotero MCP**
+
+Web browsing (WebSearch/WebFetch) is kept as a fallback for coverage gaps and sites that are not exposed via MCP.
+
 ---
 
 ## Documentation
