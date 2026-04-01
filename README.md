@@ -113,7 +113,9 @@ bash scripts/setup.sh
 
 `setup.sh` merges skills, commands, agents, rules, hooks, and scripts into `~/.claude/` (with backups). See [Quick start](#quick-start) for minimal or selective installs.
 
-**Important:** Claude Code only discovers new slash commands and MCP servers at startup. After `setup.sh` (or any change to `~/.claude/settings.json`), **restart your Claude Code CLI/app** or you may see “No commands found” / “Unknown skill”.
+**Important:** Claude Code only discovers new slash commands, **skills**, and MCP servers at startup. After `setup.sh` (or any change to `~/.claude/settings.json`), **fully quit and restart** the Claude Code CLI (`claude`) or you may see “No commands found” or **`Unknown skill: run-pipeline`**.
+
+**If you see `Unknown skill: run-pipeline`:** this repo ships a **`run-pipeline` skill** (`skills/run-pipeline/SKILL.md`) as a compatibility shim for clients that route slash commands through the Skill tool. Run `bash scripts/setup.sh` again, **restart Claude Code**, then retry `/run-pipeline` or `/run-pipeline --resume`. The orchestrator spec is still [`commands/run-pipeline.md`](commands/run-pipeline.md).
 
 ### 2. Open a project and initialize pipeline state
 
