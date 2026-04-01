@@ -164,6 +164,7 @@ See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md).
 | [CLAUDE.md](CLAUDE.md) | Workspace configuration and v3 lifecycle summary |
 | [docs/CLAUDE_REFERENCE.md](docs/CLAUDE_REFERENCE.md) | Skills, commands, agents |
 | [docs/QUICKSTART.md](docs/QUICKSTART.md) | Researcher onboarding |
+| [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md) | Where paper/project outputs live (`projects/<slug>/`) |
 | [settings.json.template](settings.json.template) | Hooks, plugins, MCP template |
 
 ---

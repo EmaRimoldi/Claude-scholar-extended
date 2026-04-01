@@ -70,6 +70,16 @@ python scripts/check_gates.py \
 
 Exit code 0 = all gates pass, 1 = gate failed.
 
+### `compute_budget_check.py` — Validate seeds / GPUs per job (ALETHEIA defaults)
+
+Enforces default **5 seeds per condition** and **1 GPU per SLURM job** before you lock a compute plan. Fails if seeds or `gpus-per-job` violate policy unless `--allow-extra-seeds` / `--allow-multi-gpu`.
+
+```bash
+python scripts/compute_budget_check.py --seeds 5 --conditions 9 --gpus-per-job 1
+```
+
+Reads optional numeric overrides from `config/compute_defaults.yaml`.
+
 ### `update_experiment_state.py` — Experiment state lifecycle
 
 Manages `experiment-state.json` transitions (planned → running → collecting → analyzing → confirmed).

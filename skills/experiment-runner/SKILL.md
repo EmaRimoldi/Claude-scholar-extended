@@ -40,9 +40,9 @@ run-manifest.json structure:
 Submit SLURM jobs from prepared scripts, tracking all job IDs:
 
 - **Single jobs**: `sbatch` for individual runs, capture job ID from stdout
-- **Array jobs**: Use SLURM job arrays for seed sweeps (`--array=0-4` for 5 seeds)
+- **Array jobs**: Use SLURM job arrays for seed sweeps (`--array=0-4` for 5 seeds; see `rules/compute-budget.md`)
 - **Dependency chains**: Phase N+1 jobs depend on Phase N completion (`--dependency=afterok:{phase_n_job_id}`)
-- **Resource requests**: Map resource estimates from `experiment-plan.md` to SLURM directives (`--gres=gpu:1`, `--time`, `--mem`)
+- **Resource requests**: **1 GPU per job** by default; map `experiment-plan.md` to `--gres=gpu:1`, `--time`, `--mem`. Do not request one job with GPUs = conditions × seeds.
 - **Job naming**: Consistent `--job-name` matching run ID for easy tracking
 - **Submission log**: Record all submitted job IDs in `experiment-state.json`
 

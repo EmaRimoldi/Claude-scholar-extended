@@ -9,6 +9,19 @@ tags: [Research, HPC, SLURM, GPU, Cluster, Scheduling]
 
 Estimates GPU resources, selects cluster partitions, designs scheduling strategy, and generates production-ready SLURM scripts for MIT Engaging. Translates the experiment matrix from `experiment-plan.md` into a concrete execution plan with resource budgets, partition assignments, dependency chains, and ready-to-submit batch scripts -- so you commit GPU hours with confidence, not guesswork.
 
+## ALETHEIA compute budget (mandatory)
+
+Follow **`rules/compute-budget.md`** and **`config/compute_defaults.yaml`**:
+
+- **Default: 5 seeds per condition** (not 10). More seeds require explicit user approval and `--allow-extra-seeds` on the budget check.
+- **One GPU per SLURM job** for standard training (`--gres=gpu:<type>:1`). Never satisfy a seed sweep by requesting **many GPUs in a single job** (e.g. 9 conditions × 10 seeds → **not** 90 GPUs on one `#SBATCH`).
+- **Seed sweeps**: use **SLURM job arrays** (`#SBATCH --array=0-4` for 5 seeds); each array task runs **one seed on one GPU**.
+- **Wall time**: set `--time` per seed run from smoke-test or validation timing; add margin (e.g. +20%), not one tiny job per GPU hoarding.
+
+Before finalizing `compute-plan.md`, run:
+
+`python scripts/compute_budget_check.py --seeds <N> --conditions <C> --gpus-per-job 1`
+
 ## Core Features
 
 ### 1. Resource Estimation

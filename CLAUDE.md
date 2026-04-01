@@ -76,7 +76,7 @@ Canonical step order, novelty gates (N1–N4), and phase tables: [`commands/run-
 
 ---
 
-## Rules (5 Global Constraints)
+## Rules (6 Global Constraints)
 
 | Rule | Purpose |
 |------|---------|
@@ -84,6 +84,7 @@ Canonical step order, novelty gates (N1–N4), and phase tables: [`commands/run-
 | `agents.md` | Auto-invocation timing, parallel execution, multi-perspective analysis |
 | `security.md` | Key management, sensitive file protection, pre-commit security checks |
 | `experiment-reproducibility.md` | Random seeds, config recording, environment recording, checkpoints |
+| `compute-budget.md` | Cluster defaults: 5 seeds/condition, 1 GPU/job, SLURM arrays for sweeps (no N×M-GPU single jobs) |
 | `context-engineering.md` | Token budgets, summarization strategies, context thresholds |
 
 ---

@@ -1,0 +1,9 @@
+# ALETHEIA defaults for /plan-compute and experiment-runner.
+# Override per project by copying to projects/<slug>/configs/compute_defaults.yaml
+# or by setting env vars (see scripts/compute_budget_check.py).
+
+max_seeds_per_condition: 5
+gpus_per_job: 1
+prefer_slurm_array_for_seeds: true
+# Guidance only: typical cap for simultaneous single-GPU jobs on a shared partition.
+max_concurrent_single_gpu_jobs: 8

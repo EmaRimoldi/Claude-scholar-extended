@@ -36,10 +36,14 @@ Activates the `compute-planner` skill to estimate GPU memory/time/storage, selec
 
 ## Workflow
 
-1. Parse run matrix from experiment-plan.md
+1. Parse run matrix from experiment-plan.md (conditions × seeds). **Default: 5 seeds per condition**; do not plan 10 unless the user explicitly asked and `compute_budget_check.py` is run with `--allow-extra-seeds`.
 2. Read timing data from validation-report.md (smoke test)
-3. Activate `compute-planner` skill
-4. Write: compute-plan.md, cluster/ directory with sbatch scripts, launch.sh, monitor.sh
+3. Activate `compute-planner` skill and apply **`rules/compute-budget.md`**: **1 GPU per job**, seed sweeps via **SLURM arrays**, not one job requesting `conditions × seeds` GPUs.
+4. Run validation:
+   ```bash
+   python scripts/compute_budget_check.py --seeds <N> --conditions <C> --gpus-per-job 1
+   ```
+5. Write: compute-plan.md, cluster/ directory with sbatch scripts, launch.sh, monitor.sh
 
 ## MANDATORY: Venv activation in generated SLURM scripts
 

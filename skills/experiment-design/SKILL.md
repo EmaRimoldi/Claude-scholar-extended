@@ -88,7 +88,8 @@ Parameter count alone is NOT an efficiency metric — identical parameter counts
 
 Determine the number of runs needed:
 
-- **Convention-based**: Community standard for the benchmark (e.g., "5 seeds is standard for BCI-IV-2a")
+  - **Convention-based**: Community standard for the benchmark (e.g., "5 seeds is standard for BCI-IV-2a")
+  - **ALETHEIA default**: Plan **5 seeds per condition** for full runs unless power analysis or the venue requires otherwise; avoid **10 seeds** by default in `experiment-plan.md` (reduces GPU waste and aligns with `rules/compute-budget.md`).
 - **Power analysis** (optional, see caveat below): When prior effect size and variance are available
 - **Cross-validation strategy**: k-fold, leave-one-out, stratified
 - **Quick validation first**: Small-scale run before committing to full sweep

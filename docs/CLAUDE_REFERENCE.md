@@ -335,4 +335,5 @@ Global constraints, always active:
 | `agents.md` | Agent orchestration: auto-invocation timing, parallel execution, multi-perspective analysis |
 | `security.md` | Security standards: key management, sensitive file protection, pre-commit security checks |
 | `experiment-reproducibility.md` | Experiment reproducibility: random seeds, config recording, environment recording, checkpoint management |
+| `compute-budget.md` | Cluster planning defaults: 5 seeds/condition, 1 GPU per job, SLURM arrays for sweeps |
 | `context-engineering.md` | Context management: token budgets, summarization strategies, memory layers |
