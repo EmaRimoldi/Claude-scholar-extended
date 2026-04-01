@@ -6,7 +6,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
 #SBATCH --time=03:00:00
-#SBATCH --partition=ou_bcs_low
+#SBATCH --partition=pi_tpoggio
 
 export LD_LIBRARY_PATH=/orcd/software/core/001/spack/pkg/gcc/12.2.0/yt6vabm/lib64:${LD_LIBRARY_PATH:-}
 export OPENBLAS_NUM_THREADS=1

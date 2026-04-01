@@ -42,14 +42,14 @@
             "M0",
             "M1"
           ],
-          "slurm_job_id": 11288487
+          "slurm_job_id": 11288722
         },
         "W1-B": {
           "conditions": [
             "M3",
             "M4b"
           ],
-          "slurm_job_id": 11288488
+          "slurm_job_id": 11288723
         }
       },
       "gate": "G2",

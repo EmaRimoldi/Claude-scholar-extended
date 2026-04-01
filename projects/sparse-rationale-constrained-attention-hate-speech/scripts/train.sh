@@ -19,7 +19,7 @@
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
 #SBATCH --time=10:00:00
-#SBATCH --partition=ou_bcs_low
+#SBATCH --partition=pi_tpoggio
 
 set -euo pipefail
 
