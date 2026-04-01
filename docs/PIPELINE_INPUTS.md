@@ -25,6 +25,16 @@ This document answers: **what artifacts must exist before the orchestrator or `/
 
 **Nothing to put in quotes** for `/run-pipeline`: flags are `--auto`, `--resume`, `--from <step_id>`, `--status`, `--reset`, `--skip-online` (see `commands/run-pipeline.md`).
 
+### Where the research question lives (what you edit)
+
+- **First anchor**: the string you pass to **`/new-project "…"`** — becomes the project title and folder `projects/<slug>/`; it is *not* a separate file by itself.
+- **After literature / formulation (step 3 in v3)**: the pipeline expects a written hypothesis document. The command **`/research-init`** (used as `formulate-hypotheses` in the pipeline) writes:
+  - **`$PROJECT_DIR/docs/hypotheses.md`** — main place for **research question + hypotheses** (you can edit this file directly).
+  - Optionally **`$PROJECT_DIR/docs/research-proposal.md`** and **`$PROJECT_DIR/docs/literature-review.md`** from the same step.
+- **Some** later commands refer to `hypotheses.md` at the project root in examples; keep a **single canonical copy** under **`docs/hypotheses.md`** unless you standardize otherwise. Downstream steps (`/claim-search`, `/design-experiments`, gates) read the hypothesis content from there.
+
+**Yes — creating a project always targets `projects/<slug>/`** (slug from the name you give `/new-project`). That directory is the only place pipeline artifacts for that paper should live.
+
 ---
 
 ## 2. `/run-experiment` — what goes after the command?
