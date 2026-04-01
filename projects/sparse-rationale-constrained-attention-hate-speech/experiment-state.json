@@ -23,7 +23,7 @@
       ],
       "gate": "G1",
       "gpu_hours": 2,
-      "slurm_job_id": 11276908
+      "slurm_job_id": 11287979
     },
     "phase_2_training_wave1": {
       "status": "pending",
@@ -35,8 +35,20 @@
       ],
       "seeds_per_condition": 3,
       "jobs": {
-        "W1-A": {"conditions": ["M0", "M1"], "slurm_job_id": null},
-        "W1-B": {"conditions": ["M3", "M4b"], "slurm_job_id": null}
+        "W1-A": {
+          "conditions": [
+            "M0",
+            "M1"
+          ],
+          "slurm_job_id": null
+        },
+        "W1-B": {
+          "conditions": [
+            "M3",
+            "M4b"
+          ],
+          "slurm_job_id": null
+        }
       },
       "gate": "G2",
       "gpu_hours": 18
@@ -53,9 +65,27 @@
       ],
       "seeds_per_condition": 3,
       "jobs": {
-        "W2-A": {"conditions": ["M2", "M4a"], "slurm_job_id": null},
-        "W2-B": {"conditions": ["M4c", "M5"], "slurm_job_id": null},
-        "W2-C": {"conditions": ["M6", "M7"], "slurm_job_id": null}
+        "W2-A": {
+          "conditions": [
+            "M2",
+            "M4a"
+          ],
+          "slurm_job_id": null
+        },
+        "W2-B": {
+          "conditions": [
+            "M4c",
+            "M5"
+          ],
+          "slurm_job_id": null
+        },
+        "W2-C": {
+          "conditions": [
+            "M6",
+            "M7"
+          ],
+          "slurm_job_id": null
+        }
       },
       "gpu_hours": 27
     },
@@ -176,5 +206,5 @@
     "M4b"
   ],
   "notes": "Phase 0 and 1 must complete before head selection configs (M4a/M4b/M4c/M5/M6/M7) can be finalized. Wave 1 results gate wave 2 start.",
-  "code_version": "3d5b8f097e9f1b07b09eb6a2c47fd10771f23bbb"
+  "code_version": "d786cd5ef2daebabe76ef2bc75ffe8c859c8ed35"
 }
