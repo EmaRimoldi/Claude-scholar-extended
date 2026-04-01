@@ -23,7 +23,7 @@
       ],
       "gate": "G1",
       "gpu_hours": 2,
-      "slurm_job_id": 11287979
+      "slurm_job_id": 11288341
     },
     "phase_2_training_wave1": {
       "status": "pending",
@@ -206,5 +206,5 @@
     "M4b"
   ],
   "notes": "Phase 0 and 1 must complete before head selection configs (M4a/M4b/M4c/M5/M6/M7) can be finalized. Wave 1 results gate wave 2 start.",
-  "code_version": "d786cd5ef2daebabe76ef2bc75ffe8c859c8ed35"
+  "code_version": "3eabaa35c64f429065ccd4a2ce698d31862bf137"
 }
