@@ -64,7 +64,9 @@ def main() -> None:
 
     if args.checkpoint:
         logger.info(f"Loading M0 checkpoint from {args.checkpoint}")
-        bert_config = AutoConfig.from_pretrained(args.checkpoint, output_attentions=True)
+        bert_config = AutoConfig.from_pretrained(
+            args.checkpoint, output_attentions=True, attn_implementation="eager"
+        )
         model = SparseBertForSequenceClassification(bert_config, model_cfg)
         ckpt_path = Path(args.checkpoint)
         safetensor_path = ckpt_path / "model.safetensors"
@@ -78,7 +80,7 @@ def main() -> None:
     else:
         logger.info("No checkpoint provided. Using pretrained bert-base-uncased for importance scoring.")
         bert_config = AutoConfig.from_pretrained(
-            "bert-base-uncased", num_labels=3, output_attentions=True
+            "bert-base-uncased", num_labels=3, output_attentions=True, attn_implementation="eager"
         )
         model = SparseBertForSequenceClassification(bert_config, model_cfg)
         # Bootstrap BERT backbone from HF hub via a standard model to avoid the
