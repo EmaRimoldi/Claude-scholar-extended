@@ -90,7 +90,7 @@ for CONDITION in "${CONDITIONS[@]}"; do
         echo "[$(date +%H:%M:%S)] ${CONDITION} seed=${SEED}"
 
         python run_experiment.py \
-            "+experiment=${CONFIG_NAME}" \
+            "experiment=${CONFIG_NAME}" \
             "seed=${SEED}" \
             "hydra.run.dir=outputs/${CONDITION}/seed${SEED}"
 

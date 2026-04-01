@@ -79,7 +79,39 @@ def test_config_files_exist() -> None:
             missing.append(f"{condition}: {path}")
     if missing:
         raise FileNotFoundError(
-            f"Missing config files:\n" + "\n".join(f"  {m}" for m in missing)
+            "Missing config files:\n" + "\n".join(f"  {m}" for m in missing)
+        )
+
+
+def test_hydra_config_override() -> None:
+    """Each experiment config must be selectable via Hydra override (experiment=name).
+
+    This catches the '+experiment=' vs 'experiment=' Hydra syntax mistake:
+    if a default is set in config.yaml, '+experiment=' raises 'Multiple values'.
+    """
+    import subprocess
+
+    failed = []
+    for condition, config_name in CONDITION_CONFIGS.items():
+        result = subprocess.run(
+            [
+                "python", "run_experiment.py",
+                f"experiment={config_name}",
+                "seed=42",
+                "--cfg", "job",          # print resolved config, no actual run
+                "--resolve",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+        )
+        if result.returncode != 0:
+            failed.append(
+                f"{condition} ({config_name}):\n    {result.stderr.strip().splitlines()[-1]}"
+            )
+    if failed:
+        raise RuntimeError(
+            "Hydra config override failed for:\n" + "\n".join(f"  {f}" for f in failed)
         )
 
 
@@ -146,9 +178,10 @@ def main() -> None:
     print("=== train.sh pre-submission validation ===\n")
     results = [
         check("1. all 10 experiment config files exist", test_config_files_exist),
-        check("2. softmax model (M0-style) init + forward", test_softmax_model_forward),
-        check("3. sparsemax model (M4b-style) init + forward", test_sparsemax_model_forward),
-        check("4. training step: forward + loss + backward", test_training_step),
+        check("2. Hydra config override (experiment=name, not +experiment=)", test_hydra_config_override),
+        check("3. softmax model (M0-style) init + forward", test_softmax_model_forward),
+        check("4. sparsemax model (M4b-style) init + forward", test_sparsemax_model_forward),
+        check("5. training step: forward + loss + backward", test_training_step),
     ]
 
     print(f"\n{'='*46}")
