@@ -358,7 +358,8 @@ def ensure_project_structure(base_dir: str, project_slug: str) -> str:
 
 
 def init_state(base_dir: str, force: bool = False,
-               project_slug: Optional[str] = None) -> dict:
+               project_slug: Optional[str] = None,
+               research_topic: Optional[str] = None) -> dict:
     state_path = os.path.join(base_dir, STATE_FILE)
     if os.path.exists(state_path) and not force:
         print(f"State file already exists: {state_path}")
@@ -377,6 +378,7 @@ def init_state(base_dir: str, force: bool = False,
         "updated_at": now_iso(),
         "mode": "interactive",
         "project_dir": project_dir_rel,
+        "research_topic": (research_topic.strip() if research_topic else None),
         "steps": {},
     }
 
@@ -435,6 +437,11 @@ def print_status(state: dict):
         print(f"  Project dir: {project_dir}/")
     else:
         print(f"  Project dir: (not set — legacy state)")
+    topic = state.get("research_topic")
+    if topic:
+        print(f"  Research topic: {topic}")
+    else:
+        print(f"  Research topic: (not set — pass init --topic or set in pipeline-state.json for /run-pipeline)")
     print()
 
     for i, step_id in enumerate(order, 1):
@@ -522,6 +529,11 @@ def main():
     p_init = sub.add_parser("init", help="Initialize pipeline state")
     p_init.add_argument("--force", action="store_true")
     p_init.add_argument("--project", help="Project slug (creates projects/<slug>/ structure)")
+    p_init.add_argument(
+        "--topic",
+        default=None,
+        help="Research question / topic string stored in pipeline-state.json for /run-pipeline (e.g. Pass 1 /research-landscape).",
+    )
 
     sub.add_parser("status", help="Show pipeline status")
 
@@ -569,8 +581,12 @@ def main():
     args = parser.parse_args()
 
     if args.action == "init":
-        init_state(args.dir, force=args.force,
-                   project_slug=getattr(args, 'project', None))
+        init_state(
+            args.dir,
+            force=args.force,
+            project_slug=getattr(args, "project", None),
+            research_topic=getattr(args, "topic", None),
+        )
         return
 
     state = load_state(args.dir)

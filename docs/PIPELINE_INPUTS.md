@@ -4,6 +4,33 @@ This document answers: **what artifacts must exist before the orchestrator or `/
 
 ---
 
+## 0. From scratch: new paper → `/run-pipeline --auto`
+
+**`--auto` only removes confirmation prompts** — it does **not** invent a research question. Something must supply the topic for Step 1 (`/research-landscape`), which requires a `topic` argument.
+
+**Recommended flow (moment 0):**
+
+1. **Clone + install** this repo; run `bash scripts/setup.sh` so Claude Code has commands/skills.
+2. **Create the project folder and state** (pick a short **slug** and a clear **research question**):
+   ```bash
+   python scripts/pipeline_state.py init --project my-paper-slug \
+     --topic "Does selective-head sparsemax supervision improve faithfulness on HateXplain without hurting F1?"
+   ```
+   This creates `projects/my-paper-slug/` and **`pipeline-state.json`** with:
+   - `project_dir` → `projects/my-paper-slug`
+   - **`research_topic`** → your question (used when the orchestrator runs `/research-landscape`).
+   Alternatively use **`/new-project "Title"`** in chat, then set `research_topic` by re-running init with `--force` and `--topic`, or **edit `pipeline-state.json`** and add the `"research_topic": "..."` field manually.
+3. **Run the orchestrator** in Claude Code:
+   ```text
+   /run-pipeline --auto
+   ```
+   Step 1 should pass **`research_topic`** from `pipeline-state.json` into `/research-landscape`.
+4. **Later**, `docs/hypotheses.md` is **produced** at step 3 (`/research-init`). You can edit it afterward; it is not the seed for step 1.
+
+**Without `research_topic`:** the model may fall back to the project **README** title or must **ask you** — so for unattended `--auto`, always set `--topic` at init.
+
+---
+
 ## 1. Starting the full pipeline: `/run-pipeline`
 
 **Install** the bundle (`bash scripts/setup.sh`) so `~/.claude` has commands, skills, and rules.

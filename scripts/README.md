@@ -9,7 +9,7 @@ Deterministic scripts that automate procedural parts of the research pipeline. T
 Manages `pipeline-state.json` for the **v3** research pipeline (**38 steps** across six phases). Step IDs and order match [`commands/run-pipeline.md`](../commands/run-pipeline.md).
 
 ```bash
-python scripts/pipeline_state.py init --project <slug>
+python scripts/pipeline_state.py init --project <slug> [--topic "Research question for Pass 1 /run-pipeline"]
 python scripts/pipeline_state.py status
 python scripts/pipeline_state.py start <step_id>
 python scripts/pipeline_state.py complete <step_id>

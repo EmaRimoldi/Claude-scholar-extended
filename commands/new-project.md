@@ -62,10 +62,10 @@ projects/<slug>/
 
 Run:
 ```bash
-python scripts/pipeline_state.py init --project <slug>
+python scripts/pipeline_state.py init --project <slug> --topic "Your full research question in one sentence"
 ```
 
-This creates `pipeline-state.json` in the repo root with `project_dir` set to `projects/<slug>`.
+This creates `pipeline-state.json` in the repo root with `project_dir` set to `projects/<slug>` and optional **`research_topic`** for `/run-pipeline` (especially `--auto` step 1). Omit `--topic` only if you will set `research_topic` manually or rely on the project README.
 
 If `pipeline-state.json` already exists, warn the user and ask if they want to reinitialize with `--force`.
 

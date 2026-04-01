@@ -31,7 +31,7 @@ If no flags are given, default to **interactive** mode starting from step 1 (or 
 1. Check if `pipeline-state.json` exists in the project root.
    - If it exists and `--resume` or no flags: load it and find the next pending/failed step.
    - If it exists and `--from <step>`: load it and set the starting point to that step.
-   - If it does not exist: run `python scripts/pipeline_state.py init --project <topic-slug>` to create it. Derive `<topic-slug>` from the research topic (kebab-case, e.g. `sparse-hate-explain`).
+   - If it does not exist: run `python scripts/pipeline_state.py init --project <topic-slug> --topic "Your research question"` to create it. Derive `<topic-slug>` from the research topic (kebab-case, e.g. `sparse-hate-explain`). The `--topic` string is stored as `research_topic` in `pipeline-state.json` and is the **canonical source** for Step 1 `/research-landscape` when using `/run-pipeline --auto` (no separate chat turn). If `research_topic` is missing, read `projects/<slug>/README.md` title or ask the user once before continuing.
 
 2. **Resolve PROJECT_DIR**: Read `project_dir` from `pipeline-state.json`. This is the base directory for ALL research outputs. If `project_dir` is null (legacy state), ask the user for a project slug and run `python scripts/pipeline_state.py init --force --project <slug>` to set it.
 
