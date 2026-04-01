@@ -167,6 +167,77 @@ Used for: Chrome browser control, web page interaction.
 }
 ```
 
+### 3. arXiv MCP Server (Optional but recommended)
+
+Zotero MCP can already **import** arXiv IDs into your library (`zotero_add_items_by_arxiv`). The dedicated arXiv MCP server is useful when you want:
+- keyword/category search over arXiv
+- download + local storage of PDFs for fast re-reading
+- reading paper text without first importing into Zotero
+
+Reference implementation: `blazickjp/arxiv-mcp-server` (PyPI: `arxiv-mcp-server`).
+
+#### Install
+
+```bash
+uv tool install arxiv-mcp-server
+```
+
+#### Configure (Claude Code / Cursor settings)
+
+```json
+{
+  "mcpServers": {
+    "arxiv-mcp-server": {
+      "command": "uv",
+      "args": ["tool", "run", "arxiv-mcp-server", "--storage-path", "/path/to/paper/storage"]
+    }
+  }
+}
+```
+
+### 4. Semantic Scholar MCP Server (Optional, great for citation graphs)
+
+Provides high-quality paper search and citation/reference network expansion.
+
+Recommended implementation: `zongmin-yu/semantic-scholar-fastmcp-mcp-server` (run via `uvx semantic-scholar-fastmcp`).
+
+#### Configure
+
+```json
+{
+  "mcpServers": {
+    "semantic-scholar": {
+      "command": "uvx",
+      "args": ["semantic-scholar-fastmcp"],
+      "env": {
+        "SEMANTIC_SCHOLAR_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+API key is optional (higher rate limits if provided).
+
+### 5. Crossref MCP Server (Optional, best metadata resolver)
+
+Crossref is excellent for DOI resolution and metadata (venues, authors, references).
+
+One implementation: `JackKuo666/Crossref-MCP-Server` (Python; run `crossref_server.py`).
+
+#### Configure
+
+```json
+{
+  "mcpServers": {
+    "crossref": {
+      "command": "python",
+      "args": ["/absolute/path/to/Crossref-MCP-Server/crossref_server.py"]
+    }
+  }
+}
+```
+
 ## Verification
 
 After configuration, restart your CLI and verify MCP servers are connected:
