@@ -30,7 +30,7 @@ Have you ever wondered whether you could start from a **single rough idea** and 
 
 Here is the recipe.
 
-1. **Open the template** [`examples/pipeline-inputs.min.json`](examples/pipeline-inputs.min.json). Treat it as your kitchen notepad: short, explicit, and easy to edit.
+1. **Open the template** [`PIPELINE_INPUTS.json`](PIPELINE_INPUTS.json). Treat it as your kitchen notepad: short, explicit, and easy to edit.
 2. **Change two strings** that define your paper before anything else runs:
    - **`project.slug`** — a short kebab-case name (it becomes `projects/<slug>/` on disk).
    - **`research.topic`** — your actual research question in one paragraph (this is what Step 1 feeds to `/research-landscape`; be concrete, not poetic).
@@ -41,7 +41,7 @@ Here is the recipe.
      --topic "Paste the same research question you wrote in research.topic"
    ```
 
-   That creates or updates **`pipeline-state.json`** in the directory where you run the command (usually the repo root). The field that matters for the pipeline is **`research_topic`**—that is the string `/run-pipeline` uses for unattended **`--auto`**. If you prefer not to use the CLI, you can edit **`pipeline-state.json`** directly and set **`research_topic`** yourself; the template JSON is still the clearest place to draft it first.
+   That creates or updates **`pipeline-state.json`** in the directory where you run the command (usually the repo root). The field that matters for the pipeline is **`research_topic`**—that is the string `/run-pipeline` uses for unattended **`--auto`**. If you prefer not to use the CLI, you can edit **`pipeline-state.json`** directly and set **`research_topic`** yourself; `PIPELINE_INPUTS.json` is the clearest place to draft it first.
 
 4. **Run** `/run-pipeline` (or `/run-pipeline --auto`) in Claude Code. Your idea is no longer floating in chat—it is anchored in files the workflow reads.
 
@@ -153,7 +153,7 @@ python3 scripts/pipeline_state.py steps | head
 
 - **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — prerequisites, credentials, Obsidian bootstrap, phase overview  
 - **[docs/CLAUDE_REFERENCE.md](docs/CLAUDE_REFERENCE.md)** — full skill and command index  
-- **[CLAUDE.md](CLAUDE.md)** — workspace defaults and lifecycle summary  
+- **[CLAUDE.md](CLAUDE.md)** — workspace defaults and lifecycle summary (used by the installer; kept at repo root)  
 
 ---
 
@@ -201,8 +201,8 @@ See [docs/ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md).
 
 ## Integrations
 
-- **Zotero** — import, collections, full text via MCP: [MCP_SETUP.md](MCP_SETUP.md)  
-- **Obsidian** — filesystem-first project vault: [OBSIDIAN_SETUP.md](OBSIDIAN_SETUP.md)  
+- **Zotero** — import, collections, full text via MCP: [docs/MCP_SETUP.md](docs/MCP_SETUP.md)  
+- **Obsidian** — filesystem-first project vault: [docs/OBSIDIAN_SETUP.md](docs/OBSIDIAN_SETUP.md)  
 
 ---
 

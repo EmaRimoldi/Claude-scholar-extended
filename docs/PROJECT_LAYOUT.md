@@ -28,7 +28,7 @@ So: **new “paper” work for this workflow = one folder under `projects/<name>
 ## Zotero and PDFs
 
 - **Bibliographic records and PDFs** live in **Zotero** (local or synced library), not automatically under `projects/`.
-- The pipeline produces **Markdown reports** (e.g. literature notes, claim maps) under **`$PROJECT_DIR/docs/`** (or your Obsidian vault if you use **`/obsidian-init`** — see [OBSIDIAN_SETUP.md](../OBSIDIAN_SETUP.md)).
+- The pipeline produces **Markdown reports** (e.g. literature notes, claim maps) under **`$PROJECT_DIR/docs/`** (or your Obsidian vault if you use **`/obsidian-init`** — see [docs/OBSIDIAN_SETUP.md](OBSIDIAN_SETUP.md)).
 
 ## Obsidian (optional)
 

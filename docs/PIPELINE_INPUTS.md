@@ -2,6 +2,8 @@
 
 This document defines the **pre-execution input contract** for the v3 research pipeline (`/run-pipeline` in [`commands/run-pipeline.md`](../commands/run-pipeline.md)). It complements **runtime state** in `pipeline-state.json` (step status, feedback-loop counters).
 
+**Important:** this file is a **specification**, not a template you edit for your project. The **human-editable “start here” template** is **`PIPELINE_INPUTS.json`** at the repository root (copy/modify it), and the **canonical** value the orchestrator reads for Step 1 is `research_topic` in **`pipeline-state.json`** (typically created via `python scripts/pipeline_state.py init --topic "..."`).
+
 ---
 
 ## 1. Goals
