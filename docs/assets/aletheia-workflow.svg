@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 380" width="920" height="380" role="img" aria-labelledby="title desc">
+  <title id="title">ALETHEIA research pipeline  v3 workflow</title>
+  <desc id="desc">Six phases from literature and novelty assessment through implementation, execution, analysis, writing, and submission. Four novelty gates N1N4.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc"/>
+      <stop offset="100%" style="stop-color:#e8eef5"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1e3a5f" flood-opacity="0.12"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <text x="460" y="36" text-anchor="middle" font-family="IBM Plex Sans, Segoe UI, system-ui, sans-serif" font-size="15" font-weight="600" fill="#1e293b">ALETHEIA  end-to-end research pipeline (v3 · 38 steps)</text>
+  <text x="460" y="56" text-anchor="middle" font-family="IBM Plex Sans, Segoe UI, system-ui, sans-serif" font-size="11" fill="#64748b">Orchestrated in Claude Code via /run-pipeline · human checkpoints between phases</text>
+
+  <!-- Phase boxes -->
+  <g font-family="IBM Plex Sans, Segoe UI, system-ui, sans-serif">
+    <rect x="28" y="88" width="128" height="100" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="92" y="112" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">1 · Research</text>
+    <text x="92" y="132" text-anchor="middle" font-size="10" fill="#475569">Literature, claims,</text>
+    <text x="92" y="146" text-anchor="middle" font-size="10" fill="#475569">adversarial search</text>
+    <text x="92" y="168" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Gate N1</text>
+
+    <rect x="176" y="88" width="128" height="100" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="240" y="112" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">2 · Design</text>
+    <text x="240" y="132" text-anchor="middle" font-size="10" fill="#475569">Experiments,</text>
+    <text x="240" y="146" text-anchor="middle" font-size="10" fill="#475569">baselines, power</text>
+    <text x="240" y="168" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Gate N2</text>
+
+    <rect x="324" y="88" width="128" height="100" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="388" y="112" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">3 · Build</text>
+    <text x="388" y="132" text-anchor="middle" font-size="10" fill="#475569">Scaffold, data,</text>
+    <text x="388" y="146" text-anchor="middle" font-size="10" fill="#475569">model, metrics</text>
+    <text x="388" y="168" text-anchor="middle" font-size="9" fill="#94a3b8">validate-setup</text>
+
+    <rect x="472" y="88" width="128" height="100" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="536" y="112" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">4 · Execute</text>
+    <text x="536" y="132" text-anchor="middle" font-size="10" fill="#475569">Download, SLURM,</text>
+    <text x="536" y="146" text-anchor="middle" font-size="10" fill="#475569">runs, collect</text>
+    <text x="536" y="168" text-anchor="middle" font-size="9" fill="#94a3b8">experiment matrix</text>
+
+    <rect x="620" y="88" width="136" height="100" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#1e40af" stroke-width="1.5"/>
+    <text x="688" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">5 · Analyze &amp; write</text>
+    <text x="688" y="128" text-anchor="middle" font-size="10" fill="#475569">Results, claims,</text>
+    <text x="688" y="142" text-anchor="middle" font-size="10" fill="#475569">manuscript, figures</text>
+    <text x="688" y="162" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Gate N3 · /verify-paper</text>
+
+    <rect x="772" y="88" width="120" height="100" rx="10" fill="#ffffff" filter="url(#shadow)" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="832" y="112" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">6 · Submit</text>
+    <text x="832" y="132" text-anchor="middle" font-size="10" fill="#475569">Review, recency,</text>
+    <text x="832" y="146" text-anchor="middle" font-size="10" fill="#475569">compile PDF/ZIP</text>
+    <text x="832" y="168" text-anchor="middle" font-size="9" font-weight="600" fill="#b45309">Gate N4</text>
+  </g>
+
+  <!-- Arrows -->
+  <g fill="none" stroke="#334155" stroke-width="1.5" marker-end="url(#arrow)">
+    <path d="M 156 138 L 170 138"/>
+    <path d="M 304 138 L 318 138"/>
+    <path d="M 452 138 L 466 138"/>
+    <path d="M 600 138 L 614 138"/>
+    <path d="M 756 138 L 768 138"/>
+  </g>
+
+  <!-- Feedback loops note -->
+  <rect x="28" y="218" width="864" height="120" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="460" y="246" text-anchor="middle" font-family="IBM Plex Sans, Segoe UI, system-ui, sans-serif" font-size="12" font-weight="600" fill="#1e293b">Feedback loops &amp; epistemic checks</text>
+  <text x="460" y="268" text-anchor="middle" font-family="IBM Plex Sans, Segoe UI, system-ui, sans-serif" font-size="10" fill="#64748b">Gap detection ” experiment design · Narrative gaps ” analysis or design · Claim / citation / method-code alignment · Registry &amp; confidence tracking under PROJECT_DIR/.epistemic/</text>
+  <text x="460" y="292" text-anchor="middle" font-family="IBM Plex Sans, Segoe UI, system-ui, sans-serif" font-size="10" fill="#64748b">Post-submission (outside main 38 steps): /rebuttal · /presentation · /poster · /promote</text>
+  <text x="460" y="318" text-anchor="middle" font-family="IBM Plex Sans, Segoe UI, system-ui, sans-serif" font-size="11" font-weight="600" fill="#0f172a">Run in Claude: /run-pipeline  optional flags --auto · --resume · --from &lt;step_id&gt; · --status · --skip-online</text>
+</svg>

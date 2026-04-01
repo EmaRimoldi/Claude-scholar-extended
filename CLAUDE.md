@@ -1,12 +1,12 @@
-# Claude Scholar Configuration
+# ALETHEIA Configuration
 
-> For the complete skills/commands/agents reference, see [docs/CLAUDE_REFERENCE.md](docs/CLAUDE_REFERENCE.md).
+> **ALETHEIA** (*Automated Learning for THEoretical Inference & Analysis*) — semi-automated research workflow for Claude Code. For the full skills/commands/agents reference, see [docs/CLAUDE_REFERENCE.md](docs/CLAUDE_REFERENCE.md).
 
 ## Project Overview
 
-**Claude Scholar** - Semi-automated research assistant for academic research and software development.
+This bundle extends the [Claude Scholar](https://github.com/Galaxy-Dawn/claude-scholar)-style workflow under the **ALETHEIA** project name: skills, commands, agents, hooks, and the v3 research pipeline.
 
-**Mission**: Support Claude Code, OpenCode, and Codex CLI across ideation, coding, experiments, writing, publication, plugin development, and project management.
+**Mission**: Support Claude Code (and optionally OpenCode / Codex CLI) across ideation, coding, experiments, writing, publication, plugin development, and project management.
 
 ---
 
