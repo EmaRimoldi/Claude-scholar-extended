@@ -12,7 +12,7 @@
 
 **ALETHEIA** — *Automated Learning for THEoretical Inference & Analysis* · **ἀλήθεια** (truth, disclosure)
 
-[Workflow diagram](#research-workflow-v3) · [Run the pipeline in Claude](#run-the-full-pipeline-in-claude-code) · [Quick start](#quick-start) · [Documentation](#documentation)
+[From idea to paper](#from-a-simple-idea-to-a-paper-start-here) · [Workflow diagram](#research-workflow-v3) · [Input contract](#input-contract-schema--artifacts) · [Run the pipeline in Claude](#run-the-full-pipeline-in-claude-code) · [Quick start](#quick-start) · [Documentation](#documentation)
 
 </div>
 
@@ -24,15 +24,52 @@ This repository extends and maintains the workflow originally shaped by the **[C
 
 ---
 
+## From a simple idea to a paper (start here)
+
+Have you ever wondered whether you could start from a **single rough idea** and still end somewhere that looks like a real paper—literature, experiments, figures, and a manuscript—without losing the plot on day one? The pipeline is built for that: the hard part is not “what button to press,” it is **stating your question clearly once** so every later step has something to lean on.
+
+Here is the recipe.
+
+1. **Open the template** [`examples/pipeline-inputs.min.json`](examples/pipeline-inputs.min.json). Treat it as your kitchen notepad: short, explicit, and easy to edit.
+2. **Change two strings** that define your paper before anything else runs:
+   - **`project.slug`** — a short kebab-case name (it becomes `projects/<slug>/` on disk).
+   - **`research.topic`** — your actual research question in one paragraph (this is what Step 1 feeds to `/research-landscape`; be concrete, not poetic).
+3. **Bake that into state** so the orchestrator is deterministic. From the repo root, run (use the same slug and the same wording as `research.topic`):
+
+   ```bash
+   python scripts/pipeline_state.py init --project your-slug-here \
+     --topic "Paste the same research question you wrote in research.topic"
+   ```
+
+   That creates or updates **`pipeline-state.json`** in the directory where you run the command (usually the repo root). The field that matters for the pipeline is **`research_topic`**—that is the string `/run-pipeline` uses for unattended **`--auto`**. If you prefer not to use the CLI, you can edit **`pipeline-state.json`** directly and set **`research_topic`** yourself; the template JSON is still the clearest place to draft it first.
+
+4. **Run** `/run-pipeline` (or `/run-pipeline --auto`) in Claude Code. Your idea is no longer floating in chat—it is anchored in files the workflow reads.
+
+Later, your hypotheses and claims will live in documents under `projects/<slug>/docs/` (for example `hypotheses.md`). The file you touch **at the very beginning** is either **`examples/pipeline-inputs.min.json`** (to draft) or **`pipeline-state.json`** (what the runner actually reads via **`research_topic`**). Same question, two representations: draft in the example, canonical in state.
+
+---
+
 ## Research workflow (v3)
 
 The pipeline is **opinionated and checkpointed**: each phase can stop for your decision before continuing.
 
-The diagram and the summary table below describe the **same six phases** (aligned layout: **960px** wide figure).
+The diagrams and the summary table below describe the **same six phases** (aligned layout: **960px** wide figures). The first figure is **sequential** (what runs in order and what is script vs LLM). The second is **dependency-oriented** (which artifacts and gates connect phases—not only the main forward path).
+
+### Input contract (schema + artifacts)
+
+Before **`/run-pipeline --auto`**, fix a small set of inputs so the orchestrator does not infer a research question from chat:
+
+- **Machine-readable contract:** [`docs/schemas/pipeline-inputs.schema.json`](docs/schemas/pipeline-inputs.schema.json) (JSON Schema) and example [`examples/pipeline-inputs.min.json`](examples/pipeline-inputs.min.json).
+- **Human-readable spec:** [`docs/PIPELINE_INPUTS.md`](docs/PIPELINE_INPUTS.md) — field definitions, implicit dependencies per phase, and a **schema → step** mapping table.
+- **Minimum at init:** `python scripts/pipeline_state.py init --project <slug> --topic "…"` stores `research_topic` in `pipeline-state.json` for Step 1 (`/research-landscape`). **`--auto` does not invent a topic.**
+
+Runtime step status and feedback-loop counters stay in **`pipeline-state.json`** and are *not* part of the input schema.
 
 <div align="center">
 
 <img src="docs/assets/aletheia-workflow.svg" width="960" alt="ALETHEIA v3 pipeline — six phases, scripts vs LLM, compute defaults"/>
+
+<img src="docs/assets/aletheia-pipeline-dependencies.svg" width="960" alt="ALETHEIA v3 — artifact flow and feedback loops between phases"/>
 
 <table style="max-width:960px;width:100%;">
 <thead>
@@ -82,10 +119,11 @@ In Claude Code, either work inside the cloned repo or open your research reposit
 
    This sets up `projects/<slug>/` and ties **`pipeline-state.json`** to that folder.
 
-2. Or initialize state manually:
+2. Or initialize state manually (include **`--topic`** for deterministic Step 1):
 
    ```bash
-   python scripts/pipeline_state.py init --project your-topic-slug
+   python scripts/pipeline_state.py init --project your-topic-slug \
+     --topic "Your full research question for /research-landscape?"
    ```
 
 ### 3. Run the orchestrator
@@ -176,7 +214,8 @@ See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md).
 | [docs/CLAUDE_REFERENCE.md](docs/CLAUDE_REFERENCE.md) | Skills, commands, agents |
 | [docs/QUICKSTART.md](docs/QUICKSTART.md) | Researcher onboarding |
 | [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md) | Where paper/project outputs live (`projects/<slug>/`) |
-| [docs/PIPELINE_INPUTS.md](docs/PIPELINE_INPUTS.md) | Prerequisites for `/run-pipeline` and `/run-experiment` (no path in quotes; `phase=N`) |
+| [docs/PIPELINE_INPUTS.md](docs/PIPELINE_INPUTS.md) | Formal input spec, schema link, field→step map, `/run-experiment` prerequisites |
+| [docs/schemas/pipeline-inputs.schema.json](docs/schemas/pipeline-inputs.schema.json) | JSON Schema for pre-pipeline inputs |
 | [settings.json.template](settings.json.template) | Hooks, plugins, MCP template |
 
 ---

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EmaRimoldi/Claude-scholar-extended/docs/schemas/pipeline-inputs.schema.json",
+  "title": "ALETHEIA pipeline inputs (pre-execution contract)",
+  "description": "Minimal structured inputs that must be fixed before /run-pipeline for deterministic orchestration. Runtime state (step status, loop counters) lives in pipeline-state.json separately.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project", "research"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Version of this contract. Bump when breaking changes are made to required fields."
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug"],
+      "properties": {
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "Kebab-case identifier; determines projects/<slug>/ and project_dir in pipeline-state.json."
+        },
+        "display_title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-facing paper title. Optional; if omitted, orchestrator may derive from slug or research.topic."
+        }
+      }
+    },
+    "research": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["topic"],
+      "properties": {
+        "topic": {
+          "type": "string",
+          "minLength": 8,
+          "description": "Canonical research question for Pass 1 (/research-landscape) and scope for literature steps. Stored as research_topic in pipeline-state.json."
+        },
+        "domain_hints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "maxItems": 12,
+          "description": "Optional keywords or subfield names to disambiguate search queries (steps 1–2, 4, 8, 23–24)."
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "target_venue": {
+          "type": "string",
+          "description": "Optional submission target (e.g. neurips, iclr, acl). Informs page limits, anonymization, and LaTeX class in /story, /produce-manuscript, /compile-manuscript."
+        }
+      }
+    },
+    "execution_defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "skip_online": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, aligns with /run-pipeline --skip-online for steps marked needs_online in run-pipeline.md."
+        }
+      }
+    },
+    "compute_defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "seeds_per_condition": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 5,
+          "description": "Default seeds per experimental condition; consumed by /design-experiments and /plan-compute unless overridden in docs/experiment-plan.md."
+        },
+        "gpus_per_job": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8,
+          "default": 1,
+          "description": "Default GPUs per SLURM job; must align with rules/compute-budget.md for steps 17–18."
+        }
+      }
+    }
+  }
+}

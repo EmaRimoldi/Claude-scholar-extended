@@ -1,159 +1,157 @@
-# What you need to run the pipeline (and `/run-experiment`)
+# Pipeline input specification (formal)
 
-This document answers: **what artifacts must exist before the orchestrator or `/run-experiment` can run**, and **what the slash command arguments mean**.
-
----
-
-## 0. From scratch: new paper → `/run-pipeline --auto`
-
-**`--auto` only removes confirmation prompts** — it does **not** invent a research question. Something must supply the topic for Step 1 (`/research-landscape`), which requires a `topic` argument.
-
-**Recommended flow (moment 0):**
-
-1. **Clone + install** this repo; run `bash scripts/setup.sh` so Claude Code has commands/skills.
-2. **Create the project folder and state** (pick a short **slug** and a clear **research question**):
-   ```bash
-   python scripts/pipeline_state.py init --project my-paper-slug \
-     --topic "Does selective-head sparsemax supervision improve faithfulness on HateXplain without hurting F1?"
-   ```
-   This creates `projects/my-paper-slug/` and **`pipeline-state.json`** with:
-   - `project_dir` → `projects/my-paper-slug`
-   - **`research_topic`** → your question (used when the orchestrator runs `/research-landscape`).
-   Alternatively use **`/new-project "Title"`** in chat, then set `research_topic` by re-running init with `--force` and `--topic`, or **edit `pipeline-state.json`** and add the `"research_topic": "..."` field manually.
-3. **Run the orchestrator** in Claude Code:
-   ```text
-   /run-pipeline --auto
-   ```
-   Step 1 should pass **`research_topic`** from `pipeline-state.json` into `/research-landscape`.
-4. **Later**, `docs/hypotheses.md` is **produced** at step 3 (`/research-init`). You can edit it afterward; it is not the seed for step 1.
-
-**Without `research_topic`:** the model may fall back to the project **README** title or must **ask you** — so for unattended `--auto`, always set `--topic` at init.
+This document defines the **pre-execution input contract** for the v3 research pipeline (`/run-pipeline` in [`commands/run-pipeline.md`](../commands/run-pipeline.md)). It complements **runtime state** in `pipeline-state.json` (step status, feedback-loop counters).
 
 ---
 
-## 1. Starting the full pipeline: `/run-pipeline`
+## 1. Goals
 
-**Install** the bundle (`bash scripts/setup.sh`) so `~/.claude` has commands, skills, and rules.
-
-**Repository / project root**
-
-- Open a **git clone** of this repo (or your fork) in Claude Code, **or** a research repo that already copies these commands into `~/.claude`.
-
-**Per-research project directory** (required)
-
-- Run **`/new-project "Your paper title"`** (or `python scripts/pipeline_state.py init --project <kebab-slug>`).
-- This sets **`pipeline-state.json`** → `project_dir` = `projects/<slug>/`.
-- **All** pipeline outputs (docs, code, results, manuscript) go under that folder — not under the plugin repo root.
-
-**Optional but typical**
-
-- **`.claude/settings.local.json`** — Zotero / API keys if you use online steps.
-- **Obsidian** binding via **`/obsidian-init`** if you use the vault workflow.
-
-**Nothing to put in quotes** for `/run-pipeline`: flags are `--auto`, `--resume`, `--from <step_id>`, `--status`, `--reset`, `--skip-online` (see `commands/run-pipeline.md`).
-
-### Where the research question lives (what you edit)
-
-- **First anchor**: the string you pass to **`/new-project "…"`** — becomes the project title and folder `projects/<slug>/`; it is *not* a separate file by itself.
-- **After literature / formulation (step 3 in v3)**: the pipeline expects a written hypothesis document. The command **`/research-init`** (used as `formulate-hypotheses` in the pipeline) writes:
-  - **`$PROJECT_DIR/docs/hypotheses.md`** — main place for **research question + hypotheses** (you can edit this file directly).
-  - Optionally **`$PROJECT_DIR/docs/research-proposal.md`** and **`$PROJECT_DIR/docs/literature-review.md`** from the same step.
-- **Some** later commands refer to `hypotheses.md` at the project root in examples; keep a **single canonical copy** under **`docs/hypotheses.md`** unless you standardize otherwise. Downstream steps (`/claim-search`, `/design-experiments`, gates) read the hypothesis content from there.
-
-**Yes — creating a project always targets `projects/<slug>/`** (slug from the name you give `/new-project`). That directory is the only place pipeline artifacts for that paper should live.
+| Goal | Meaning |
+|------|---------|
+| **Determinism** | Given the same inputs and repo, the orchestrator can resolve `PROJECT_DIR`, pass a topic into Step 1, and apply consistent defaults for online steps and compute — without guessing from chat context. |
+| **Separation** | **Inputs** (intent, fixed at init) vs **artifacts** (files produced by steps) vs **state** (which step is done, loop counts). |
+| **Traceability** | Every input field maps to at least one step or guard; no unused fields. |
 
 ---
 
-## 2. `/run-experiment` — what goes after the command?
+## 2. Reverse-engineered dependency summary
 
-There is **no** string in `'` `'` that you must pass. The command is defined in `commands/run-experiment.md` with **one optional argument**:
+### 2.1 What each phase consumes (implicit from prior work)
 
-| Invocation | Meaning |
-|------------|---------|
-| `/run-experiment` | Run the **next pending phase** according to `$PROJECT_DIR/experiment-state.json`. |
-| `/run-experiment phase=2` | Run **phase 2** explicitly (numeric phase id used by your `experiment-state.json` / `run-manifest`). |
+| Phase | Steps (ids) | Primary upstream dependencies |
+|-------|-------------|------------------------------|
+| **P1** Research | `research-landscape` … `recency-sweep-1` | **research_topic** (input); then `docs/research-landscape.md`, `docs/hypotheses.md`, claim/citation reports |
+| **P2** Design | `design-experiments`, `design-novelty-check` | `docs/hypotheses.md`, `docs/novelty-assessment.md`, `docs/claim-overlap-report.md` |
+| **P3** Build | `scaffold` … `validate-setup` | `docs/experiment-plan.md` |
+| **P4** Execute | `download-data` … `collect-results` | `docs/experiment-plan.md`, code under `src/`, `experiment-state.json` |
+| **P5** Analysis & writing | `analyze-results` … `verify-paper` | Results tables, `docs/analysis-report.md`, `.epistemic/*`, manuscript tree |
+| **P6** Submit | `adversarial-review` … `compile-manuscript` | `docs/concurrent-work-report.md`, `manuscript/` |
 
-So: **`phase=<number>`**, not a file path. If your project uses string phase keys (`phase_1`, `phase_2`), the implementation in Claude should map that to the same numbering (convention: phase 1 = quick validation, etc.) — align with `experiment-plan.md` and `experiment-state.json`.
+**Epistemic layer** (`.epistemic/`) is initialized in early literature steps and **must** stay consistent through map-claims, manuscript, and guards — see `run-pipeline.md` (Guards G1–G3).
 
-**Prerequisites before `/run-experiment` can do anything useful** (pipeline steps 9–17 completed in order):
+### 2.2 Where ambiguity existed (underspecification)
 
-| Step | Command | Produces (under `$PROJECT_DIR`) |
-|------|---------|----------------------------------|
-| 9 | `/design-experiments` | `docs/experiment-plan.md` (matrix, seeds, phases) |
-| 11–15 | `/scaffold` … `/validate-setup` | `src/`, `configs/`, working code |
-| 16 | `/download-data` | Data/cache ready on cluster |
-| 17 | `/plan-compute` | `docs/compute-plan.md`, SLURM scripts (e.g. `cluster/` or `scripts/` as in your plan) |
-
-**Runner state**
-
-- **`experiment-state.json`** — tracks phases, job IDs, gates. Often created/updated by `experiment-design` / runner; if missing, the agent should initialize from `experiment-plan.md`.
-
-**Pre-flight** (from `commands/run-experiment.md`): data offline check, dry-run, `sinfo`, venv in sbatch, commit hash recorded.
+| Issue | Before | Resolution |
+|-------|--------|------------|
+| Step 1 topic | Relied on chat or README title | **research_topic** required in `pipeline-state.json` via `pipeline_state.py init --topic "..."` |
+| Project root | Mixed repo root vs `projects/<slug>/` | **`project_dir`** in state points at `projects/<slug>/`; all artifacts go there |
+| Online steps | Unclear when network is allowed | **`execution_defaults.skip_online`** + CLI `--skip-online` |
+| Compute policy | Scattered across docs | **`compute_defaults`** align with [`rules/compute-budget.md`](../rules/compute-budget.md); overridden by `docs/experiment-plan.md` once written |
+| Venue / format | Implicit in manuscript step | **`constraints.target_venue`** informs `/story`, `/produce-manuscript`, `/compile-manuscript` |
 
 ---
 
-## 3. Minimal example layout (works with v3 + compute budget)
+## 3. Minimal deterministic inputs
 
-Below is a **minimal** `projects/<slug>/` tree that matches the pipeline and `run-experiment` expectations:
+To run **`/run-pipeline --auto`** without ad hoc clarification, these must be known **before Step 1**:
 
-```
-projects/my-paper/
-├── pipeline-state.json          # symlink or note: root pipeline-state.json points here
-├── experiment-state.json        # phases, jobs, gates (runner)
-├── docs/
-│   ├── experiment-plan.md       # matrix: conditions × seeds (default 5 seeds), phases
-│   └── compute-plan.md          # from /plan-compute; GPU/time, array strategy
-├── cluster/                     # or scripts/ — your sbatch + launchers from plan-compute
-│   ├── run_phase1.sh
-│   └── ...
-├── src/
-│   └── main.py                  # entry (Hydra optional)
-├── configs/
-│   └── config.yaml
-├── results/
-└── logs/
-```
+1. **`project.slug`** — filesystem anchor (`projects/<slug>/`).
+2. **`research.topic`** — single canonical string for `/research-landscape` and scoped search (stored as `research_topic` in `pipeline-state.json`).
 
-**`docs/experiment-plan.md` (excerpt)** — defines *what* to run:
+All other fields in the JSON Schema are **optional** but remove remaining degrees of freedom when set.
 
-```markdown
-## Run matrix
-- Conditions: A (baseline), B (proposed)
-- Seeds per condition: 5 (1, 2, 3, 4, 5)
-- Phases:
-  - Phase 1: condition A only, 1 seed — smoke
-  - Phase 2: A and B × 5 seeds — main comparison
+---
 
-## Primary metric
-Macro-F1 on validation set.
-```
+## 4. Machine-readable schema
 
-**Compute validation** (before locking SLURM):
+- **JSON Schema:** [`docs/schemas/pipeline-inputs.schema.json`](schemas/pipeline-inputs.schema.json)
+- **Example:** [`examples/pipeline-inputs.min.json`](../examples/pipeline-inputs.min.json)
+
+Validate locally (optional):
 
 ```bash
-python scripts/compute_budget_check.py --seeds 5 --conditions 2 --gpus-per-job 1
+# pip install check-jsonschema
+check-jsonschema --schemafile docs/schemas/pipeline-inputs.schema.json examples/pipeline-inputs.min.json
 ```
 
-**`/run-experiment`** then:
+---
 
-1. Reads `compute-plan.md` + scripts in `cluster/`.
-2. Submits jobs (prefer **1 GPU per job**, **array** for seeds — see `rules/compute-budget.md`).
-3. Updates `experiment-state.json` and `results/`.
+## 5. Field reference → pipeline steps
+
+Each field must appear in at least one downstream consumer. Unused fields are schema violations.
+
+| JSON path | Role | Step ids (or scope) |
+|-----------|------|---------------------|
+| `schema_version` | Contract version for tooling | All (validation) |
+| `project.slug` | `project_dir` → `projects/<slug>/` | All (paths) |
+| `project.display_title` | Title line for README / manuscript front matter | `produce-manuscript`, `compile-manuscript`; optional elsewhere |
+| `research.topic` | Pass to `/research-landscape`; scope for searches | `research-landscape`, `cross-field-search`, `formulate-hypotheses`, `claim-search`, `recency-sweep-1` |
+| `research.domain_hints` | Query disambiguation | `research-landscape`, `cross-field-search`, `claim-search`, `literature-rescan`, `recency-sweep-*` |
+| `constraints.target_venue` | Page limits, class, anonymization | `story`, `produce-manuscript`, `compile-manuscript` |
+| `execution_defaults.skip_online` | Default for network-dependent steps | Steps with `needs_online: true` in `pipeline_state.py` when orchestrator applies skip policy |
+| `compute_defaults.seeds_per_condition` | Default experiment matrix density | `design-experiments`, `plan-compute`, `run-experiment` |
+| `compute_defaults.gpus_per_job` | SLURM resource shape | `plan-compute`, `run-experiment` |
+
+**Not in this schema** (by design): `steps`, loop counters (`reposition_count`, …), SLURM job ids — they belong to **`pipeline-state.json`** as **runtime state**.
 
 ---
 
-## 4. Relationship to `pipeline-state.json` (root)
+## 6. Mapping: schema → `pipeline-state.json`
 
-- **`pipeline-state.json`** (repo root): which **pipeline step** is next (`research-landscape`, `run-experiment`, …).
-- **`experiment-state.json`** (`$PROJECT_DIR`): **experiment execution** only (phases, SLURM jobs, gates).
+At initialization, the orchestrator **should** set:
 
-Do not confuse the two.
+| State field | Source |
+|-------------|--------|
+| `project_dir` | `"projects/" + project.slug` |
+| `research_topic` | `research.topic` |
+| `mode` | From `/run-pipeline` flags (`--auto` → orchestrator behavior; may still store `"interactive"` unless you standardize persistence) |
+
+Optional: copy `compute_defaults` and `constraints.target_venue` into state or into `projects/<slug>/docs/pipeline-inputs.resolved.json` for agents to read — not required if agents read the example YAML/JSON from the project root.
 
 ---
 
-## See also
+## 7. Moment zero → `/run-pipeline --auto`
 
-- [`commands/run-pipeline.md`](../commands/run-pipeline.md) — full 38 steps
-- [`commands/run-experiment.md`](../commands/run-experiment.md) — pre-flight, batching, paths
-- [`docs/PROJECT_LAYOUT.md`](PROJECT_LAYOUT.md) — where `projects/<slug>/` comes from
-- [`rules/compute-budget.md`](../rules/compute-budget.md) — 5 seeds, 1 GPU/job, arrays
+1. Install the bundle: `bash scripts/setup.sh`
+2. Initialize state with topic (required for deterministic Step 1):
+
+   ```bash
+   python scripts/pipeline_state.py init --project my-paper-slug \
+     --topic "Your full research question here?"
+   ```
+
+3. Optionally add a validated **`examples/pipeline-inputs.min.json`** copy at the repo root or under `projects/<slug>/` and align fields with the schema.
+4. In Claude Code: `/run-pipeline --auto`
+
+`--auto` only removes confirmation prompts; it does **not** infer a missing **`research_topic`**.
+
+---
+
+## 8. `/run-experiment` (Phase 4)
+
+No string argument is passed to the slash command; see [`commands/run-experiment.md`](../commands/run-experiment.md). Prerequisites:
+
+| Prerequisite | Produced by (typical) |
+|--------------|------------------------|
+| `docs/experiment-plan.md` | `design-experiments` |
+| `src/`, `configs/` | `scaffold` … `implement-metrics` |
+| `experiment-state.json` | Runner / `run-experiment` |
+| `docs/compute-plan.md` | `plan-compute` |
+
+`compute_defaults` in the input schema **seed** `/design-experiments` and `/plan-compute` until `experiment-plan.md` overrides them.
+
+---
+
+## 9. Diagrams
+
+| Diagram | Shows |
+|---------|--------|
+| [`docs/assets/aletheia-workflow.svg`](assets/aletheia-workflow.svg) | Phase **sequence**, scripts vs LLM |
+| [`docs/assets/aletheia-pipeline-dependencies.svg`](assets/aletheia-pipeline-dependencies.svg) | **Artifact and control dependencies** (gates, loops) |
+
+---
+
+## 10. Related files
+
+| File | Role |
+|------|------|
+| [`commands/run-pipeline.md`](../commands/run-pipeline.md) | Full 38-step list, guards, inline scripts |
+| [`scripts/pipeline_state.py`](../scripts/pipeline_state.py) | Step definitions, `init --topic`, counters |
+| [`rules/compute-budget.md`](../rules/compute-budget.md) | Seeds, GPU/job policy |
+| [`docs/PROJECT_LAYOUT.md`](PROJECT_LAYOUT.md) | Directory layout |
+
+---
+
+## Document history
+
+- **v1 (schema_version 1):** Formal schema file, field→step matrix, dependency diagram reference, split inputs vs runtime state.
