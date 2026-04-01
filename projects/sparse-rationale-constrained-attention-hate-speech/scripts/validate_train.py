@@ -95,7 +95,7 @@ def test_hydra_config_override() -> None:
     for condition, config_name in CONDITION_CONFIGS.items():
         result = subprocess.run(
             [
-                "python", "run_experiment.py",
+                sys.executable, "run_experiment.py",
                 f"experiment={config_name}",
                 "seed=42",
                 "--cfg", "job",          # print resolved config, no actual run
