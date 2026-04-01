@@ -17,16 +17,18 @@
       "gate_g0": "PASS"
     },
     "phase_1_head_importance": {
-      "status": "running",
+      "status": "completed",
       "jobs": [
         "compute_importance"
       ],
       "gate": "G1",
       "gpu_hours": 2,
-      "slurm_job_id": 11288341
+      "slurm_job_id": 11288341,
+      "gate_g1": "WARN",
+      "gate_g1_note": "Variance=9.4e-8 < 0.01 (pretrained model, no fine-tuned checkpoint). Per experiment plan: proceed, add random-head baseline to Wave 2."
     },
     "phase_2_training_wave1": {
-      "status": "pending",
+      "status": "running",
       "conditions": [
         "M0",
         "M1",
@@ -40,14 +42,14 @@
             "M0",
             "M1"
           ],
-          "slurm_job_id": null
+          "slurm_job_id": 11288487
         },
         "W1-B": {
           "conditions": [
             "M3",
             "M4b"
           ],
-          "slurm_job_id": null
+          "slurm_job_id": 11288488
         }
       },
       "gate": "G2",
@@ -181,7 +183,7 @@
     },
     "G1": {
       "description": "Head importance variance > 0.01",
-      "status": "pending"
+      "status": "WARN"
     },
     "G2": {
       "description": "M4b val IoU-F1 > M1 - 0.02",
