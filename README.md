@@ -34,18 +34,17 @@ Here is the recipe.
 2. **Change two strings** that define your paper before anything else runs:
    - **`project.slug`** — a short kebab-case name (it becomes `projects/<slug>/` on disk).
    - **`research.topic`** — your actual research question in one paragraph (this is what Step 1 feeds to `/research-landscape`; be concrete, not poetic).
-3. **Bake that into state** so the orchestrator is deterministic. From the repo root, run (use the same slug and the same wording as `research.topic`):
+3. **Bake it into state** (so `/run-pipeline --auto` can run without guessing). From the repo root, run:
 
    ```bash
-   python scripts/pipeline_state.py init --project your-slug-here \
-     --topic "Paste the same research question you wrote in research.topic"
+   python scripts/pipeline_state.py init --inputs PIPELINE_INPUTS.json
    ```
 
-   That creates or updates **`pipeline-state.json`** in the directory where you run the command (usually the repo root). The field that matters for the pipeline is **`research_topic`**—that is the string `/run-pipeline` uses for unattended **`--auto`**. If you prefer not to use the CLI, you can edit **`pipeline-state.json`** directly and set **`research_topic`** yourself; `PIPELINE_INPUTS.json` is the clearest place to draft it first.
+   This will automatically infer your project slug, create `projects/<slug>/`, and write **`pipeline-state.json`**. The field the orchestrator reads for Step 1 is **`research_topic`** (copied from `research.topic`).
 
 4. **Run** `/run-pipeline` (or `/run-pipeline --auto`) in Claude Code. Your idea is no longer floating in chat—it is anchored in files the workflow reads.
 
-Later, your hypotheses and claims will live in documents under `projects/<slug>/docs/` (for example `hypotheses.md`). The file you touch **at the very beginning** is either **`examples/pipeline-inputs.min.json`** (to draft) or **`pipeline-state.json`** (what the runner actually reads via **`research_topic`**). Same question, two representations: draft in the example, canonical in state.
+Later, your hypotheses and claims will live in documents under `projects/<slug>/docs/` (for example `hypotheses.md`). The file you touch **at the very beginning** is **`PIPELINE_INPUTS.json`**; `pipeline-state.json` is the machine state the orchestrator uses after you initialize.
 
 ---
 

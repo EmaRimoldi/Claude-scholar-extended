@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import Optional
 
 STATE_FILE = "pipeline-state.json"
+DEFAULT_INPUTS_FILE = "PIPELINE_INPUTS.json"
 
 # Default project directory structure created for each project.
 PROJECT_SUBDIRS = ["docs", "configs", "src", "data", "results", "results/tables",
@@ -357,14 +358,70 @@ def ensure_project_structure(base_dir: str, project_slug: str) -> str:
     return project_dir_rel
 
 
+def slugify(text: str) -> str:
+    """Best-effort slug generator (kebab-case, ascii-ish) for project names."""
+    import re
+
+    if not text:
+        return ""
+    s = text.strip().lower()
+    s = re.sub(r"[^a-z0-9]+", "-", s)
+    s = re.sub(r"-{2,}", "-", s).strip("-")
+    return s
+
+
+def load_inputs(base_dir: str, inputs_path: Optional[str] = None) -> dict:
+    """
+    Load pre-pipeline inputs (JSON) used to infer project slug and topic.
+
+    Resolution order:
+    - explicit inputs_path (relative to base_dir or absolute)
+    - DEFAULT_INPUTS_FILE in base_dir (if present)
+    - else: {}
+    """
+    candidate: Optional[Path] = None
+    if inputs_path:
+        p = Path(inputs_path)
+        candidate = p if p.is_absolute() else (Path(base_dir) / p)
+    else:
+        p = Path(base_dir) / DEFAULT_INPUTS_FILE
+        candidate = p if p.exists() else None
+
+    if not candidate or not candidate.exists():
+        return {}
+
+    try:
+        with open(str(candidate), "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"WARNING: failed to parse inputs file {candidate}: {e}", file=sys.stderr)
+        return {}
+
+
 def init_state(base_dir: str, force: bool = False,
                project_slug: Optional[str] = None,
-               research_topic: Optional[str] = None) -> dict:
+               research_topic: Optional[str] = None,
+               inputs_path: Optional[str] = None) -> dict:
     state_path = os.path.join(base_dir, STATE_FILE)
     if os.path.exists(state_path) and not force:
         print(f"State file already exists: {state_path}")
         print("Use --force to reinitialize.")
         return load_state(base_dir)
+
+    inputs = load_inputs(base_dir, inputs_path=inputs_path)
+
+    # Infer project_slug and research_topic from inputs if not provided.
+    if not project_slug:
+        project_slug = (
+            inputs.get("project", {}).get("slug")
+            or slugify(inputs.get("project", {}).get("display_title", ""))
+            or slugify(inputs.get("research", {}).get("topic", ""))
+            or None
+        )
+
+    if not research_topic:
+        rt = inputs.get("research", {}).get("topic")
+        research_topic = rt.strip() if isinstance(rt, str) else None
 
     # Determine project_dir
     project_dir_rel = None
@@ -530,6 +587,12 @@ def main():
     p_init.add_argument("--force", action="store_true")
     p_init.add_argument("--project", help="Project slug (creates projects/<slug>/ structure)")
     p_init.add_argument(
+        "--inputs",
+        default=None,
+        help=f"Path to pre-pipeline inputs JSON (default: {DEFAULT_INPUTS_FILE} if present). "
+             "Used to infer --project and --topic when omitted.",
+    )
+    p_init.add_argument(
         "--topic",
         default=None,
         help="Research question / topic string stored in pipeline-state.json for /run-pipeline (e.g. Pass 1 /research-landscape).",
@@ -586,6 +649,7 @@ def main():
             force=args.force,
             project_slug=getattr(args, "project", None),
             research_topic=getattr(args, "topic", None),
+            inputs_path=getattr(args, "inputs", None),
         )
         return
 
