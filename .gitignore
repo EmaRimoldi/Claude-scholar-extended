@@ -18,6 +18,7 @@ history.jsonl
 session-env/
 shell-snapshots/
 file-history/
+.claude/
 
 # Cache and temporary files
 cache/
@@ -26,6 +27,7 @@ downloads/
 ide/
 paste-cache/
 todos/
+logs/slurm/
 
 # Telemetry and statistics
 telemetry/

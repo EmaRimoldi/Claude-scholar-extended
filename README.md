@@ -87,7 +87,7 @@ Runtime step status and feedback-loop counters stay in **`pipeline-state.json`**
 
 </div>
 
-Details: [`commands/run-pipeline.md`](commands/run-pipeline.md), [`pipeline-v3-spec.md`](pipeline-v3-spec.md). State machine: [`scripts/pipeline_state.py`](scripts/pipeline_state.py).
+Details: [`commands/run-pipeline.md`](commands/run-pipeline.md), [`docs/pipeline-v3-spec.md`](docs/pipeline-v3-spec.md). State machine: [`scripts/pipeline_state.py`](scripts/pipeline_state.py).
 
 ---
 
@@ -183,7 +183,7 @@ Copy only the hooks, skills, or commands you need into `~/.claude/`; see the [or
 
 ### Environment for Python scripts
 
-See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md).
+See [docs/ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md).
 
 ---
 
