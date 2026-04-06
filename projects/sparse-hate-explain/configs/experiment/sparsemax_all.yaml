@@ -1,7 +1,0 @@
-# @package _global_
-
-# Sparsemax attention supervision on all heads.
-model:
-  attention_transform: sparsemax
-  supervised_heads: "all"
-  lambda_attn: 1.0

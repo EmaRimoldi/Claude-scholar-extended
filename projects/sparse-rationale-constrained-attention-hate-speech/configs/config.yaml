@@ -1,0 +1,37 @@
+# Base Hydra config for sparse-hate-explain experiments
+# Override with: python run_experiment.py +experiment=M4b seed=42
+
+defaults:
+  - _self_
+  - experiment: m4b_sel_sparsemax_mse  # default to primary proposed method
+
+hydra:
+  run:
+    dir: outputs/${experiment.condition}/${now:%Y-%m-%d_%H-%M-%S}_seed${seed}
+  sweep:
+    dir: outputs/multirun/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${experiment.condition}/seed${seed}
+
+# Global seed (overridden per SLURM array task)
+seed: 42
+
+# Model base
+pretrained_model_name: bert-base-uncased
+num_labels: 3
+dropout: 0.1
+max_length: 128
+
+# Training
+batch_size: 32
+learning_rate: 2e-5
+num_epochs: 5
+warmup_ratio: 0.1
+weight_decay: 0.01
+max_grad_norm: 1.0
+
+# Evaluation
+eval_steps: 500
+save_steps: 500
+metric_for_best_model: macro_f1
+max_steps: -1  # -1 = use num_epochs; set >0 for quick smoke tests
+dataloader_num_workers: 4

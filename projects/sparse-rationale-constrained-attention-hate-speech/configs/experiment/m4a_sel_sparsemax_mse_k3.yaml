@@ -1,0 +1,13 @@
+# M4a: BERT-base + sparsemax + top-3 heads (importance) + MSE
+# Requires: importance_scores_path pointing to Phase 1 output
+condition: M4a
+description: "Sparsemax top-3 heads MSE"
+
+use_head_selection: true
+use_sparsemax: true
+use_alignment_loss: true
+alignment_loss_type: mse
+alignment_loss_weight: 0.1
+top_k_heads: 3
+importance_scores_path: outputs/phase1/importance_scores.pt
+fixed_supervised_heads: []

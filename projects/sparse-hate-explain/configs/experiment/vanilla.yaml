@@ -1,7 +1,0 @@
-# @package _global_
-
-# Baseline: standard BERT, no attention supervision.
-model:
-  attention_transform: softmax
-  supervised_heads: "all"
-  lambda_attn: 0.0

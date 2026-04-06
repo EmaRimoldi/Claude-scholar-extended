@@ -18,8 +18,8 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
 #SBATCH --cpus-per-task=4
-#SBATCH --time=10:00:00
-#SBATCH --partition=pi_tpoggio
+#SBATCH --time=5:50:00
+#SBATCH --partition=mit_normal_gpu
 
 set -euo pipefail
 

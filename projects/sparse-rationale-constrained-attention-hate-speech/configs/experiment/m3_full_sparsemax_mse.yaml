@@ -1,0 +1,12 @@
+# M3: BERT-base + sparsemax + all-12 final-layer heads + MSE
+condition: M3
+description: "Sparsemax all-12 final-layer heads MSE"
+
+use_head_selection: false
+use_sparsemax: true
+use_alignment_loss: true
+alignment_loss_type: mse
+alignment_loss_weight: 0.1
+top_k_heads: 0
+importance_scores_path: null
+fixed_supervised_heads: []

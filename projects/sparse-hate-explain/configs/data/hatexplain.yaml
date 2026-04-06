@@ -1,7 +1,0 @@
-# HateXplain dataset configuration.
-dataset_name: hatexplain
-max_length: 128
-batch_size: 16
-num_workers: 4
-model_name: ${model.model_name}
-cache_dir: null

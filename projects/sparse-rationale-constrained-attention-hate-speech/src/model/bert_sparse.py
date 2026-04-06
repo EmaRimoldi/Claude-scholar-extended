@@ -187,11 +187,16 @@ class SparseBertForSequenceClassification(BertPreTrainedModel):
 
         extracted = []
         for layer_idx, head_idx in supervised:
+            if all_attentions is not None and layer_idx < len(all_attentions):
+                attn_layer = all_attentions[layer_idx]
+            else:
+                # Transformers 5.x doesn't capture custom module attentions via
+                # output_capturing; read from the stored buffer on the module.
+                self_attn = self.bert.encoder.layer[layer_idx].attention.self
+                attn_layer = self_attn._last_attn
             # shape: (B, L)  — CLS query attends to all tokens
-            attn = all_attentions[layer_idx][:, head_idx, 0, :]
+            attn = attn_layer[:, head_idx, 0, :]
             if attention_mask is not None:
-                # Zero out padding positions (they should already be ~0 after masking
-                # but ensure consistency with the padding mask)
                 pad_mask = attention_mask.float()
                 attn = attn * pad_mask
             extracted.append(attn)
@@ -272,7 +277,9 @@ class SparseBertSelfAttention(nn.Module):
         encoder_hidden_states: Optional[Tensor] = None,
         encoder_attention_mask: Optional[Tensor] = None,
         past_key_value=None,
+        past_key_values=None,
         output_attentions: bool = False,
+        **kwargs,
     ):
         """Forward matching BertSelfAttention signature."""
         import math
@@ -313,6 +320,9 @@ class SparseBertSelfAttention(nn.Module):
         context = torch.matmul(attention_probs, v)  # (B, H, L, d)
         context = context.permute(0, 2, 1, 3).contiguous()
         context = context.view(B, L, num_heads * head_dim)
+
+        # Store for extraction by SparseBertForSequenceClassification
+        self._last_attn = attention_probs
 
         outputs = (context, attention_probs) if output_attentions else (context,)
         return outputs

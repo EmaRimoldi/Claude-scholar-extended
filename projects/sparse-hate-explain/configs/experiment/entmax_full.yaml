@@ -1,9 +1,0 @@
-# @package _global_
-# B4: Entmax (α=1.5) supervision, all heads — reviewer defense against "why not entmax?"
-# Reference: Correia et al. (2019) Adaptively Sparse Transformers, EMNLP.
-model:
-  attention_transform: entmax
-  entmax_alpha: 1.5
-  supervised_heads: "all"
-  lambda_attn: 1.0
-  attn_loss_type: kl

@@ -42,14 +42,14 @@
             "M0",
             "M1"
           ],
-          "slurm_job_id": 11288722
+          "slurm_job_id": 11464115
         },
         "W1-B": {
           "conditions": [
             "M3",
             "M4b"
           ],
-          "slurm_job_id": 11288723
+          "slurm_job_id": 11464117
         }
       },
       "gate": "G2",
@@ -208,5 +208,21 @@
     "M4b"
   ],
   "notes": "Phase 0 and 1 must complete before head selection configs (M4a/M4b/M4c/M5/M6/M7) can be finalized. Wave 1 results gate wave 2 start.",
-  "code_version": "3eabaa35c64f429065ccd4a2ce698d31862bf137"
+  "code_version": "3eabaa35c64f429065ccd4a2ce698d31862bf137",
+  "recovery": {
+    "recovered_at": "2026-04-06T14:18:31.058873",
+    "previous_failures": [
+      11297386,
+      11297387,
+      11297422,
+      11297423
+    ],
+    "issue": "evaluation_strategy parameter name (fixed to eval_strategy)",
+    "new_wave1_jobs": [
+      11464115,
+      11464117
+    ],
+    "wave2_ready": true,
+    "phases_345_ready": true
+  }
 }

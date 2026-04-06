@@ -1,8 +1,0 @@
-# @package _global_
-# 2x2x2 ablation condition: target=all transform=sparsemax loss=mse
-model:
-  attention_transform: sparsemax
-  supervised_heads: "all"
-  lambda_attn: 1.0
-  attn_loss_type: mse
-
