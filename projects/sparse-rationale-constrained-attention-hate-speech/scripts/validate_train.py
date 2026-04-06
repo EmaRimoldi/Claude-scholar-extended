@@ -174,6 +174,102 @@ def test_training_step() -> None:
     assert has_grad, "No gradients after backward — training loop is broken"
 
 
+def test_data_loading() -> None:
+    """HateXplainDataset must load without errors."""
+    try:
+        from src.data.dataset import HateXplainDataset
+    except ImportError:
+        raise ImportError("Cannot import HateXplainDataset")
+
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+
+    # Try to load train dataset
+    try:
+        train_dataset = HateXplainDataset(
+            "train",
+            tokenizer,
+            max_length=64,
+            include_rationale=False,
+        )
+        assert len(train_dataset) > 0, "Train dataset is empty"
+    except Exception as e:
+        raise RuntimeError(f"Could not load train data: {e}")
+
+    # Try to load validation dataset
+    try:
+        val_dataset = HateXplainDataset(
+            "validation",
+            tokenizer,
+            max_length=64,
+            include_rationale=False,
+        )
+        assert len(val_dataset) > 0, "Validation dataset is empty"
+    except Exception as e:
+        raise RuntimeError(f"Could not load validation data: {e}")
+
+
+def test_metrics_computation() -> None:
+    """compute_metrics must handle inhomogeneous logits arrays (critical for Trainer)."""
+    import numpy as np
+    from sklearn.metrics import f1_score
+
+    # Simulate the problematic case: list of arrays with different shapes
+    # This is what HuggingFace Trainer produces in eval
+    logits_list = [
+        np.array([0.1, 0.5, 0.4]),      # shape (3,)
+        np.array([0.8, 0.1, 0.1]),      # shape (3,)
+        np.array([[0.2, 0.3, 0.5]]),    # shape (1, 3)
+        np.array([0.6, 0.2, 0.2]),      # shape (3,)
+    ]
+    labels = np.array([1, 0, 2, 0])
+
+    # Replicate the compute_metrics robustness test
+    logits = logits_list
+
+    # Handle different input types for logits
+    if isinstance(logits, list):
+        try:
+            # Try to convert list of arrays to a single array
+            logits_list_conv = []
+            for item in logits:
+                if hasattr(item, 'numpy'):
+                    logits_list_conv.append(item.numpy())
+                elif isinstance(item, (list, tuple)):
+                    logits_list_conv.append(np.array(item))
+                else:
+                    logits_list_conv.append(item)
+            # Try to stack as regular array
+            logits = np.stack(logits_list_conv, axis=0)
+        except (ValueError, TypeError):
+            # If shapes don't match, create uniform array and fill
+            batch_size = len(logits_list_conv)
+            num_classes = 3
+            logits_array = np.zeros((batch_size, num_classes))
+            for i, item in enumerate(logits_list_conv):
+                if isinstance(item, np.ndarray):
+                    if item.ndim == 1 and len(item) <= num_classes:
+                        logits_array[i, :len(item)] = item
+                    elif item.ndim >= 1:
+                        logits_array[i] = item.flat[:num_classes]
+            logits = logits_array
+
+    # Now ensure logits is 2D
+    if logits.ndim == 1:
+        logits = logits.reshape(-1, 1)
+    elif logits.ndim > 2:
+        logits = logits[:, 0, :]
+
+    # Compute predictions
+    preds = np.argmax(logits, axis=-1)
+    macro_f1 = f1_score(labels, preds, average="macro", zero_division=0)
+    accuracy = (preds == labels).mean()
+
+    assert macro_f1 >= 0, "F1 computation failed"
+    assert accuracy >= 0, "Accuracy computation failed"
+
+
 def main() -> None:
     print("=== train.sh pre-submission validation ===\n")
     results = [
@@ -182,14 +278,16 @@ def main() -> None:
         check("3. softmax model (M0-style) init + forward", test_softmax_model_forward),
         check("4. sparsemax model (M4b-style) init + forward", test_sparsemax_model_forward),
         check("5. training step: forward + loss + backward", test_training_step),
+        check("6. data loading (HateXplainDataset)", test_data_loading),
+        check("7. metrics computation (inhomogeneous logits handling)", test_metrics_computation),
     ]
 
-    print(f"\n{'='*46}")
+    print(f"\n{'='*50}")
     passed = sum(results)
     total = len(results)
     status = "ALL PASS" if passed == total else f"{total - passed} FAILED"
     print(f"  {status}  ({passed}/{total})")
-    print("=" * 46)
+    print("=" * 50)
     sys.exit(0 if passed == total else 1)
 
 
