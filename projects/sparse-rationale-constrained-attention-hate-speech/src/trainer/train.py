@@ -178,7 +178,26 @@ def build_compute_metrics(tokenizer, eval_dataset):
 
     def compute_metrics(eval_pred: EvalPrediction) -> dict:
         logits, labels = eval_pred.predictions, eval_pred.label_ids
+
+        # Convert logits to numpy if needed
+        if hasattr(logits, 'numpy'):
+            logits = logits.numpy()
+        elif not isinstance(logits, np.ndarray):
+            logits = np.array(logits)
+
+        # Flatten to 2D (batch_size, num_classes) if needed
+        # Handle case where logits might be wrapped in nested structure
+        if logits.ndim > 2:
+            # If 3D or higher, likely (batch_size, seq_len, num_classes)
+            # For sequence classification, use CLS logits (first token) or mean
+            logits = logits[:, 0, :]  # Use CLS token logits
+        elif logits.ndim == 1:
+            # If 1D, might be (batch_size,) in rare cases; reshape if needed
+            logits = logits.reshape(-1, 1)
+
+        # Now compute predictions
         preds = np.argmax(logits, axis=-1)
+
         macro_f1 = f1_score(labels, preds, average="macro", zero_division=0)
         accuracy = (preds == labels).mean()
         return {"macro_f1": float(macro_f1), "accuracy": float(accuracy)}
