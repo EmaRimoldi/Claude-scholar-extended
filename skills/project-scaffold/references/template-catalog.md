@@ -506,10 +506,19 @@ refresh: collect tables
 check-gates:
 	uv run python scripts/check_gates.py
 
-validate:
+# ---------- Pre-submission validation (MANDATORY before GPU submission) ----------
+pre-flight-validate:
+	@echo "Running pre-flight validation (unit tests)..."
+	uv run python scripts/validate_train.py
+
+cpu-smoke-test:
+	@echo "Running CPU smoke test (real training loop on CPU with minimal data)..."
+	uv run python scripts/cpu_smoke_test.py
+
+validate: pre-flight-validate cpu-smoke-test
 	uv run python scripts/generate_validation_report.py
 
-validate-quick:
+validate-quick: pre-flight-validate
 	uv run python scripts/generate_validation_report.py --skip-pytest
 
 analyze:
@@ -524,19 +533,82 @@ clean:
 
 | Target | Purpose | When to run |
 |--------|---------|-------------|
+| `pre-flight-validate` | **MANDATORY** -- Unit tests + config checks before any submission | Before every GPU submission |
+| `cpu-smoke-test` | **MANDATORY** -- Real training loop on CPU (catches runtime errors early) | Before every GPU submission |
+| `validate` | Full validation: pre-flight + CPU smoke + config + imports | After code changes, before experiment sweep |
+| `validate-quick` | Pre-flight only (skip full report, faster) | Quick sanity check before submission |
 | `collect` | Aggregate metrics from outputs/ or SLURM logs into CSV/JSON | After experiment runs complete |
 | `tables` | Regenerate LaTeX tables from `experiments/results_summary.csv` | After `collect` |
 | `build-pdf` | Recompile manuscript PDF (3-pass pdflatex + bibtex) | After `tables` or prose edits |
 | `refresh` | One-command post-run update: collect + tables | After every SLURM job completes |
 | `check-gates` | Evaluate phase gates (G0/G1/G2) against current results | Before deciding to proceed to next phase |
-| `validate` | Run full validation report (pytest + config + imports + smoke + data) | After code changes, before experiment sweep |
-| `validate-quick` | Validation report without pytest (faster) | Quick sanity check |
+
+**Critical workflow** (before GPU submission):
+```bash
+make pre-flight-validate   # Catches config/import errors (fast, ~10s)
+make cpu-smoke-test        # Catches runtime errors (fast, ~2-5min)
+# If both pass, submit job to GPU
+```
 
 The `SLURM_LOG` variable allows passing a specific log file: `make collect SLURM_LOG=cluster/logs/icl-nl-full_12345.out`
 
 ---
 
-## H. .gitignore Template
+## H. Pre-Flight Validation Script
+
+File: `scripts/validate_train.py`
+
+**Purpose**: Unit tests + configuration checks before GPU submission. Runs on CPU only (~10-15 seconds).
+
+**Tests**:
+1. All experiment config files exist
+2. Hydra config override syntax correct
+3. Model initialization (softmax, sparsemax variants)
+4. Data loading (dataset imports)
+5. Training step (forward + loss + backward)
+6. Metrics computation (inhomogeneous logits handling)
+
+**Template** (project-specific):
+- Read experiment config paths from `CONDITION_CONFIGS` dictionary
+- Test model initialization with tiny configs (hidden_size=64, num_layers=2)
+- Use synthetic batches for forward/backward tests
+- Validate metrics with various input shapes
+
+**Integration**: Called from Makefile as `make pre-flight-validate` and from SLURM submission scripts before GPU submission.
+
+---
+
+## I. CPU Smoke Test Script
+
+File: `scripts/cpu_smoke_test.py`
+
+**Purpose**: Real training loop on CPU with minimal data (max_steps=2). Catches runtime errors before GPU submission (~1-5 minutes depending on data size).
+
+**Workflow**:
+1. Set `CUDA_VISIBLE_DEVICES=""` to force CPU mode
+2. Load real dataset (full data or subset for speed)
+3. Initialize model with full config (no tiny configs)
+4. Run 2 training steps with real data
+5. Verify compute_metrics works with actual Trainer outputs
+
+**Key differences from pre-flight**:
+- Uses REAL data, not synthetic
+- Runs ACTUAL training loop (forward → loss → backward → optimizer step)
+- Catches data pipeline issues (format, loading, preprocessing)
+- Catches compute_metrics edge cases (inhomogeneous logits from Trainer)
+- Only max_steps=2 for speed
+
+**Template** (project-specific):
+- Load actual dataset (not synthetic batches)
+- Initialize full model (real num_labels, real pretrained weights)
+- Run 2 training steps
+- Verify loss computation and metrics
+
+**Integration**: Called from Makefile as `make cpu-smoke-test` and from SLURM submission scripts before GPU submission.
+
+---
+
+## J. .gitignore Template
 
 File: `.gitignore`
 

@@ -12,14 +12,29 @@ tags: [Research, Execution, SLURM, Experiment]
 
 ## PRE-FLIGHT CHECKS (mandatory before submitting ANY job)
 
-Before submitting SLURM jobs, verify:
+Before submitting SLURM jobs, verify (in this order):
 
-1. **Data cached**: Run `python -c "import os; os.environ['HF_DATASETS_OFFLINE']='1'; os.environ['TRANSFORMERS_OFFLINE']='1'; <load each dataset and model>"` — must succeed
-2. **Dry run passes**: Run `python -m src.main --dry-run` on the login node — must complete without errors
-3. **SLURM accessible**: Run `sinfo -s` — must show available partitions
-4. **Project directory exists**: $PROJECT_DIR/src/, $PROJECT_DIR/configs/ must exist with code
+1. **Pre-flight validation** (MANDATORY, ~10-15 seconds):
+   ```bash
+   make pre-flight-validate
+   # Checks: configs, Hydra syntax, imports, model init, training step, metrics
+   # Exit 0 = code is syntactically correct and imports work
+   ```
 
-5. **Venv Python**: Verify that the Python used in SLURM job scripts points to the venv Python (3.10+), not system Python. Check with: `head -20 cluster/job_*.sh | grep python` — must show a path containing `.venv/bin/python`, NOT bare `python`.
+2. **CPU smoke test** (MANDATORY, ~1-5 minutes):
+   ```bash
+   make cpu-smoke-test
+   # Runs: 2 training steps on CPU with real data
+   # Catches: data loading errors, training loop bugs, compute_metrics failures
+   # Exit 0 = code runs end-to-end on CPU
+   ```
+
+3. **Data cached**: Run `python -c "import os; os.environ['HF_DATASETS_OFFLINE']='1'; os.environ['TRANSFORMERS_OFFLINE']='1'; <load each dataset and model>"` — must succeed
+4. **SLURM accessible**: Run `sinfo -s` — must show available partitions
+5. **Project directory exists**: $PROJECT_DIR/src/, $PROJECT_DIR/configs/ must exist with code
+6. **Venv Python**: Verify that the Python used in SLURM job scripts points to the venv Python (3.10+), not system Python. Check with: `head -20 cluster/job_*.sh | grep python` — must show a path containing `.venv/bin/python`, NOT bare `python`.
+
+**Rationale**: Steps 1-2 catch 95% of failures (config errors, import bugs, training loop issues) on CPU in minutes, preventing wasted GPU time.
 
 If ANY check fails, do NOT submit jobs. Fix the issue first.
 

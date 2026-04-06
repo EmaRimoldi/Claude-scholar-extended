@@ -203,7 +203,9 @@ project-scaffold (Create project)  <-- THIS SKILL
   - Factory/Registry implementation code (canonical versions)
   - Hydra config templates
   - Entry point template
-  - Makefile template
+  - Makefile template (with pre-flight-validate and cpu-smoke-test targets)
+  - Pre-flight validation script template (unit tests + config checks)
+  - CPU smoke test script template (real training on CPU with minimal data)
   - When to add optional dependencies (transformers, datasets, etc.)
 
 ### Example Files

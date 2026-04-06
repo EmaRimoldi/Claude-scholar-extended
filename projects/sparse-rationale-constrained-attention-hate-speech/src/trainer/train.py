@@ -180,35 +180,57 @@ def build_compute_metrics(tokenizer, eval_dataset):
         logits, labels = eval_pred.predictions, eval_pred.label_ids
 
         # Handle different input types for logits
-        if isinstance(logits, list):
-            # If it's a list, try to stack it carefully
+        # First, convert to numpy if needed
+        if hasattr(logits, 'numpy'):
+            logits = logits.numpy()
+
+        # Handle list or array of objects (inhomogeneous shapes)
+        if isinstance(logits, (list, np.ndarray)):
+            # Check if it's a list or array of mixed types/shapes
+            is_list = isinstance(logits, list)
+            items = logits if is_list else (logits.tolist() if logits.dtype == object else [logits])
+
+            # If numpy array of objects, extract items
+            if isinstance(logits, np.ndarray) and logits.dtype == object:
+                items = logits.flatten().tolist()
+
+            # Try to stack homogeneously
             try:
-                # Try to convert list of arrays to a single array
-                logits_list = []
-                for item in logits:
-                    if hasattr(item, 'numpy'):
-                        logits_list.append(item.numpy())
+                logits_converted = []
+                for item in items:
+                    if isinstance(item, np.ndarray):
+                        logits_converted.append(item)
                     elif isinstance(item, (list, tuple)):
-                        logits_list.append(np.array(item))
+                        logits_converted.append(np.array(item))
                     else:
-                        logits_list.append(item)
-                # Try to stack as regular array
-                logits = np.stack(logits_list, axis=0)
+                        logits_converted.append(np.atleast_1d(np.asarray(item)))
+
+                # Try regular stack first
+                logits = np.stack(logits_converted, axis=0)
             except (ValueError, TypeError):
-                # If shapes don't match, create empty array and fill
-                batch_size = len(logits_list)
+                # Fall back to manual array construction for inhomogeneous shapes
+                batch_size = len(logits_converted)
                 num_classes = 3  # HateXplain has 3 labels
                 logits_array = np.zeros((batch_size, num_classes))
-                for i, item in enumerate(logits_list):
+                for i, item in enumerate(logits_converted):
                     if isinstance(item, np.ndarray):
                         if item.ndim == 1 and len(item) <= num_classes:
                             logits_array[i, :len(item)] = item
                         elif item.ndim >= 1:
                             logits_array[i] = item.flat[:num_classes]
+                    else:
+                        item_arr = np.atleast_1d(np.asarray(item, dtype=float))
+                        if item_arr.ndim == 1 and len(item_arr) <= num_classes:
+                            logits_array[i, :len(item_arr)] = item_arr
+                        else:
+                            logits_array[i] = item_arr.flat[:num_classes]
                 logits = logits_array
-        elif hasattr(logits, 'numpy'):
-            logits = logits.numpy()
         elif not isinstance(logits, np.ndarray):
+            # Last resort: convert to array
+            logits = np.atleast_2d(np.asarray(logits, dtype=float))
+
+        # Ensure logits is a numpy array
+        if not isinstance(logits, np.ndarray):
             logits = np.asarray(logits, dtype=float)
 
         # Now ensure logits is 2D
