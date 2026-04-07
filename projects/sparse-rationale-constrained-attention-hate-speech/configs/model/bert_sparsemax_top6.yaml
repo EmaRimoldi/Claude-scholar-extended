@@ -1,0 +1,12 @@
+# Condition C5: sparsemax + MSE alignment loss, top-6 heads by gradient importance (H3)
+# Head selection is done dynamically in first epoch; these are placeholder indices
+# (will be overridden by gradient importance ranking at runtime).
+model_name: bert-base-uncased
+use_sparsemax: true
+supervised_heads: [0, 1, 2, 3, 4, 5]  # placeholder; updated after epoch 1 importance ranking
+alpha: 0.3
+use_kl_loss: false
+num_labels: 3
+dropout: 0.1
+head_selection_mode: gradient_importance
+num_supervised_heads: 6

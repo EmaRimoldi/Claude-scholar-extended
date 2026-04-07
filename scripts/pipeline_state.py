@@ -383,21 +383,27 @@ def _check_required_output(project_dir: str, rel_path: str) -> bool:
 def check_completion_contracts(
     project_dir: str,
     step_id: str,
+    state_root: str | None = None,
 ) -> list:
     """
     Validate completion contracts for a high-risk step.
     Returns a list of failure reason strings.  Empty list means all clear.
+
+    project_dir: directory for checking required output files (docs/, etc.)
+    state_root: directory for checking state/step-results/ artifacts.
+                Defaults to project_dir when not provided (legacy behaviour).
     """
     failures: list = []
+    _state_root = state_root if state_root is not None else project_dir
 
     # 1. Required output files
     for req in REQUIRED_OUTPUTS.get(step_id, []):
         if not _check_required_output(project_dir, req):
             failures.append(f"required output missing: {req}")
 
-    # 2. Step-result artifact
+    # 2. Step-result artifact (lives under state_root/state/step-results/)
     if step_id in STEP_RESULT_REQUIRED:
-        result_path = _step_result_path(project_dir, step_id)
+        result_path = _step_result_path(_state_root, step_id)
         if not os.path.exists(result_path):
             failures.append(
                 f"step-result artifact missing: state/step-results/{step_id}.json "
@@ -1196,7 +1202,8 @@ def main():
 
     elif args.action == "complete":
         step_id = args.step_id
-        failures = check_completion_contracts(args.dir, step_id)
+        _resolved_project_dir = os.path.join(args.dir, state.get("project_dir") or "")
+        failures = check_completion_contracts(_resolved_project_dir, step_id, state_root=args.dir)
         if failures:
             reason = "; ".join(failures)
             state = mark_fail(state, step_id, reason=reason)

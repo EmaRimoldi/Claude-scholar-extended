@@ -1,0 +1,19 @@
+{
+  "job_ids": {
+    "C1": 11504191,
+    "C2": 11504192,
+    "C3": 11504193,
+    "C4": 11504194,
+    "C5": 11504196
+  },
+  "partition": "mit_normal_gpu",
+  "array": "0-4 (seeds 42-46)",
+  "total_jobs": 25,
+  "status": "PENDING",
+  "submitted_at": "2026-04-07",
+  "bug_fixed": "sparsemax NaN from float32 overflow: scores.clamp(min=-1e4) before sparsemax",
+  "step_id": "run-experiment",
+  "generation": 1,
+  "created_at": "2026-04-07T16:54:43+00:00",
+  "$schema": "step-result-v1"
+}

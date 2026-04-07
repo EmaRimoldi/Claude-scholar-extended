@@ -1,0 +1,26 @@
+{
+  "step_id": "design-experiments",
+  "completed_at": "2026-04-07",
+  "token_estimate": 2500,
+  "key_outputs": {
+    "experiment_plan": "docs/experiment-plan.md",
+    "conditions": ["C1 (BERT-FT baseline)", "C2 (SRA replication)", "C3 (sparsemax unsup)", "C4 (sparsemax+MSE all-12, primary)", "C5 (sparsemax+MSE top-6, H3)"],
+    "primary_contrast": "C4 vs C2",
+    "seeds": 5,
+    "total_gpu_hours": 110,
+    "proposition_1_required": true
+  },
+  "summary": "5 conditions defined: C1 (BERT baseline), C2 (SRA-softmax+KL), C3 (sparsemax unsupervised), C4 (sparsemax+MSE all-12 heads, primary), C5 (sparsemax top-6 heads, H3). Primary contrast: C4 vs C2 on ERASER comprehensiveness AOPC (5 seeds, bootstrap 95% CI, TOST for F1 equivalence). H4 adversarial swap uses trained checkpoints. W5a (HateBRXplain, 3 seeds) for NeurIPS venue fit. Proposition 1 (structural-zero faithfulness) required in manuscript. ~110 GPU-hours total.",
+  "critical_context": [
+    "Primary contrast: C4 (sparsemax+MSE) vs C2 (SRA softmax+KL) on comprehensiveness AOPC",
+    "Loss: L_total = CrossEntropy + alpha * MSE(sparsemax(z), normalized_rationale_mask)",
+    "Sparsemax on final encoder layer (layer 11) only; all earlier layers retain softmax",
+    "Rationale target: majority-vote binary mask, L1-normalized to valid simplex point",
+    "Alignment weight alpha: grid {0.1, 0.3, 0.5, 1.0}; select on val comprehensiveness",
+    "5 seeds per condition; SLURM array jobs (1 GPU per task)",
+    "H4 adversarial swap: replace attention with uniform; measure KL(P_swap || P_orig); sparsemax should show >=2x larger KL",
+    "Proposition 1 proved: zero-weight token -> zero contribution to CLS -> comprehensiveness = 0 by construction",
+    "W5a requires multilingual backbone (xlm-roberta-base) for HateBRXplain",
+    "Gate N2 pre-check passed: all novelty claims are testable; no cyclic design"
+  ]
+}

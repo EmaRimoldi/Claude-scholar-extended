@@ -1,0 +1,23 @@
+{
+  "key_outputs": {
+    "hypotheses_file": "docs/hypotheses.md",
+    "core_claim": "Sparsemax+rationale supervision improves ERASER comprehensiveness over SRA without macro-F1 cost, via structural zero on non-rationale tokens",
+    "primary_hypothesis": "H1: sparsemax comprehensiveness AOPC gain >= +0.04 over SRA; macro-F1 delta <= \u00b11.0 (TOST equivalence); 5 seeds",
+    "secondary_hypotheses": "H2: rationale density validation (<30%), H3: head-selective supervision beats uniform, H4: adversarial swap causality, H5: identity-term FPR reduction",
+    "top_priority": "H1 (core), H4 (mechanistic), H5 (fairness impact)",
+    "novelty_positioning": "vs SRA: structural zero vs. soft penalty; vs Malaviya2018: annotation mask vs. fertility budget"
+  },
+  "summary": "5 hypotheses generated. H1 is the primary NeurIPS-grade contribution. H4 provides mechanistic validation (Jain-Wallace causal-attention test). H5 provides fairness impact. Novelty confirmed against SRA and Malaviya2018 constrained sparsemax.",
+  "critical_context": [
+    "H1: sparsemax AOPC comprehensiveness >= SRA+0.04; macro-F1 delta <= 1.0 (equivalence test); 5 seeds on HateXplain",
+    "H4: adversarial swap KL-divergence >= 2x softmax baseline; proves sparsemax causally constrains computation",
+    "H5: FPR on non-hate identity-mention posts; sparsemax <= SRA - 0.03",
+    "Kill condition H1: if comprehensiveness gain < +0.02 AOPC OR F1 drops > 1.0, H1 is falsified",
+    "datasets.md and references.bib written; primary dataset HateXplain, eval framework ERASER"
+  ],
+  "token_estimate": 3100,
+  "$schema": "step-handoff-v1",
+  "step_id": "formulate-hypotheses",
+  "created_at": "2026-04-07T16:07:35+00:00",
+  "generation": 1
+}

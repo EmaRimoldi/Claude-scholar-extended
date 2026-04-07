@@ -1,0 +1,23 @@
+{
+  "key_outputs": {
+    "report_file": "docs/claim-overlap-report.md",
+    "overall_threat": "MEDIUM",
+    "high_threats": "eilertsen2025aligning (SRA): Task+Result+partial-Method; sparsemax gap confirmed",
+    "medium_threats": "vargas2026smra (SMRA, Jan 2026): Task+Result, Portuguese, moral MFT; malaviya2018sparse: Method(constrained sparsemax), different task",
+    "kill_signals": "None",
+    "method_x_task_gap": "No paper combines sparsemax with HSD \u2014 confirmed across 17 queries"
+  },
+  "summary": "Claim-level search complete. SMRA (arXiv 2601.03481, Jan 2026) identified as second concurrent work: supervised attention for HSD using moral MFT rationales (Portuguese, softmax). PRIMARY gap confirmed: no sparsemax+HSD paper in any database. Overall threat MEDIUM; all threats are cite-and-differentiate.",
+  "critical_context": [
+    "eilertsen2025aligning (SRA): HIGH threat; Task+Result overlap; differential = sparsemax structural zero vs softmax KL penalty",
+    "vargas2026smra (SMRA, Jan 2026): MEDIUM threat; moral MFT rationales, Portuguese, softmax; MUST cite in related work",
+    "malaviya2018sparse: MEDIUM threat; constrained sparsemax for NMT; already in ledger",
+    "METHOD\u00d7TASK GAP CONFIRMED: no sparsemax+HSD paper exists (17 targeted queries, 5 adjacent fields, 54 landscape papers)",
+    "No kill signals; composite threat MEDIUM; differentiation is mathematically precise"
+  ],
+  "token_estimate": 2500,
+  "$schema": "step-handoff-v1",
+  "step_id": "claim-search",
+  "created_at": "2026-04-07T16:13:21+00:00",
+  "generation": 1
+}

@@ -435,3 +435,8 @@ repo/
 "Read RESEARCH_PLAN.md and scaffold the repo structure described in Section 5,
 with placeholder implementations for each module in src/."*
 
+
+## Execution Config
+seeds_per_condition: 3
+cluster_partition: pi_tpoggio
+gpus_per_job: 1

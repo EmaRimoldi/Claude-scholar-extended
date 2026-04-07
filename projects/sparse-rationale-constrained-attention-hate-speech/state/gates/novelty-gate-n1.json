@@ -1,0 +1,18 @@
+{
+  "gate": "N1",
+  "date": "2026-04-07",
+  "decision": "PROCEED",
+  "confidence": "HIGH",
+  "novelty_level": "CLEAR",
+  "primary_dimensions": ["method_novelty", "combination_novelty"],
+  "kill_signals": 0,
+  "closest_prior_work": "eilertsen2025aligning",
+  "differential_written": true,
+  "reposition_count": 0,
+  "venue_warning": true,
+  "venue_warning_details": "Single-dataset NeurIPS submission; recommend Proposition 1 formalization + HateBRXplain second dataset",
+  "routing": "proceed_to_design_experiments",
+  "required_experiments": ["H1", "H4", "H2"],
+  "recommended_experiments": ["H3", "H5", "W5a"],
+  "formal_contribution_required": "Proposition 1: structural zero claim (proof sketch)"
+}

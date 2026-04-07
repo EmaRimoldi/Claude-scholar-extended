@@ -1,0 +1,52 @@
+{
+  "condition": "C1",
+  "seed": 45,
+  "best_val_f1": 0.6794994432802217,
+  "history": {
+    "train_loss": [
+      0.8519507689932032,
+      0.6484310106527285,
+      0.5039667818006012,
+      0.3710250025789356,
+      0.28160527588609846
+    ],
+    "val_f1": [
+      0.6452411309289179,
+      0.6794994432802217,
+      0.6766694106552514,
+      0.6788101920480738,
+      0.6769406811283961
+    ]
+  },
+  "config": {
+    "model": {
+      "model_name": "bert-base-uncased",
+      "use_sparsemax": false,
+      "supervised_heads": null,
+      "alpha": 0.0,
+      "use_kl_loss": false,
+      "num_labels": 3,
+      "dropout": 0.1
+    },
+    "data": {
+      "data_dir": "data/hatexplain",
+      "max_length": 128,
+      "batch_size": 32,
+      "num_workers": 4,
+      "include_rationales": true
+    },
+    "training": {
+      "learning_rate": 2e-05,
+      "weight_decay": 0.01,
+      "num_epochs": 5,
+      "warmup_ratio": 0.1,
+      "output_dir": "checkpoints/C1/seed_45",
+      "device": "cuda",
+      "eval_strategy": "epoch",
+      "early_stop_patience": 3,
+      "run_id": "C1_seed45"
+    },
+    "seed": 45,
+    "condition": "C1"
+  }
+}

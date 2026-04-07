@@ -1,0 +1,14 @@
+{
+  "preflight_result": "PASS",
+  "checks_passed": 10,
+  "checks_total": 10,
+  "python": ".venv/bin/python",
+  "bugs_fixed": [
+    "SparsemaxBertSelfAttention Transformers5 API",
+    "KLAlignmentLoss numerical stability"
+  ],
+  "step_id": "validate-setup",
+  "generation": 1,
+  "created_at": "2026-04-07T16:37:03+00:00",
+  "$schema": "step-result-v1"
+}

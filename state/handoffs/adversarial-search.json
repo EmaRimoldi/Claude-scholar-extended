@@ -1,0 +1,21 @@
+{
+  "key_outputs": {
+    "attacks_run": "5: Survey, Already-Done, Closest-Prior, Incremental-Variation, Cross-Field",
+    "kill_signals": "0 \u2014 no kill signals triggered",
+    "strongest_attack": "SRA ablation: sparsemax is a one-line change in SRA",
+    "rebuttal_strength": "STRONG \u2014 operator range difference (open vs closed simplex), 3 distinct testable predictions (H1, H4, H3)",
+    "verdict": "CLEAR \u2014 PROCEED to Gate N1"
+  },
+  "summary": "Adversarial search complete. 5 attacks, 0 kill signals. Strongest attack (SRA-ablation) rebutted with strong mathematical differential: sparsemax changes operator range from open to closed simplex, creating structurally different faithfulness guarantee. Verdict: novelty CLEAR, recommendation PROCEED.",
+  "critical_context": [
+    "Strongest attack: sparsemax=ablation of SRA. REBUTTED: range(sparsemax)=closed simplex, range(softmax)=open simplex \u2014 qualitative not quantitative difference",
+    "3 distinct testable predictions distinguish from SRA: H1 (comprehensiveness), H4 (adversarial swap KL), H3 (head selection + probe)",
+    "No survey names sparsemax+HSD as a variant; no prior paper fills the Method\u00d7Task gap",
+    "Verdict for Gate N1: CLEAR/PROCEED/HIGH confidence"
+  ],
+  "token_estimate": 2200,
+  "$schema": "step-handoff-v1",
+  "step_id": "adversarial-search",
+  "created_at": "2026-04-07T16:17:22+00:00",
+  "generation": 1
+}

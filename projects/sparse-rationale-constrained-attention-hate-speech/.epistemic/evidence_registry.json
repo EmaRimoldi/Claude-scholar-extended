@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0",
+  "initialized_at": "step_research-landscape",
+  "last_updated": "step_research-landscape",
+  "entries": [
+    {
+      "id": "EV-LIT-001",
+      "type": "literature_finding",
+      "source": "research-landscape + eilertsen2025aligning",
+      "description": "SRA (AAAI 2026) is the primary concurrent work: supervises BERT softmax attention with KL divergence loss against HateXplain rationale masks, claims 2.4x better explainability than baselines. Uses softmax — produces no exactly-zero attention weights.",
+      "strength": "strong",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "Establishes that rationale-supervised attention for hate speech is viable; our sparsemax contribution is structurally distinct"
+    },
+    {
+      "id": "EV-LIT-002",
+      "type": "literature_finding",
+      "source": "research-landscape + mathew2021hatexplain",
+      "description": "HateXplain annotates 20K posts with rationale spans: avg 5.47 of 23.42 tokens highlighted (~25% density). The low rationale density is structurally compatible with sparse attention — most tokens should have zero weight.",
+      "strength": "strong",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "Key dataset property: ~25% token density means sparsemax's structural sparsity is well-matched"
+    },
+    {
+      "id": "EV-LIT-003",
+      "type": "literature_finding",
+      "source": "research-landscape + martins2016sparsemax",
+      "description": "Sparsemax (Martins & Astudillo, ICML 2016) is differentiable, produces exact-zero probabilities for low-scoring items, and has an efficient Jacobian supporting backpropagation through constrained projection.",
+      "strength": "strong",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "Confirms technical feasibility of using sparsemax as drop-in for softmax in attention heads"
+    },
+    {
+      "id": "EV-LIT-004",
+      "type": "literature_finding",
+      "source": "research-landscape + correia2019adaptively",
+      "description": "α-entmax (Correia et al., EMNLP 2019) enables learnable sparsity per head with no accuracy cost on MT. Heads specialize: some dense (α≈1), some focused (α≈2). α=2 recovers sparsemax.",
+      "strength": "strong",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "Design option: fix α=2 (sparsemax) or learn α; rationale supervision may drive heads toward α≈2"
+    },
+    {
+      "id": "EV-LIT-005",
+      "type": "literature_finding",
+      "source": "research-landscape + jain2019attention + wiegreffe2019attention",
+      "description": "The 'attention is explanation' debate (Jain & Wallace 2019 vs. Wiegreffe & Pinter 2019) is unresolved for softmax attention. Sparsemax sidesteps this debate: zero-weight tokens are provably excluded from the representation, making faithfulness a structural property rather than a probabilistic one.",
+      "strength": "moderate",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "Our contribution reframes the debate: supervised sparsemax makes faithfulness verifiable, not just arguable"
+    },
+    {
+      "id": "EV-LIT-006",
+      "type": "literature_finding",
+      "source": "research-landscape + deyoung2020eraser",
+      "description": "ERASER standardizes comprehensiveness (AOPC) and sufficiency (AOPC) metrics. Comprehensiveness measures prediction change when rationale is deleted; sufficiency measures whether rationale alone is sufficient for prediction. Mini-project found significant comprehensiveness improvement with sparsemax.",
+      "strength": "strong",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "Standard evaluation framework; comprehensiveness improvement is the strongest preliminary signal from mini-project"
+    },
+    {
+      "id": "EV-LIT-007",
+      "type": "gap_finding",
+      "source": "research-landscape",
+      "description": "No paper combines sparsemax (or α-entmax) with supervised human rationale alignment in any classification task. All rationale-supervised attention work (SRA, IvRA, HuMAL, Bouchacourt & Baroni, regularization2023attention) uses softmax attention.",
+      "strength": "strong",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "PRIMARY GAP: confirmed by exhaustive search across 54 papers; this is Gap 1 from research-landscape.md"
+    },
+    {
+      "id": "EV-LIT-008",
+      "type": "gap_finding",
+      "source": "research-landscape + deepyoung2025sufficient",
+      "description": "Whether hard sparsity constraint (exactly-zero attention on non-rationale tokens) degrades classification is unknown. 'Learning from Sufficient Rationales' (2025) shows rationale informativeness for sufficiency is complex — the relationship between annotation quality and model sufficiency is nonlinear.",
+      "strength": "moderate",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "Gap 2: faithfulness-performance trade-off under hard sparsity; explains inconsistent mini-project sufficiency"
+    },
+    {
+      "id": "EV-LIT-009",
+      "type": "gap_finding",
+      "source": "research-landscape + chen2024fairness + nghiem2024hatecot",
+      "description": "Cross-dataset generalization of rationale-supervised models is untested. HateCOT addresses generalization via LLM chain-of-thought; KDD 2024 identifies target-aware generalizable fairness as open. No sparsemax rationale model has been evaluated cross-dataset.",
+      "strength": "moderate",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "Gap 3: deployment-critical but secondary to Gaps 1 and 2"
+    },
+    {
+      "id": "EV-LIT-010",
+      "type": "literature_finding",
+      "source": "research-landscape + gao2025rise",
+      "description": "RISE (IJCNN 2025) uses multi-task learning with BIO rationale tagging as auxiliary task; outperforms SOTA on HateXplain. Different approach from attention supervision — does not modify attention mechanism.",
+      "strength": "moderate",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "Adjacent competitor using MTL; demonstrates that rationale guidance in HSD is active research area in 2025"
+    },
+    {
+      "id": "EV-LIT-011",
+      "type": "preliminary_result",
+      "source": "research-landscape (mini-project evidence)",
+      "description": "Mini-project (3 seeds, BERT-base, HateXplain) found significant comprehensiveness gains with sparsemax over softmax baseline using ERASER metrics. Sufficiency was inconsistent across seeds.",
+      "strength": "weak",
+      "claims_dependent": [],
+      "last_updated": "step_research-landscape",
+      "notes": "PRELIMINARY ONLY: needs replication with proper 5-seed design; motivates the full research project"
+    }
+  ]
+}

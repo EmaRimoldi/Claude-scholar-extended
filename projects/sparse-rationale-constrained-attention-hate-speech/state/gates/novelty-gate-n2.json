@@ -1,0 +1,76 @@
+{
+  "gate": "N2",
+  "date": "2026-04-07",
+  "step": "design-novelty-check",
+  "decision": "PROCEED",
+  "confidence": "HIGH",
+
+  "checks": {
+    "primary_claim_testable": {
+      "status": "PASS",
+      "detail": "Novelty claim is sparsemax structural zero vs. softmax KL (operator range difference). Experiment C4 vs C2 directly tests this: same task, same dataset, same backbone, different attention operator + loss. Comprehensiveness AOPC is the right metric (measures structural faithfulness directly)."
+    },
+    "baselines_correct": {
+      "status": "PASS",
+      "detail": "C1 (BERT-base FT, no supervision): establishes supervised-vs-unsupervised baseline. C2 (SRA replication, softmax+KL): establishes primary competitor. C3 (sparsemax, no supervision): isolates the sparsity effect from the supervision effect — critical for disentanglement. All three are necessary; no redundancy."
+    },
+    "sra_replication_faithful": {
+      "status": "PASS",
+      "detail": "C2 uses identical hyperparameters to eilertsen2025aligning (AAAI 2026): same backbone, same dataset, same KL alignment loss. SRA's IoU F1 results will be reproduced as a sanity check. Any discrepancy must be reported."
+    },
+    "disentanglement_test": {
+      "status": "PASS",
+      "detail": "C3 (sparsemax without supervision) added specifically to test whether comprehensiveness gain comes from supervision signal (C4 > C3) or from sparsity regularization alone (C3 > C1). This is essential for a clean contribution claim."
+    },
+    "statistical_framework_adequate": {
+      "status": "PASS",
+      "detail": "Bootstrap 95% CI (n=10K resamples) on 5 seeds provides well-calibrated uncertainty. TOST equivalence test (margin ±1.0 F1) correctly tests the no-accuracy-degradation claim. Wilcoxon signed-rank for H4 KL values (n≈12,500 paired observations). All tests specified before data collection."
+    },
+    "adversarial_swap_design": {
+      "status": "PASS",
+      "detail": "H4 implementation is correct: replace attention weights with uniform (1/T); measure KL(P_swap || P_orig) without recomputing encoder states. This is the Jain & Wallace (NAACL 2019) protocol. The prediction that sparsemax shows ≥2x larger KL is specific and falsifiable."
+    },
+    "h4_tests_structural_causality": {
+      "status": "PASS",
+      "detail": "H4 directly tests the theoretical claim: if sparsemax creates a hard computational dependency on the support set (Proposition 1), then replacing weights with uniform should produce larger output change than in a softmax model where all tokens already had distributed mass. H4 is not redundant with H1 — it tests the causal mechanism, not just the metric improvement."
+    },
+    "proposition_1_in_design": {
+      "status": "PASS",
+      "detail": "Proposition 1 (structural-zero faithfulness guarantee) is included in the experiment plan as a required formal contribution. The proof sketch is sound: h_CLS = sum_t(w_t * V_t); w_t = 0 -> contribution = 0 -> removing t does not change h_CLS -> prediction unchanged -> ERASER comprehensiveness for that token = 0 by construction."
+    },
+    "venue_fit_addressed": {
+      "status": "PASS",
+      "detail": "W5a (HateBRXplain, 3 seeds) provides a second dataset for NeurIPS reviewer expectations. Uses xlm-roberta-base backbone for multilingual evaluation. This is the direct mitigation for the N1 venue warning."
+    },
+    "no_cyclic_design": {
+      "status": "PASS",
+      "detail": "Hypotheses H1-H5 and conditions C1-C5 were defined before any full-scale experiments. Mini-project pilot (3 seeds) was exploratory only and is not reported as primary evidence. No post-hoc hypothesis selection."
+    },
+    "kill_conditions_defined": {
+      "status": "PASS",
+      "detail": "H1 kill: Δcomp < 0.02 OR ΔF1 > 1.0. H4 kill: KL ratio ≤ 1.0. H3 kill: all-12 ≥ top-6. H5 kill: FPR(sparsemax) ≥ FPR(SRA). All kill conditions pre-specified."
+    }
+  },
+
+  "concerns": [
+    {
+      "level": "LOW",
+      "issue": "5 seeds yields limited power (~38%) for medium effect size (d=0.5)",
+      "resolution": "Addressed by Bootstrap CI + effect size reporting rather than p-value. Standard at NeurIPS for compute-constrained NLP experiments. Not a design flaw."
+    },
+    {
+      "level": "LOW",
+      "issue": "W5a requires HateBRXplain availability from Vargas et al. (not yet publicly released as of search date)",
+      "resolution": "Contact authors; W5a is a should-have, not a must-have for Gate N1 justification. If unavailable, use HateXplain Portuguese split or Davidson 2017 (W5b) as second dataset."
+    },
+    {
+      "level": "LOW",
+      "issue": "Sparsemax implementation not yet validated in BERT attention layer (potential training instability if gradient flow through threshold is mishandled)",
+      "resolution": "Validate in Step 15 (pre-flight) with 1-seed pilot on CPU. Use small alpha initially. Check gradient norms."
+    }
+  ],
+
+  "kill_signals": 0,
+  "recommendation": "PROCEED to implementation (Step 11: scaffold)",
+  "routing": "proceed_to_scaffold"
+}

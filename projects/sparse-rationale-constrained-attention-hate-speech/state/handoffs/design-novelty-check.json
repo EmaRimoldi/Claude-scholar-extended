@@ -1,0 +1,20 @@
+{
+  "step_id": "design-novelty-check",
+  "completed_at": "2026-04-07",
+  "token_estimate": 800,
+  "key_outputs": {
+    "gate_file": "state/gates/novelty-gate-n2.json",
+    "decision": "PROCEED",
+    "checks_passed": 11,
+    "kill_signals": 0
+  },
+  "summary": "Gate N2 passed. All 11 design checks passed. 3 LOW concerns (power at 5 seeds, HateBRXplain availability, sparsemax training stability). None are blockers. Routing: proceed to scaffold (Step 11).",
+  "critical_context": [
+    "N2 PROCEED: experiment design correctly tests novelty claim",
+    "C3 (sparsemax no-supervision) is critical disentanglement control — must not be removed",
+    "SRA replication (C2) must reproduce eilertsen2025aligning results as sanity check",
+    "H4 adversarial swap: uniform attention replacement, measure KL without re-encoding",
+    "W5a contingent on HateBRXplain availability; W5b (Davidson) as fallback second dataset",
+    "Proposition 1 proof must appear in manuscript Section 3"
+  ]
+}

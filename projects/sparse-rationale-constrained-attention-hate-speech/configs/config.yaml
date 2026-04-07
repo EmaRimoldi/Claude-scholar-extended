@@ -1,0 +1,15 @@
+defaults:
+  - model: bert_sparsemax
+  - data: hatexplain
+  - training: default
+  - _self_
+
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+
+seed: 42
+condition: "C4"  # C1, C2, C3, C4, C5

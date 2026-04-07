@@ -1,0 +1,22 @@
+{
+  "key_outputs": {
+    "total_papers": "54 papers scanned (Tier 1: 8, Tier 2: 16, Tier 3: 30)",
+    "clusters": "5 clusters: (1) Sparse/Differentiable Attention [HIGH], (2) Rationale-Supervised Attention [HIGH], (3) Explainable Hate Speech [HIGH], (4) Faithfulness Evaluation [HIGH], (5) Fairness/Target Bias [MEDIUM]",
+    "top_gaps": "Gap1: No sparsemax+rationale hate speech paper exists; Gap2: Hard sparsity vs classification trade-off unknown; Gap3: Cross-dataset generalization untested",
+    "tier1_papers": "eilertsen2025aligning, mathew2021hatexplain, martins2016sparsemax, correia2019adaptively, jain2019attention, wiegreffe2019attention, deyoung2020eraser, gao2025rise",
+    "key_benchmarks": "HateXplain (primary), ERASER (comprehensiveness+sufficiency), HateBRXplain, Davidson2017"
+  },
+  "summary": "Pass 1 complete. 54 papers, 5 clusters, 3 gaps. Primary competitor: eilertsen2025aligning (SRA, AAAI 2026) uses softmax. Our sparsemax+rationale gap is confirmed unoccupied.",
+  "critical_context": [
+    "eilertsen2025aligning (SRA, AAAI 2026): softmax+KL loss on HateXplain; our distinction is structural zero-attention via sparsemax",
+    "mathew2021hatexplain: 20K posts, ~25% token density \u2014 well-suited for sparse attention",
+    "martins2016sparsemax: differentiable, exact-zero weights, efficient Jacobian \u2014 technically feasible",
+    "ERASER metrics: comprehensiveness+sufficiency are primary faithfulness evaluation",
+    "Mini-project: significant comprehensiveness gain; sufficiency inconsistent (3 seeds)"
+  ],
+  "token_estimate": 4200,
+  "$schema": "step-handoff-v1",
+  "step_id": "research-landscape",
+  "created_at": "2026-04-07T16:00:05+00:00",
+  "generation": 1
+}

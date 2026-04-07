@@ -1,0 +1,13 @@
+{
+  "gate": "N2",
+  "decision": "PROCEED",
+  "checks_passed": 11,
+  "kill_signals": 0,
+  "concerns": 3,
+  "concern_level": "ALL LOW",
+  "output_file": "state/gates/novelty-gate-n2.json",
+  "step_id": "design-novelty-check",
+  "generation": 1,
+  "created_at": "2026-04-07T16:26:33+00:00",
+  "$schema": "step-result-v1"
+}

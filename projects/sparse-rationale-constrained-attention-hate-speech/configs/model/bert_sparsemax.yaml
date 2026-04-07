@@ -1,0 +1,8 @@
+# Condition C4: sparsemax + MSE alignment loss (all 12 heads) — primary contribution
+model_name: bert-base-uncased
+use_sparsemax: true
+supervised_heads: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+alpha: 0.3
+use_kl_loss: false
+num_labels: 3
+dropout: 0.1

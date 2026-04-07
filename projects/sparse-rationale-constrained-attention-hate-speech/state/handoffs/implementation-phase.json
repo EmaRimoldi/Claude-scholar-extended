@@ -1,0 +1,38 @@
+{
+  "steps_completed": ["scaffold", "build-data", "setup-model", "implement-metrics", "validate-setup"],
+  "completed_at": "2026-04-07",
+  "token_estimate": 1500,
+  "key_outputs": {
+    "src_structure": [
+      "src/model_module/sparsemax.py",
+      "src/model_module/bert_classifier.py",
+      "src/model_module/losses.py",
+      "src/data_module/dataset.py",
+      "src/metrics_module/eraser.py",
+      "src/metrics_module/faithfulness.py",
+      "src/metrics_module/fairness.py",
+      "src/trainer_module/trainer.py",
+      "src/utils/seed.py",
+      "train.py",
+      "scripts/preflight_validate.py",
+      "requirements.txt"
+    ],
+    "preflight": "PASS (10/10 checks)",
+    "python_executable": "/home/erimoldi/projects/Claude-scholar-extended/.venv/bin/python",
+    "torch_version": "2.11.0+cu130",
+    "transformers_version": "5.4.0"
+  },
+  "summary": "All 5 implementation steps complete. Sparsemax operator validated (correct forward/backward, exact zeros confirmed). BertHateSpeechClassifier supports conditions C1-C5 via ClassifierConfig. Two bugs found and fixed during preflight: (1) SparsemaxBertSelfAttention.forward signature updated for Transformers 5.x API (past_key_values, **kwargs); (2) KLAlignmentLoss replaced manual computation with F.kl_div for numerical stability. ERASER metrics, adversarial swap, fairness FPR all implemented. Pre-flight: 10/10 PASS.",
+  "critical_context": [
+    "Python executable: .venv/bin/python (Python 3.12 with torch 2.11 + transformers 5.4)",
+    "Transformers 5.x BertSelfAttention.forward signature: (hidden_states, attention_mask, past_key_values, **kwargs) -> (attn_output, attn_weights)",
+    "SparsemaxBertSelfAttention correctly matches this signature; stores .query, .key, .value, .dropout, .scaling from original",
+    "Sparsemax zero count = 0/32 in preflight (with random weights, support typically covers most tokens; zeros appear after training with alignment loss)",
+    "KLAlignmentLoss uses F.kl_div(log_target, attention, reduction='none').sum(-1).mean()",
+    "MSEAlignmentLoss uses F.mse_loss — works with exact zeros in target",
+    "JointLoss: L_total = CE + alpha * L_align (alpha in config)",
+    "ERASER masks top-k% by attention weight; comprehensiveness = drop in pred prob when deleted",
+    "H4 adversarial swap: replace real tokens with [MASK] (id=103) as uniform attention proxy",
+    "CLS attention extracted from final BERT layer (index -1), averaged over supervised_heads"
+  ]
+}

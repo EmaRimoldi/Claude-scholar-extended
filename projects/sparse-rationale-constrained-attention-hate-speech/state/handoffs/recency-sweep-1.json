@@ -1,0 +1,20 @@
+{
+  "step_id": "recency-sweep-1",
+  "completed_at": "2026-04-07",
+  "token_estimate": 1200,
+  "key_outputs": {
+    "concurrent_work_report": "docs/concurrent-work-report.md",
+    "sweep_detail": "docs/concurrent-work-report-sweep1.md",
+    "new_threats": 0,
+    "known_competitors": ["eilertsen2025aligning", "vargas2026smra"],
+    "gap_confirmed": true
+  },
+  "summary": "Recency sweep (Nov 2025 - Apr 2026): 0 new concurrent work found. SRA (AAAI 2026) and SMRA (arXiv Jan 2026) remain the only papers in the supervised-attention-for-HSD cluster. Neither uses sparsemax. The Method x Task gap is confirmed as of 2026-04-07. Gate N1 PROCEED decision stands.",
+  "critical_context": [
+    "Primary competitor: eilertsen2025aligning (SRA, AAAI 2026) — softmax + KL loss on HateXplain",
+    "Secondary: vargas2026smra (SMRA, Jan 2026) — MFT moral rationales, Portuguese, softmax",
+    "Both from Vargas research group — potential future follow-up paper is a competitive risk",
+    "Sparsemax x human rationale supervision x HSD gap: CONFIRMED UNOCCUPIED",
+    "Proceed to design-experiments with N1 routing constraints (H1, H4, H2 must-have; H3, H5, W5a should-have)"
+  ]
+}

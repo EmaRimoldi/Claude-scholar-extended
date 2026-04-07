@@ -1,0 +1,8 @@
+# Condition C1: softmax, no supervision (fine-tuned baseline)
+model_name: bert-base-uncased
+use_sparsemax: false
+supervised_heads: null
+alpha: 0.0
+use_kl_loss: false
+num_labels: 3
+dropout: 0.1

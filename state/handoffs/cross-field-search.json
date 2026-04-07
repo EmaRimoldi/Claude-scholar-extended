@@ -1,0 +1,21 @@
+{
+  "key_outputs": {
+    "fields_searched": "5 fields: NLP/MT, Computer Vision, Signal Processing, Information Retrieval, Computational Neuroscience",
+    "papers_scanned": "45 total (8 NLP/MT, 12 CV, 10 SP, 8 IR, 7 Neuro)",
+    "highest_threat": "malaviya2018sparse (ACL 2018) MEDIUM \u2014 constrained sparsemax for NMT; cite-and-differentiate required",
+    "recommendation": "cite_and_differentiate",
+    "new_citations": "malaviya2018sparse (MEDIUM), le2023guiding (LOW)"
+  },
+  "summary": "Cross-field search complete across 5 adjacent fields. No blocking prior art found. Highest threat: Malaviya et al. ACL 2018 (constrained sparsemax for NMT coverage) \u2014 same mechanism, different constraint source and task domain. Recommendation: cite_and_differentiate. Novelty claim CLEAR for application domain.",
+  "critical_context": [
+    "malaviya2018sparse: constrained sparsemax for NMT fertility bounds \u2014 MUST cite in related work; differential: constraint is fertility budget not human rationale mask, generation not classification, BLEU not ERASER",
+    "le2023guiding: annotation-guided soft attention for VQA \u2014 mention as cross-field validation; differential: soft vs. structural zero, vision vs. text",
+    "Signal processing oracle/partial support does not constitute prior art: CS recovers support from data; we use given support",
+    "Application novelty status: CLEAR \u2014 combination of sparsemax + human rationale constraint + ERASER faithfulness eval is unoccupied across all 5 fields"
+  ],
+  "token_estimate": 2800,
+  "$schema": "step-handoff-v1",
+  "step_id": "cross-field-search",
+  "created_at": "2026-04-07T16:04:06+00:00",
+  "generation": 1
+}

@@ -96,21 +96,36 @@ Activates the `experiment-runner` skill to autonomously:
 
 There is **no** required string in quotes. The only optional argument is **`phase=<integer>`**, matching the phased structure in `experiment-plan.md` / `experiment-state.json`. See [docs/PIPELINE_INPUTS.md](../docs/PIPELINE_INPUTS.md) for prerequisites and a minimal project layout example.
 
+## CRITICAL: Always run the autonomous script first
+
+**Do NOT manually assess whether the cluster is available.**
+
+At Step 18, the FIRST action is always:
+
+```bash
+python scripts/run_experiment_autonomously.py --repo-root .
+```
+
+This script auto-detects the cluster, runs preflight, and submits — with no manual
+intervention required. Do not reason about whether `sbatch` might be available;
+run the script and let it report the environment. Exit codes:
+- 0 = submitted OK
+- 1 = preflight failed — fix the code, then rerun
+- 2 = not on a SLURM cluster — script prints manual instructions
+- 3 = missing state files — check pipeline-state.json and project structure
+
 ## Workflow
 
 **Autonomous Execution** (no manual intervention required after `/run-experiment`):
 
-1. Read experiment-state.json (current phase, conditions, seeds)
-2. Run `make pre-flight-validate` (10-15s)
+1. **Run** `python scripts/run_experiment_autonomously.py --repo-root .`
+2. Script auto-detects: sbatch in PATH + SLURM_JOB_ID not set → login node confirmed
+3. Script runs `scripts/preflight_validate.py` in the project directory (10-30s)
    - If fails → abort, display error, suggest fix
    - If passes → continue
-3. Run `make cpu-smoke-test` (1-5min)
-   - If fails → abort, display error, suggest fix
-   - If passes → continue
-4. Submit SLURM jobs via `sbatch`
-5. Update experiment-state.json (job IDs, timestamps)
+4. Script auto-discovers `slurm/train_*.sh` and submits each via `sbatch`
+5. Script updates `experiment-state.json` with job IDs and timestamps
 6. Return control to user with job IDs and monitoring info
-7. (Optional) Monitor jobs and auto-trigger next wave when complete
 
 **Example Output**:
 ```
@@ -138,26 +153,28 @@ Jobs submitted. Monitoring status.
 
 ## Implementation
 
-The `experiment-runner` skill is implemented as:
+The autonomous runner is:
 
 ```bash
-python scripts/run_experiment_autonomously.py --phase 2 --project-dir projects/my-project
+python scripts/run_experiment_autonomously.py --repo-root .
+# Optional flags:
+#   --project-dir PATH   override project dir (default: read from pipeline-state.json)
+#   --dry-run            print sbatch commands but do not submit
+#   --skip-preflight     skip preflight_validate.py (not recommended)
 ```
 
 **What this script does**:
-1. Reads `experiment-state.json` (project config, phase number, conditions)
-2. Runs `make pre-flight-validate` in the project directory
-3. If that passes, runs `make cpu-smoke-test`
-4. If both pass, submits SLURM jobs with correct `--conditions` flags
-5. Updates `experiment-state.json` with new job IDs and submission timestamps
-6. Returns structured JSON report and CLI output
+1. **Detects cluster**: checks `which sbatch` and `$SLURM_JOB_ID` — does not assume
+2. **Pre-flight**: runs `scripts/preflight_validate.py` in the project directory
+3. **Discovers scripts**: finds all `slurm/train_*.sh` automatically
+4. **Submits**: calls `sbatch` for each script; collects job IDs
+5. **Updates state**: writes job IDs to `experiment-state.json`
 
-**Key benefits**:
-- ✅ No manual validation steps between code changes and job submission
-- ✅ Failures caught in <10 minutes on CPU (not 2-5 hours on GPU)
-- ✅ Clear error messages with actionable suggestions for fixes
-- ✅ Full audit trail in experiment-state.json (job IDs, timestamps, phase status)
-- ✅ Can be integrated into CI/CD pipelines for fully autonomous runs
+**Key properties**:
+- ✅ Works on any SLURM cluster — no hardcoded partition or hostname
+- ✅ Exit 2 (not 1) when cluster unavailable — clean signal, not an error
+- ✅ Prints manual fallback commands when sbatch is absent
+- ✅ Never stalls waiting for human to confirm cluster availability
 
 ## Integration
 

@@ -1,0 +1,8 @@
+learning_rate: 2.0e-5
+weight_decay: 0.01
+num_epochs: 5
+warmup_ratio: 0.1
+output_dir: checkpoints
+device: cuda
+eval_strategy: epoch
+early_stop_patience: 3

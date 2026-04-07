@@ -1,0 +1,8 @@
+# Condition C2: softmax + KL alignment loss (SRA replication)
+model_name: bert-base-uncased
+use_sparsemax: false
+supervised_heads: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+alpha: 0.3
+use_kl_loss: true
+num_labels: 3
+dropout: 0.1

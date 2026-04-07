@@ -1,0 +1,5 @@
+data_dir: data/hatexplain
+max_length: 128
+batch_size: 32
+num_workers: 4
+include_rationales: true

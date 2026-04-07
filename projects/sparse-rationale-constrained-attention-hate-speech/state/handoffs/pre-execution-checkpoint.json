@@ -1,0 +1,53 @@
+{
+  "checkpoint": "pre-execution",
+  "date": "2026-04-07",
+  "pipeline_steps_complete": "1-17",
+  "next_step": 18,
+  "blocking_reason": "Steps 18-19 require GPU cluster execution",
+
+  "what_was_built": {
+    "literature": "54-paper landscape + 6 search passes + N1 gate (PROCEED)",
+    "hypotheses": "H1-H5 + W5a/W5b defined in docs/hypotheses.md",
+    "experiment_design": "5 conditions C1-C5, ERASER metrics, H4 adversarial swap, Proposition 1",
+    "code": {
+      "sparsemax": "src/model_module/sparsemax.py (validated: correct zeros, gradient flow)",
+      "model": "src/model_module/bert_classifier.py (Transformers 5.x compatible)",
+      "losses": "src/model_module/losses.py (MSE for sparsemax, KL for SRA)",
+      "dataset": "src/data_module/dataset.py (HateXplain + rationale processing)",
+      "eraser": "src/metrics_module/eraser.py (comprehensiveness + sufficiency AOPC)",
+      "faithfulness": "src/metrics_module/faithfulness.py (H4 adversarial swap)",
+      "fairness": "src/metrics_module/fairness.py (H5 identity-term FPR)",
+      "trainer": "src/trainer_module/trainer.py (unified CE + alignment loss)",
+      "train_entry": "train.py (Hydra-configured)",
+      "download": "scripts/download_data.py (HateXplain from GitHub JSON)"
+    },
+    "configs": "configs/ (bert_softmax_baseline, bert_softmax_sra, bert_sparsemax, bert_sparsemax_top6)",
+    "preflight": "PASS (10/10 checks, .venv/bin/python with torch 2.11 + transformers 5.4)",
+    "compute_plan": "docs/compute-plan.md (25 jobs, ~110 GPU-hours, SLURM arrays)"
+  },
+
+  "cluster_execution_instructions": {
+    "step_1_setup": "cd $PROJECT_DIR && source .venv/bin/activate",
+    "step_2_data": ".venv/bin/python scripts/download_data.py --output-dir data/hatexplain",
+    "step_3_preflight": ".venv/bin/python scripts/preflight_validate.py",
+    "step_4_submit_C1": "sbatch slurm/train_c1.sh  # BERT baseline (1.5h × 5 seeds)",
+    "step_5_submit_C2": "sbatch slurm/train_c2.sh  # SRA replication (2h × 5 seeds)",
+    "step_6_submit_C3": "sbatch slurm/train_c3.sh  # sparsemax no-sup (2h × 5 seeds)",
+    "step_7_submit_C4": "sbatch slurm/train_c4.sh  # PRIMARY (2.5h × 5 seeds)",
+    "step_8_submit_C5": "sbatch slurm/train_c5.sh  # head-selective (2.5h × 5 seeds)",
+    "step_9_collect": "python scripts/collect_results.py --conditions C1 C2 C3 C4 C5",
+    "note_python": "Use .venv/bin/python (Python 3.12, torch 2.11+cu130, transformers 5.4.0)"
+  },
+
+  "critical_context_for_resume": [
+    "Primary novelty: sparsemax structural zero vs. softmax KL (operator range difference)",
+    "Primary comparison: C4 (sparsemax+MSE) vs C2 (SRA-softmax+KL) on ERASER comprehensiveness AOPC",
+    "C3 (sparsemax, no supervision) is critical disentanglement control",
+    "H1 kill: delta_comp < 0.02 AOPC OR delta_F1 > 1.0",
+    "H4 kill: KL_ratio(sparsemax/softmax) <= 1.0",
+    "Proposition 1 must appear in manuscript Section 3",
+    "W5a (HateBRXplain) is should-have for NeurIPS venue fit",
+    "SRA macro-F1 expected ~84%; if C2 diverges, check alpha and report discrepancy",
+    "After collecting results, resume pipeline at Step 20 (/analyze-results)"
+  ]
+}

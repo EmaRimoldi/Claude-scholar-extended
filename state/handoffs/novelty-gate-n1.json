@@ -1,0 +1,21 @@
+{
+  "key_outputs": {
+    "decision": "PROCEED",
+    "novelty_level": "CLEAR on Method+Combination; PARTIAL on Empirical+Theoretical",
+    "kill_signals": "0",
+    "closest_prior": "eilertsen2025aligning (SRA)",
+    "venue_warning": "YES \u2014 single dataset NeurIPS; recommend Prop 1 + HateBRXplain"
+  },
+  "summary": "Gate N1 CLEARED. 0 kill signals. PROCEED. Primary novelty: Method (sparsemax never supervised) + Combination (sparsemax\u00d7rationale\u00d7HSD). Venue warning issued: add formal Prop 1 and HateBRXplain for NeurIPS fit.",
+  "critical_context": [
+    "PROCEED decision \u2014 proceed to recency-sweep then design-experiments",
+    "Venue warning: formalize Prop 1 (structural zero) + add HateBRXplain (second dataset)",
+    "Required experiments: H1 (comprehensiveness 5 seeds), H4 (adversarial swap), H2 (sparsity analysis)",
+    "Closest prior: eilertsen2025aligning; differential = operator range (closed vs open simplex)"
+  ],
+  "token_estimate": 1600,
+  "$schema": "step-handoff-v1",
+  "step_id": "novelty-gate-n1",
+  "created_at": "2026-04-07T16:19:15+00:00",
+  "generation": 1
+}
