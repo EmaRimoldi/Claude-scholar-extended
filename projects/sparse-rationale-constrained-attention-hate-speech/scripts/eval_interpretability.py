@@ -72,20 +72,20 @@ def build_test_dataloader(batch_size: int = 16, max_examples: int = None):
     """Build test DataLoader from cached JSONL."""
     from transformers import AutoTokenizer
     from src.data_module.loader import load_jsonl
-    from src.data_module.dataset import HateXplainDataset, load_hatexplain_examples
+    from src.data_module.dataset import HateXplainDataset
 
     tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
     test_path = DATA_DIR / "test.jsonl"
     if not test_path.exists():
-        # Fall back to validation set
         test_path = DATA_DIR / "validation.jsonl"
         logger.warning(f"test.jsonl not found, using validation.jsonl")
 
-    raw = load_jsonl(str(test_path))
+    # load_jsonl returns HateXplainExample objects directly — do NOT pass through
+    # load_hatexplain_examples again (that expects raw dicts, not HateXplainExample)
+    examples = load_jsonl(str(test_path))
     if max_examples:
-        raw = raw[:max_examples]
+        examples = examples[:max_examples]
 
-    examples = load_hatexplain_examples(raw, include_rationales=True)
     dataset = HateXplainDataset(examples, tokenizer, max_length=128)
 
     from torch.utils.data import DataLoader
