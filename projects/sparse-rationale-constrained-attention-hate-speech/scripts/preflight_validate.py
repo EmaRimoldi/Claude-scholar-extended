@@ -100,6 +100,27 @@ def check_kl_loss() -> None:
     assert loss.item() >= 0, "KL loss should be non-negative"
 
 
+# ---- Check 5b: KL loss with BERT padding zeros (regression: float32 underflow) ----
+def check_kl_loss_with_padding_zeros() -> None:
+    """Regression test: BERT adds torch.finfo().min to padding scores.
+    softmax(score + finfo.min) underflows to exactly 0.0 in float32.
+    F.kl_div naively computes 0 * (log(0) - input) = 0 * (-inf) = NaN.
+    torch.xlogy handles xlogy(0, 0) = 0 correctly.
+    """
+    from src.model_module.losses import KLAlignmentLoss
+
+    loss_fn = KLAlignmentLoss()
+    # Simulate BERT CLS attention: real tokens have softmax mass, padding is exactly 0
+    # Sequence length 8: first 3 tokens real, last 5 are padding → attention=0
+    attention = torch.tensor([[0.4, 0.35, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0]])
+    # Binary rationale mask: only first 3 positions have any signal
+    rationale = torch.tensor([[1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
+    loss = loss_fn(attention, rationale)
+    assert not torch.isnan(loss), f"KL loss is NaN with padding zeros (got {loss})"
+    assert not torch.isinf(loss), f"KL loss is inf with padding zeros (got {loss})"
+    assert loss.item() >= 0, f"KL loss should be non-negative, got {loss.item()}"
+
+
 # ---- Check 6: Joint loss (CE + MSE) ----
 def check_joint_loss() -> None:
     from src.model_module.losses import JointLoss, MSEAlignmentLoss
@@ -212,6 +233,7 @@ if __name__ == "__main__":
         ("Sparsemax gradient flow", check_sparsemax_gradient),
         ("MSE alignment loss", check_mse_loss),
         ("KL alignment loss", check_kl_loss),
+        ("KL loss with BERT padding zeros (regression)", check_kl_loss_with_padding_zeros),
         ("Joint loss (CE + MSE)", check_joint_loss),
         ("BERT softmax forward", check_bert_softmax_forward),
         ("BERT sparsemax forward with supervision", check_bert_sparsemax_forward),

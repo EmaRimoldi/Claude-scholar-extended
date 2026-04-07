@@ -44,14 +44,17 @@ class KLAlignmentLoss(nn.Module):
         Returns:
             Scalar mean KL divergence over the batch.
         """
-        # Add epsilon to target to handle zero entries (softmax output is always > 0,
-        # but target may have zeros; KL diverges when P > 0 and Q = 0)
+        # Add epsilon to target to handle zero entries (target may have zeros for
+        # non-rationale tokens; KL diverges when P > 0 and Q = 0)
         target_smooth = rationale_mask + self.epsilon
         target_smooth = target_smooth / target_smooth.sum(dim=-1, keepdim=True)
         log_target = torch.log(target_smooth)
-        # F.kl_div: KL(attention || target_smooth) = sum attention * (log(attention) - log(target_smooth))
-        # 'none' reduction then sum over T, mean over batch
-        kl_per_token = F.kl_div(log_target, attention, reduction="none")
+        # KL(attention || target_smooth) = sum_t attention_t * log(attention_t / target_smooth_t)
+        # = sum_t [attention_t * log(attention_t)] - [attention_t * log_target_t]
+        # Use torch.xlogy for the entropy term: xlogy(p, p) = p*log(p), with xlogy(0, 0)=0
+        # This avoids NaN from BERT padding tokens where softmax underflows to exactly 0.0
+        # (float32: exp(-3.4e38) = 0 exactly), which causes 0*log(0) = 0*(-inf) = NaN in F.kl_div.
+        kl_per_token = torch.xlogy(attention, attention) - attention * log_target
         return kl_per_token.sum(dim=-1).mean()
 
 
