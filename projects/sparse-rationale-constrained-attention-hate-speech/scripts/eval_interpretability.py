@@ -101,7 +101,7 @@ def build_test_dataloader(batch_size: int = 16, max_examples: int = None):
     return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
 
-def compute_eraser_scores(model, loader, device, n_steps: int = 10) -> dict:
+def compute_eraser_scores(model, loader, device) -> dict:
     """Compute ERASER comprehensiveness and sufficiency AOPC."""
     from src.metrics_module.eraser import compute_comprehensiveness_aopc, compute_sufficiency_aopc
 
@@ -132,8 +132,9 @@ def compute_eraser_scores(model, loader, device, n_steps: int = 10) -> dict:
             out = model(input_ids=ids.to(device), attention_mask=mask.to(device))
         return out["logits"].cpu()
 
-    comp = compute_comprehensiveness_aopc(model_fn, input_ids, attention_mask, cls_attention, n_steps=n_steps)
-    suff = compute_sufficiency_aopc(model_fn, input_ids, attention_mask, cls_attention, n_steps=n_steps)
+    # eraser.py uses levels= (list of fractions), not n_steps=
+    comp = compute_comprehensiveness_aopc(model_fn, input_ids, attention_mask, cls_attention)
+    suff = compute_sufficiency_aopc(model_fn, input_ids, attention_mask, cls_attention)
     return {"comprehensiveness_aopc": comp, "sufficiency_aopc": suff}
 
 
@@ -160,14 +161,20 @@ def compute_plausibility(model, loader, device) -> dict:
 
     cls_attention = torch.cat(all_cls_attn)
     rationale_binary = torch.cat(all_rationale_binary)
+    attention_mask = torch.cat(all_masks)
 
-    metrics = compute_plausibility_metrics(cls_attention, rationale_binary)
+    metrics = compute_plausibility_metrics(cls_attention, rationale_binary, attention_mask)
     return metrics
 
 
 def compute_faithfulness(model, loader, device) -> dict:
-    """H4 adversarial swap: replace CLS attention with uniform, measure KL(P_swap||P_orig)."""
-    from src.metrics_module.faithfulness import compute_adversarial_swap_kl, aggregate_swap_kl_statistics
+    """H4 adversarial swap: replace CLS attention with uniform, measure KL(P_swap||P_orig).
+
+    aggregate_swap_kl_statistics() is a two-model comparison function; we compute
+    per-condition mean/std directly here and store raw values for cross-condition
+    Wilcoxon tests in the analysis step.
+    """
+    from src.metrics_module.faithfulness import compute_adversarial_swap_kl
 
     all_kl_values = []
 
@@ -186,11 +193,12 @@ def compute_faithfulness(model, loader, device) -> dict:
         return {"adversarial_swap_delta": None}
 
     all_kl = torch.cat(all_kl_values)
-    stats = aggregate_swap_kl_statistics(all_kl)
+    mean_kl = round(all_kl.mean().item(), 6)
+    std_kl = round(all_kl.std().item(), 6)
     return {
-        "adversarial_swap_delta": round(stats.get("mean_kl", 0.0), 6),
-        "adversarial_swap_kl_mean": round(stats.get("mean_kl", 0.0), 6),
-        "adversarial_swap_kl_std": round(stats.get("std_kl", 0.0), 6),
+        "adversarial_swap_delta": mean_kl,
+        "adversarial_swap_kl_mean": mean_kl,
+        "adversarial_swap_kl_std": std_kl,
     }
 
 
