@@ -1,0 +1,6 @@
+condition,n_seeds,comprehensiveness_aopc_mean,comprehensiveness_aopc_std,sufficiency_aopc_mean,sufficiency_aopc_std,token_f1_mean,token_f1_std,adversarial_swap_delta_mean,adversarial_swap_delta_std
+C1,5,,,,,,,1.712465,0.412609
+C2,5,0.159538,0.016114,0.334211,0.034422,0.0,0.0,1.228873,0.418782
+C3,5,,,,,,,1.935499,0.362823
+C4,5,0.337701,0.029593,0.176377,0.031593,0.0,0.0,1.804855,0.41599
+C5,5,0.296355,0.040961,0.240061,0.023692,0.0,0.0,1.941916,0.228663

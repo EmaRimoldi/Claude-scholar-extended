@@ -1,0 +1,13 @@
+{
+  "claims": {
+    "C-MAIN": {"strength": "strong", "evidence": ["E1","E2","E3","E4","E5"], "mechanism": ["M1","M2","M3","M4"]},
+    "C-FAITHFUL": {"strength": "medium-strong", "evidence": ["E6","E7","E8"], "weakening": "ratio 1.47x < 2x prespec"},
+    "C-NOCOST": {"strength": "strong", "evidence": ["E9","E10","E11"]},
+    "C-OPERATOR": {"strength": "strong", "evidence": ["E8"], "note": "C3>C2 unsupervised sparsemax beats supervised softmax"},
+    "C-HEAD": {"strength": "weak", "evidence": [], "note": "n=5 underpowered"},
+    "C-EQUIV-SUFF": {"strength": "strong", "evidence": ["suff C4=0.176 vs C2=0.334"]}
+  },
+  "weakest_claim": "C-FAITHFUL (H4 ratio 1.47x vs 2x threshold)",
+  "primary_claim": "C-MAIN",
+  "evidence_gaps": ["second dataset", "formal proof sketch", "POS probe"]
+}

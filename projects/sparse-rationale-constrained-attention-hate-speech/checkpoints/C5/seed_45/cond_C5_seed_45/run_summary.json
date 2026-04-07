@@ -1,0 +1,61 @@
+{
+  "condition": "C5",
+  "seed": 45,
+  "best_val_f1": 0.6808410479014128,
+  "history": {
+    "train_loss": [
+      0.86818728123534,
+      0.6652227360716481,
+      0.535314460399245,
+      0.4159844451566496,
+      0.330442225998132
+    ],
+    "val_f1": [
+      0.6393363324011867,
+      0.6803248177406699,
+      0.6808410479014128,
+      0.673945600015804,
+      0.6777661671548564
+    ]
+  },
+  "config": {
+    "model": {
+      "model_name": "bert-base-uncased",
+      "use_sparsemax": true,
+      "supervised_heads": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "alpha": 0.3,
+      "use_kl_loss": false,
+      "num_labels": 3,
+      "dropout": 0.1,
+      "head_selection_mode": "gradient_importance",
+      "num_supervised_heads": 6
+    },
+    "data": {
+      "data_dir": "data/hatexplain",
+      "max_length": 128,
+      "batch_size": 32,
+      "num_workers": 4,
+      "include_rationales": true
+    },
+    "training": {
+      "learning_rate": 2e-05,
+      "weight_decay": 0.01,
+      "num_epochs": 5,
+      "warmup_ratio": 0.1,
+      "output_dir": "checkpoints/C5/seed_45",
+      "device": "cuda",
+      "eval_strategy": "epoch",
+      "early_stop_patience": 3,
+      "run_id": "C5_seed45"
+    },
+    "seed": 45,
+    "condition": "C5"
+  }
+}
