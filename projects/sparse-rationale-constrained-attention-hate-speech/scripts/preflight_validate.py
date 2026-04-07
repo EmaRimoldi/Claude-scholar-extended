@@ -4,14 +4,20 @@ Per project validation rules: all code must pass CPU validation before
 cluster submission to avoid wasting GPU resources on broken code.
 
 Tests:
-1. Sparsemax forward/backward correctness
-2. Sparsemax produces exactly-zero values on known inputs
-3. BERT classifier forward pass (softmax + sparsemax, tiny batch)
-4. Loss functions compute without NaN
-5. Alignment loss gradient flows back to model parameters
-6. Dataset loading and tokenization
-7. ERASER metric computation on synthetic data
-8. Trainer runs 1 batch without error
+1.  Sparsemax forward/backward correctness
+2.  Sparsemax produces exactly-zero values on known inputs
+3.  Sparsemax gradient flow
+4.  MSE alignment loss
+5.  KL alignment loss (non-degenerate inputs)
+5b. KL alignment loss with BERT padding zeros (regression: float32 underflow → NaN)
+5c. KL loss backward with padding zeros (gradient must be finite, not NaN)
+6.  Joint loss (CE + MSE)
+7.  BERT softmax forward (no-grad, no padding)
+8.  BERT sparsemax forward with supervision (no-grad, no padding)
+9.  ERASER comprehensiveness metric
+10. Sparsemax CLS attention zero count
+11. End-to-end training step for all 5 conditions with realistic padded batch
+    (forward + loss + backward; catches NaN loss/gradient before GPU submission)
 
 Exit code 0 = all passed; non-zero = failures (blocks submission).
 """
@@ -97,7 +103,9 @@ def check_kl_loss() -> None:
     target = torch.tensor([[0.5, 0.3, 0.2]])
     loss = loss_fn(attention, target)
     assert not torch.isnan(loss), "KL loss is NaN"
-    assert loss.item() >= 0, "KL loss should be non-negative"
+    # Allow tiny float32 rounding (~2e-8) when distributions are identical;
+    # clamp(min=0) in the loss function handles this in real training.
+    assert loss.item() >= -1e-6, f"KL loss is significantly negative: {loss.item()}"
 
 
 # ---- Check 5b: KL loss with BERT padding zeros (regression: float32 underflow) ----
@@ -119,6 +127,30 @@ def check_kl_loss_with_padding_zeros() -> None:
     assert not torch.isnan(loss), f"KL loss is NaN with padding zeros (got {loss})"
     assert not torch.isinf(loss), f"KL loss is inf with padding zeros (got {loss})"
     assert loss.item() >= 0, f"KL loss should be non-negative, got {loss.item()}"
+
+
+# ---- Check 5c: KL loss backward with padding zeros ----
+def check_kl_loss_backward_with_padding() -> None:
+    """Verify that backward through KL with exact-zero attention produces finite gradients.
+
+    The forward NaN check (5b) is necessary but not sufficient: even if loss is finite,
+    the gradient could be NaN if the backward pass encounters a 0*log(0) branch.
+    This checks both forward and backward are clean.
+    """
+    from src.model_module.losses import KLAlignmentLoss
+
+    loss_fn = KLAlignmentLoss()
+    # attention has exact zeros at padding positions (as BERT produces in float32)
+    attention = torch.tensor([[0.4, 0.35, 0.25, 0.0, 0.0, 0.0, 0.0, 0.0]], requires_grad=True)
+    rationale = torch.tensor([[1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
+    loss = loss_fn(attention, rationale)
+    assert not torch.isnan(loss), f"KL backward test: loss is NaN"
+    loss.backward()
+    assert attention.grad is not None, "KL backward test: no gradient"
+    assert not torch.isnan(attention.grad).any(), (
+        f"KL backward test: NaN gradient at positions {torch.where(torch.isnan(attention.grad))}"
+    )
+    assert not torch.isinf(attention.grad).any(), "KL backward test: inf gradient"
 
 
 # ---- Check 6: Joint loss (CE + MSE) ----
@@ -200,6 +232,75 @@ def check_eraser_comprehensiveness() -> None:
     assert abs(score) < 0.1, f"Uniform model should have ~0 comprehensiveness, got {score}"
 
 
+# ---- Check 11: End-to-end training step for all 5 conditions with padded batch ----
+def check_training_step_all_conditions() -> None:
+    """Run forward+loss+backward for each condition on a realistic padded batch.
+
+    This is the critical integration test. It catches NaN losses and gradients
+    that only appear during actual training, not in isolated unit tests.
+
+    Why padding matters: BERT adds torch.finfo(float32).min (~-3.4e38) to padding
+    scores as the additive attention mask. exp(-3.4e38) underflows to exactly 0.0
+    in float32. Any loss that naively calls log(0) on these zeros will produce NaN.
+
+    Batch: B=2, T=32, first 10 tokens real, positions 10-31 are padding.
+    Rationale: tokens 1 and 2 marked (sparse, as typical of HateXplain).
+    """
+    import torch.nn as nn
+    from src.model_module.bert_classifier import BertHateSpeechClassifier, ClassifierConfig
+    from src.model_module.losses import JointLoss, KLAlignmentLoss, MSEAlignmentLoss
+
+    B, T, real_len = 2, 32, 10
+    input_ids = torch.randint(100, 30000, (B, T))
+    attention_mask = torch.zeros(B, T, dtype=torch.long)
+    attention_mask[:, :real_len] = 1          # first 10 tokens are real
+    labels = torch.randint(0, 3, (B,))
+    rationale = torch.zeros(B, T)
+    rationale[:, 1:3] = 0.5                   # tokens 1-2 are rationale
+
+    condition_cfgs = [
+        ("C1", ClassifierConfig(use_sparsemax=False, supervised_heads=None,         alpha=0.0, use_kl_loss=False)),
+        ("C2", ClassifierConfig(use_sparsemax=False, supervised_heads=list(range(12)), alpha=0.3, use_kl_loss=True)),
+        ("C3", ClassifierConfig(use_sparsemax=True,  supervised_heads=None,         alpha=0.0, use_kl_loss=False)),
+        ("C4", ClassifierConfig(use_sparsemax=True,  supervised_heads=list(range(12)), alpha=0.3, use_kl_loss=False)),
+        ("C5", ClassifierConfig(use_sparsemax=True,  supervised_heads=list(range(6)),  alpha=0.3, use_kl_loss=False)),
+    ]
+    ce_fn = nn.CrossEntropyLoss()
+
+    for cond, cfg in condition_cfgs:
+        model = BertHateSpeechClassifier(cfg)
+        model.train()
+        model.zero_grad()
+
+        out = model(input_ids=input_ids, attention_mask=attention_mask)
+        logits = out["logits"]
+        cls_attn = out["cls_attention"]
+
+        if cfg.alpha > 0 and cls_attn is not None:
+            align_loss = KLAlignmentLoss() if cfg.use_kl_loss else MSEAlignmentLoss()
+            loss_fn = JointLoss(align_loss, alpha=cfg.alpha)
+            loss, ce_val, align_val = loss_fn(logits, labels, cls_attn, rationale)
+        else:
+            loss = ce_fn(logits, labels)
+
+        assert not torch.isnan(loss), (
+            f"{cond}: loss is NaN — check loss function for 0*log(0) with padding zeros"
+        )
+        assert not torch.isinf(loss), f"{cond}: loss is inf"
+        assert loss.item() > 0, f"{cond}: loss={loss.item()} should be positive"
+
+        loss.backward()
+
+        grad_norm = sum(
+            p.grad.data.norm(2).item() ** 2
+            for p in model.parameters()
+            if p.grad is not None
+        ) ** 0.5
+        assert grad_norm > 0, f"{cond}: gradient norm is 0 (backward did not propagate)"
+        assert not (grad_norm != grad_norm), f"{cond}: gradient norm is NaN"
+        logger.info(f"  {cond}: loss={loss.item():.4f}  grad_norm={grad_norm:.2f}")
+
+
 # ---- Check 10: Sparsemax CLS attention has exactly-zero tokens ----
 def check_sparsemax_cls_has_zeros() -> None:
     from src.model_module.bert_classifier import BertHateSpeechClassifier, ClassifierConfig
@@ -228,17 +329,19 @@ def check_sparsemax_cls_has_zeros() -> None:
 # ---- Main ----
 if __name__ == "__main__":
     checks = [
-        ("Sparsemax valid probabilities", check_sparsemax_valid),
-        ("Sparsemax exact zeros", check_sparsemax_exact_zeros),
-        ("Sparsemax gradient flow", check_sparsemax_gradient),
-        ("MSE alignment loss", check_mse_loss),
-        ("KL alignment loss", check_kl_loss),
-        ("KL loss with BERT padding zeros (regression)", check_kl_loss_with_padding_zeros),
-        ("Joint loss (CE + MSE)", check_joint_loss),
-        ("BERT softmax forward", check_bert_softmax_forward),
-        ("BERT sparsemax forward with supervision", check_bert_sparsemax_forward),
-        ("ERASER comprehensiveness metric", check_eraser_comprehensiveness),
-        ("Sparsemax CLS attention zero count", check_sparsemax_cls_has_zeros),
+        ("Sparsemax valid probabilities",                       check_sparsemax_valid),
+        ("Sparsemax exact zeros",                               check_sparsemax_exact_zeros),
+        ("Sparsemax gradient flow",                             check_sparsemax_gradient),
+        ("MSE alignment loss",                                  check_mse_loss),
+        ("KL alignment loss",                                   check_kl_loss),
+        ("KL loss with BERT padding zeros (regression)",        check_kl_loss_with_padding_zeros),
+        ("KL loss backward with padding zeros",                 check_kl_loss_backward_with_padding),
+        ("Joint loss (CE + MSE)",                               check_joint_loss),
+        ("BERT softmax forward",                                check_bert_softmax_forward),
+        ("BERT sparsemax forward with supervision",             check_bert_sparsemax_forward),
+        ("ERASER comprehensiveness metric",                     check_eraser_comprehensiveness),
+        ("Sparsemax CLS attention zero count",                  check_sparsemax_cls_has_zeros),
+        ("Training step all conditions C1-C5 (padded batch)",  check_training_step_all_conditions),
     ]
 
     logger.info("=== Pre-flight Validation ===")

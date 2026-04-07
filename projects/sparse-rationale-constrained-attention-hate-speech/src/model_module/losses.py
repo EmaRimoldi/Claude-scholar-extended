@@ -50,12 +50,30 @@ class KLAlignmentLoss(nn.Module):
         target_smooth = target_smooth / target_smooth.sum(dim=-1, keepdim=True)
         log_target = torch.log(target_smooth)
         # KL(attention || target_smooth) = sum_t attention_t * log(attention_t / target_smooth_t)
-        # = sum_t [attention_t * log(attention_t)] - [attention_t * log_target_t]
-        # Use torch.xlogy for the entropy term: xlogy(p, p) = p*log(p), with xlogy(0, 0)=0
-        # This avoids NaN from BERT padding tokens where softmax underflows to exactly 0.0
-        # (float32: exp(-3.4e38) = 0 exactly), which causes 0*log(0) = 0*(-inf) = NaN in F.kl_div.
-        kl_per_token = torch.xlogy(attention, attention) - attention * log_target
-        return kl_per_token.sum(dim=-1).mean()
+        #
+        # BERT padding tokens: BERT adds torch.finfo(float32).min (~-3.4e38) as additive mask.
+        # exp(-3.4e38) underflows to exactly 0.0 in float32 → attention=0 at padding positions.
+        # By KL convention, 0 * log(0 / q) = 0 for any q > 0.
+        #
+        # torch.xlogy fixes the FORWARD (returns 0 at p=0) but NOT the BACKWARD
+        # (derivative of x*log(x) at x=0 is log(0)+1 = -inf → NaN gradients).
+        #
+        # The correct fix uses torch.where to route padding positions to a constant branch
+        # (zero output), completely eliminating the gradient path through those positions:
+        #   - nonzero mask: True for real tokens, False for padding
+        #   - safe_attn: attention for real tokens, 1.0 (constant) for padding
+        #   - kl_per_token: attention*(log(attention)-log_target) for real, 0 for padding
+        # Backward: torch.where multiplies grad by 0 at padding positions → no NaN.
+        nonzero = attention > 0
+        safe_attn = torch.where(nonzero, attention, torch.ones_like(attention))
+        kl_per_token = torch.where(
+            nonzero,
+            safe_attn * (torch.log(safe_attn) - log_target),
+            torch.zeros_like(attention),
+        )
+        # KL divergence is non-negative by definition; clamp to avoid tiny float32
+        # rounding errors (e.g., ~-2e-8) when attention ≈ target distribution.
+        return kl_per_token.sum(dim=-1).mean().clamp(min=0.0)
 
 
 class MSEAlignmentLoss(nn.Module):
