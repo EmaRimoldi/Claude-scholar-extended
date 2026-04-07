@@ -42,15 +42,23 @@ def load_best_model(condition: str, seed: int, device: torch.device):
     """Load best checkpoint for a given condition and seed."""
     from src.model_module.bert_classifier import BertHateSpeechClassifier, ClassifierConfig
 
-    ckpt_path = CHECKPOINT_DIR / condition / f"seed_{seed}" / f"cond_{condition}_seed_{seed}" / "best_model.pt"
+    run_dir = CHECKPOINT_DIR / condition / f"seed_{seed}" / f"cond_{condition}_seed_{seed}"
+    ckpt_path = run_dir / "best_model.pt"
+    summary_path = run_dir / "run_summary.json"
+
     if not ckpt_path.exists():
         raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
 
-    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
-    cfg_dict = ckpt["config"]
+    # Reconstruct ClassifierConfig from run_summary.json (full Hydra config as plain dict).
+    # The checkpoint's "config" key is a TrainingConfig dataclass which lacks model-arch fields.
+    if summary_path.exists():
+        with open(summary_path) as f:
+            summary = json.load(f)
+        model_cfg = summary.get("config", {}).get("model", {})
+    else:
+        model_cfg = {}
+        logger.warning(f"run_summary.json not found at {summary_path}; using defaults")
 
-    # Reconstruct ClassifierConfig from saved dict
-    model_cfg = cfg_dict.get("model", {})
     clf_cfg = ClassifierConfig(
         model_name=model_cfg.get("model_name", "bert-base-uncased"),
         use_sparsemax=model_cfg.get("use_sparsemax", False),
@@ -61,6 +69,7 @@ def load_best_model(condition: str, seed: int, device: torch.device):
         dropout=model_cfg.get("dropout", 0.1),
     )
 
+    ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
     model = BertHateSpeechClassifier(clf_cfg)
     model.load_state_dict(ckpt["model_state_dict"])
     model.to(device)
