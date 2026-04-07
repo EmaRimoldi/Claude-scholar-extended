@@ -237,6 +237,68 @@ Ready for Pass 2 (claim-level search) after hypothesis formulation at `/formulat
 
 ---
 
+---
+
+## Batched Processing Protocol (Context Management)
+
+When processing ≥20 papers, use batched processing to prevent accumulating full paper
+texts in active context. This is the **preferred mode for all runs**.
+
+### Batch execution pattern
+
+Process papers in groups of 10 (combining Tier 1 and Tier 2 from each search round):
+
+1. Process 10 papers (search, read abstracts, read full text for Tier 1).
+2. Write a partial batch handoff immediately:
+
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-handoff \
+  research-landscape-batch-N \
+  '{"key_outputs": {
+      "papers_processed": "Papers 1-10: [comma-separated titles or cite keys]",
+      "clusters_emerging": "Clusters seen so far: [names and 1-line descriptions]",
+      "tier1_findings": "Key findings from Tier 1 papers in this batch"
+    },
+    "summary": "Batch N: processed N papers. Emerging themes: ...",
+    "critical_context": [
+      "[Author YYYY]: [key finding most relevant to hypothesis]",
+      "Cluster [name]: [methodology and relevance note]"
+    ],
+    "token_estimate": <estimated tokens for these 10 papers>}'
+```
+
+3. After writing the batch handoff, **discard the full paper text** from active context.
+   Retain only the batch handoff summary and the running cluster map.
+4. Repeat for the next batch.
+
+### Consolidation handoff (write after ALL batches complete)
+
+After all papers are processed and `research-landscape.md` is written:
+
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-handoff \
+  research-landscape \
+  '{"key_outputs": {
+      "total_papers": "N papers scanned (Tier 1: X, Tier 2: Y, Tier 3: Z)",
+      "clusters": "4-8 cluster names with 1-sentence descriptions",
+      "top_gaps": "Top 3 actionable gaps with supporting cite keys",
+      "tier1_papers": "Cite keys of all Tier 1 papers",
+      "key_benchmarks": "Standard benchmarks found across clusters"
+    },
+    "summary": "...",
+    "critical_context": ["...", "..."],
+    "token_estimate": <int>}'
+```
+
+This consolidation handoff is what `cross-field-search` and `formulate-hypotheses` will
+load when the context budget is HIGH.
+
+Batch handoffs → `state/handoffs/research-landscape-batch-N.json`  
+Consolidation handoff → `state/handoffs/research-landscape.json`  
+Full output document → `$PROJECT_DIR/docs/research-landscape.md` (unchanged)
+
+---
+
 ## Gate Criteria
 
 Before marking this step complete, verify:

@@ -419,6 +419,33 @@ LOOP_COUNTERS = {
     "adversarial_review_cycles": {"max": 2, "loop": "Adversarial Review → upstream"},
 }
 
+# ---------------------------------------------------------------------------
+# Context budget and handoff system
+# ---------------------------------------------------------------------------
+#
+# Each step MAY write a step-handoff-v1 artifact to state/handoffs/<step_id>.json
+# after completing.  The orchestrator loads this INSTEAD of full prerequisite
+# Markdown documents when check-budget reports a HIGH context budget, reducing
+# token consumption by 5-10x for document-heavy steps.
+#
+# Schema: step-handoff-v1
+#   step_id          (str)   — canonical or sub-step ID
+#   key_outputs      (dict)  — field name → short value string (1-2 sentences each)
+#   summary          (str)   — 1-3 sentence prose summary of what the step produced
+#   critical_context (list)  — short strings the next step MUST know
+#   token_estimate   (int)   — rough token count of the full output document
+#   created_at       (str)   — ISO-8601 timestamp (auto-injected)
+#   $schema          (str)   — "step-handoff-v1" (auto-injected)
+#
+# The handoff system is ADDITIVE:
+# - Steps without a handoff remain fully functional.
+# - Batch sub-step IDs (e.g. "research-landscape-batch-1") are valid and do
+#   NOT need to appear in PIPELINE_STEPS.
+# - write-handoff does NOT modify pipeline-state.json step statuses.
+# ---------------------------------------------------------------------------
+
+HANDOFF_REQUIRED_FIELDS = ("key_outputs", "summary", "critical_context", "token_estimate")
+
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -1106,6 +1133,41 @@ def main():
         help="Generation ID to update (default: active generation).",
     )
 
+    # --- Context budget / handoff subcommands ---
+
+    p_write_handoff = sub.add_parser(
+        "write-handoff",
+        help="Write state/handoffs/<step_id>.json — a compressed step summary for "
+             "context-efficient loading by downstream steps. Accepts inline JSON or @filepath.",
+    )
+    p_write_handoff.add_argument(
+        "step_id",
+        help="Step ID that produced this handoff (may be a sub-step, e.g. 'research-landscape-batch-1').",
+    )
+    p_write_handoff.add_argument(
+        "json_data",
+        help="JSON object as a string, or @path/to/file.json to read from a file. "
+             "Required fields: key_outputs (dict), summary (str), "
+             "critical_context (list), token_estimate (int).",
+    )
+
+    p_check_budget = sub.add_parser(
+        "check-budget",
+        help="Measure total char size of prerequisite files for a step. "
+             "Exits 0 (OK), 2 (HIGH: >threshold chars). "
+             "Prints JSON with sizes, status, and available handoff alternatives.",
+    )
+    p_check_budget.add_argument(
+        "step_id",
+        help="Step ID to check budget for.",
+    )
+    p_check_budget.add_argument(
+        "--threshold",
+        type=int,
+        default=100_000,
+        help="Char threshold for HIGH status (default: 100000 chars ≈ 25K tokens).",
+    )
+
     args = parser.parse_args()
 
     if args.action == "init":
@@ -1376,6 +1438,100 @@ def main():
             sys.exit(1)
         resolved_gen = target_gen if target_gen is not None else get_active_generation(args.dir)
         print(f"Archive path '{args.archive_path}' recorded for generation {resolved_gen}")
+
+    # --- Context budget / handoff handlers ---
+
+    elif args.action == "write-handoff":
+        try:
+            handoff = _parse_json_arg(args.json_data)
+        except (json.JSONDecodeError, FileNotFoundError) as exc:
+            print(f"Error parsing handoff JSON: {exc}", file=sys.stderr)
+            sys.exit(1)
+        # Validate required fields
+        missing = [f for f in HANDOFF_REQUIRED_FIELDS if f not in handoff]
+        if missing:
+            print(
+                f"[ERROR] Handoff JSON missing required field(s): {', '.join(missing)}\n"
+                f"Required: key_outputs (dict), summary (str), "
+                f"critical_context (list), token_estimate (int).",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        # Auto-inject schema fields
+        handoff.setdefault("$schema", "step-handoff-v1")
+        handoff.setdefault("step_id", args.step_id)
+        handoff.setdefault("created_at", now_iso())
+        handoff.setdefault("generation", get_active_generation(args.dir))
+        # Write to state/handoffs/<step_id>.json
+        handoffs_dir = os.path.join(args.dir, STATE_DIR, "handoffs")
+        os.makedirs(handoffs_dir, exist_ok=True)
+        handoff_path = os.path.join(handoffs_dir, f"{args.step_id}.json")
+        with open(handoff_path, "w") as f:
+            json.dump(handoff, f, indent=2)
+        print(f"Handoff written: {handoff_path}")
+
+    elif args.action == "check-budget":
+        step_id = args.step_id
+        threshold = args.threshold
+        if step_id not in state["steps"]:
+            print(f"Unknown step: {step_id}", file=sys.stderr)
+            sys.exit(1)
+        prereqs = state["steps"][step_id].get("prerequisite_files", [])
+        # Resolve project_dir (may be relative to args.dir)
+        project_dir_raw = state.get("project_dir") or args.dir
+        if os.path.isabs(project_dir_raw):
+            project_dir = project_dir_raw
+        else:
+            project_dir = os.path.join(args.dir, project_dir_raw)
+
+        files_result: list = []
+        total_chars = 0
+        for rel in prereqs:
+            full = os.path.join(project_dir, rel)
+            if os.path.isfile(full):
+                try:
+                    size = os.path.getsize(full)
+                    files_result.append({"file": rel, "chars": size, "exists": True})
+                    total_chars += size
+                except OSError:
+                    files_result.append({"file": rel, "chars": 0, "exists": False})
+            elif os.path.isdir(full):
+                dir_size = sum(
+                    os.path.getsize(os.path.join(dp, fn))
+                    for dp, _, fns in os.walk(full)
+                    for fn in fns
+                )
+                files_result.append({"file": rel, "chars": dir_size, "exists": True, "type": "dir"})
+                total_chars += dir_size
+            else:
+                files_result.append({"file": rel, "chars": 0, "exists": False})
+
+        # Collect available handoff alternatives
+        handoffs_dir = os.path.join(project_dir, STATE_DIR, "handoffs")
+        handoff_alternatives: list[str] = []
+        if os.path.isdir(handoffs_dir):
+            handoff_alternatives = sorted(
+                f"state/handoffs/{fn}"
+                for fn in os.listdir(handoffs_dir)
+                if fn.endswith(".json")
+            )
+
+        budget_status = "HIGH" if total_chars > threshold else "OK"
+        result = {
+            "step_id": step_id,
+            "total_chars": total_chars,
+            "threshold": threshold,
+            "budget_status": budget_status,
+            "files": files_result,
+            "handoff_alternatives": handoff_alternatives,
+        }
+        if budget_status == "HIGH":
+            result["recommendation"] = (
+                f"Total prereq size {total_chars:,} chars exceeds {threshold:,} char threshold. "
+                f"Load state/handoffs/<dep_step>.json summaries instead of full documents."
+            )
+        print(json.dumps(result, indent=2))
+        sys.exit(2 if budget_status == "HIGH" else 0)
 
 
 if __name__ == "__main__":

@@ -56,6 +56,72 @@ Before generating any manuscript content, run these mandatory audits. BLOCK gene
 
 Generation proceeds only after all four audits pass. If any audit fails, output a structured failure report listing each violation and the specific fix required before re-running.
 
+---
+
+## Incremental Section Writing Protocol (Context Management)
+
+Write the manuscript **section by section in canonical order**. After writing each
+section, save it to disk and write a section handoff before starting the next section.
+This prevents holding more than one section's prose in active context at a time.
+
+### Section order and file targets
+
+| Order | Section | File |
+|-------|---------|------|
+| 1 | Abstract | `$PROJECT_DIR/manuscript/abstract.tex` |
+| 2 | Introduction | `$PROJECT_DIR/manuscript/introduction.tex` |
+| 3 | Methods | `$PROJECT_DIR/manuscript/methods.tex` |
+| 4 | Results | `$PROJECT_DIR/manuscript/results.tex` |
+| 5 | Discussion | `$PROJECT_DIR/manuscript/discussion.tex` |
+| 6 | Conclusion | `$PROJECT_DIR/manuscript/conclusion.tex` |
+
+### After writing each section
+
+Save the section to its file, then write a section handoff before loading context
+for the next section:
+
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-handoff \
+  produce-manuscript-<section_name> \
+  '{"key_outputs": {
+      "section":           "<section_name>",
+      "key_claims":        "Main claims made in this section (1-2 sentences)",
+      "numbers_used":      "Specific metrics/numbers cited in this section",
+      "forward_refs":      "Tables/figures this section references by label"
+    },
+    "summary": "...",
+    "critical_context": [
+      "Claim X supported by result Y (Table N)",
+      "Section ends with transition to <next_section>"
+    ],
+    "token_estimate": <int>}'
+```
+
+When writing section N+1, load the previous section's handoff
+(`state/handoffs/produce-manuscript-<prev>.json`) for cross-reference continuity
+rather than re-reading the full prior section prose.
+
+### Final manuscript handoff (write after all sections assembled)
+
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-handoff \
+  produce-manuscript \
+  '{"key_outputs": {
+      "sections_written":  "abstract, introduction, methods, results, discussion, conclusion",
+      "manuscript_path":   "manuscript/main.tex",
+      "figure_count":      "N figures in manuscript/figures/",
+      "claim_coverage":    "All N claims in claim-ledger.md have supporting evidence"
+    },
+    "summary": "...",
+    "critical_context": ["..."],
+    "token_estimate": <int>}'
+```
+
+The `manuscript/` required output and all completion contracts are **unchanged**.
+The incremental protocol is the preferred execution mode, not an additional gate.
+
+---
+
 ## Integration
 
 - **Primary skill**: `manuscript-production`

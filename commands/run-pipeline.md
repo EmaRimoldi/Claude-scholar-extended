@@ -48,7 +48,7 @@ If no flags are given, default to **interactive** mode starting from step 1 (or 
 3. **Create project folder structure** (if not already present):
    ```bash
    mkdir -p $PROJECT_DIR/{docs,configs,src,data,results/tables,results/figures,manuscript,logs,notebooks}
-   mkdir -p $PROJECT_DIR/state/step-results $PROJECT_DIR/state/gates
+   mkdir -p $PROJECT_DIR/state/step-results $PROJECT_DIR/state/gates $PROJECT_DIR/state/handoffs
    ```
 
 4. If `--status` was passed:
@@ -194,6 +194,28 @@ Use the AskUserQuestion tool for this confirmation.
 
 ### 5. Execute the step
 
+**Pre-execution: context budget check**
+
+Before marking a step as running, check whether its prerequisite files exceed the
+context budget threshold:
+
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR check-budget <step_id> \
+  > /tmp/budget-<step_id>.json
+BUDGET_EXIT=$?
+```
+
+- **Exit 0 (OK):** Load prerequisite files as full documents. Proceed normally.
+- **Exit 2 (HIGH — >100K chars):** Print `[BUDGET] Step <step_id>: prereqs exceed 100K chars — loading handoffs where available.`
+  - For each prerequisite step that has a handoff at `state/handoffs/<dep_step_id>.json`:
+    - Load the handoff JSON and pass its `summary` + `critical_context` as inline context.
+    - Log: `[HANDOFF] Loaded state/handoffs/<dep_step_id>.json (token_estimate: N) instead of full doc.`
+  - For prerequisites with no handoff file: load the full Markdown as normal, with a note.
+  - Available handoffs are listed in the `handoff_alternatives` field of the JSON output.
+
+The budget check is **advisory in interactive mode** and **enforced in auto mode**
+(auto mode must load handoffs rather than full docs when budget is HIGH).
+
 1. Mark the step as running:
    ```bash
    python scripts/pipeline_state.py start <step_id>
@@ -249,6 +271,32 @@ After each step completes, display a brief status line:
 [OK] Step N/38: <command> — completed
      Next: <next_command> — <next_description>
 ```
+
+**Optional handoff write** (strongly recommended for steps that produce large documents):
+
+If the completed step produced a document >50K chars, write a handoff immediately after
+`complete` succeeds. This allows downstream steps to load a compressed summary instead
+of the full document when the context budget is HIGH.
+
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-handoff <step_id> \
+  '{"key_outputs":   {"<field>": "<1-2 sentence value>", ...},
+    "summary":        "<1-3 sentence prose summary of what this step produced>",
+    "critical_context": ["<fact 1>", "<fact 2>", ...],
+    "token_estimate": <int — rough token count of the full output document>}'
+```
+
+**Steps that most benefit from handoffs** (write after every run):
+
+| Step | Key fields to include in `key_outputs` |
+|------|---------------------------------------|
+| `research-landscape` | `total_papers`, `clusters`, `top_gaps`, `tier1_papers` |
+| `cross-field-search` | `adjacent_fields`, `cross_field_gaps`, `key_papers` |
+| `formulate-hypotheses` | `hypotheses` (one line each), `primary_hypothesis` |
+| `design-experiments` | `conditions`, `baselines`, `metrics`, `total_runs` |
+| `analyze-results` | `primary_result`, `hypothesis_verdicts`, `key_numbers` |
+| `map-claims` | `claims` (one line each), `weakest_claim`, `evidence_gaps` |
+| `produce-manuscript` | `sections_written`, `manuscript_path`, `claim_coverage` |
 
 ### 8. Completion Contracts for High-Risk Steps
 
