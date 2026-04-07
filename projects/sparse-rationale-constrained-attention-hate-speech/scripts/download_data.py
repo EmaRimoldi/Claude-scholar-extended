@@ -87,15 +87,17 @@ def process_record(post_id: str, record: dict[str, Any]) -> dict[str, Any]:
     label_str = get_majority_label(label_strs)
     label = LABEL_MAP.get(label_str, 0)
 
-    # Per-annotator rationale masks
+    # Per-annotator rationale masks — stored at record top level, not inside annotators.
+    # Structure: record["rationales"] = [[ann1_mask], [ann2_mask], ...]
+    # "normal" posts have rationales=[] (no hate → no rationale needed).
+    rationales_raw = record.get("rationales", [])
     rationales = []
-    for ann in annotations:
-        rat = ann.get("rationale", [])
+    for rat in rationales_raw:
         if len(rat) == len(post_tokens):
             rationales.append([int(r) for r in rat])
         else:
             # Pad or truncate to match token count
-            rat_padded = (rat + [0] * len(post_tokens))[: len(post_tokens)]
+            rat_padded = (list(rat) + [0] * len(post_tokens))[: len(post_tokens)]
             rationales.append([int(r) for r in rat_padded])
 
     return {
