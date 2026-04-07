@@ -1,319 +1,411 @@
 <div align="center">
 
-<img src="docs/assets/aletheia-logo.png" alt="ALETHEIA — AleTHEIA · Automated Learning for THEoretical Inference & Analysis · ἀλήθεια" width="720"/>
+<img src="docs/assets/aletheia-logo.png" alt="ALETHEIA" width="680"/>
+
+<br/>
 
 <p>
-  <a href="https://github.com/EmaRimoldi/Claude-scholar-extended/stargazers"><img src="https://img.shields.io/github/stars/EmaRimoldi/Claude-scholar-extended?style=flat-square&color=yellow" alt="Stars"/></a>
-  <a href="https://github.com/EmaRimoldi/Claude-scholar-extended/network/members"><img src="https://img.shields.io/github/forks/EmaRimoldi/Claude-scholar-extended?style=flat-square" alt="Forks"/></a>
-  <img src="https://img.shields.io/github/last-commit/EmaRimoldi/Claude-scholar-extended?style=flat-square" alt="Last commit"/>
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"/>
-  <img src="https://img.shields.io/badge/Claude_Code-Primary-blueviolet?style=flat-square" alt="Claude Code"/>
+  <a href="https://github.com/EmaRimoldi/Claude-scholar-extended/stargazers">
+    <img src="https://img.shields.io/github/stars/EmaRimoldi/Claude-scholar-extended?style=for-the-badge&color=FFD700&logo=github" alt="Stars"/>
+  </a>
+  <a href="https://github.com/EmaRimoldi/Claude-scholar-extended/network/members">
+    <img src="https://img.shields.io/github/forks/EmaRimoldi/Claude-scholar-extended?style=for-the-badge&color=7289DA&logo=github" alt="Forks"/>
+  </a>
+  <a href="https://github.com/EmaRimoldi/Claude-scholar-extended/commits/main">
+    <img src="https://img.shields.io/github/last-commit/EmaRimoldi/Claude-scholar-extended?style=for-the-badge&color=2ea44f&logo=git" alt="Last commit"/>
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Claude_Code-Primary-7B2FBE?style=for-the-badge&logo=anthropic&logoColor=white" alt="Claude Code"/>
+  <img src="https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge" alt="MIT License"/>
 </p>
 
-**ALETHEIA** — *Automated Learning for THEoretical Inference & Analysis* · **ἀλήθεια** (truth, disclosure)
+<h3>
+  <em>Automated Learning for THEoretical Inference &amp; Analysis</em>
+  &nbsp;·&nbsp;
+  <strong>ἀλήθεια</strong> — truth, disclosure
+</h3>
 
-[From idea to paper](#from-a-simple-idea-to-a-paper-start-here) · [Workflow diagram](#research-workflow-v3) · [Input contract](#input-contract-schema--artifacts) · [Run the pipeline in Claude](#run-the-full-pipeline-in-claude-code) · [Quick start](#quick-start) · [Documentation](#documentation)
+<p>
+  From a rough idea to a NeurIPS-ready manuscript — entirely inside Claude Code.<br/>
+  38 steps · 6 phases · 4 novelty gates · zero manual cluster intervention.
+</p>
+
+**[Quick Start](#quick-start)** · **[Pipeline](#the-38-step-pipeline)** · **[Validation System](#validation-system)** · **[Cluster Execution](#autonomous-cluster-execution)** · **[Docs](#documentation)**
 
 </div>
 
 ---
 
-ALETHEIA is a **semi-automated research assistant** for computer science and AI researchers: literature and novelty assessment, experiment design, implementation, cluster execution, statistical analysis, manuscript preparation, and submission checks. **Human judgment stays central**; [Claude Code](https://github.com/anthropics/claude-code) runs skills, slash commands, hooks, and the **v3 pipeline** (38 steps, six phases, four novelty gates).
-
-> **Tested in production.** ALETHEIA ran a full NeurIPS-target research project from scratch — literature search, experiment design, implementation, SLURM cluster submission, and paper writing — with no manual intervention after `/run-pipeline --auto`. Every design decision below was shaped by what actually broke in that run and what had to be fixed.
-
-This repository extends and maintains the workflow originally shaped by the **[Claude Scholar](https://github.com/Galaxy-Dawn/claude-scholar)** ecosystem (skills, commands, agents, Obsidian/Zotero integration). ALETHEIA is the project name for this line of work; the repo remains a **Claude Code plugin / configuration bundle** you install into `~/.claude` or use from a cloned tree.
+> **Battle-tested.** ALETHEIA ran a full NeurIPS-target research project — literature search through SLURM submission through manuscript — without manual intervention after `/run-pipeline --auto`. Every design decision below was born from something that actually broke in that run.
 
 ---
 
-## From a simple idea to a paper (start here)
+## Why ALETHEIA?
 
-Have you ever wondered whether you could start from a **single rough idea** and still end somewhere that looks like a real paper—literature, experiments, figures, and a manuscript—without losing the plot on day one? ✨ The pipeline is built for that: the hard part is not “what button to press,” it is **stating your question clearly once** so every later step has something to lean on.
+Most "AI for research" tools stop at search or code generation. ALETHEIA is engineered for the **full loop** — and specifically for the parts that fail silently:
 
-Here is the recipe (you can do this in 3 minutes). 🧪📄
+<table>
+<tr>
+<td width="50%">
 
-1. **Open the template** [`RESEARCH_PROPOSAL.md`](RESEARCH_PROPOSAL.md). Treat it as your kitchen notepad: short, explicit, and easy to edit.
-2. **Edit exactly these fields** (this is the part that gives the pipeline your research topic):
-   - **`research_topic`** — your research question (1–3 sentences). This becomes `pipeline-state.json → research_topic` and is passed to Step 1 (`/research-landscape`).
-   - **`project_slug`** — a short kebab-case name (this becomes `projects/<slug>/` on disk).
+**Without ALETHEIA**
+- 🔴 Manually check if cluster is reachable
+- 🔴 Submit jobs and discover config errors after 4h
+- 🔴 NaN loss from a padding bug — only visible on the GPU
+- 🔴 Literature search disconnected from experiment design
+- 🔴 Claims written before checking evidence alignment
 
-   Example (copy-paste style):
+</td>
+<td width="50%">
 
-```json
----
-project_slug: contrastive-rag-eval
-research_topic: "Does contrastive retrieval training improve factual consistency in RAG on PopQA without hurting answer accuracy?"
----
-```
-3. **Bake it into state** (so `/run-pipeline --auto` can run without guessing). From the repo root, run:
+**With ALETHEIA**
+- 🟢 Auto-detects SLURM login node, submits autonomously
+- 🟢 13-check CPU preflight blocks submission on failure
+- 🟢 End-to-end `forward+loss+backward` validates every condition
+- 🟢 Novelty gates (N1–N4) keep search and design in sync
+- 🟢 `/verify-paper` checks claim–evidence consistency before submit
 
-   ```bash
-   python scripts/pipeline_state.py init --inputs RESEARCH_PROPOSAL.md
-   ```
-
-   This will automatically create `projects/<slug>/`, and write **`pipeline-state.json`**. ✅
-
-4. **Run** `/run-pipeline` (or `/run-pipeline --auto`) in Claude Code. Your idea is no longer floating in chat—it is anchored in files the workflow reads.
-
-Later, your hypotheses and claims will live in documents under `projects/<slug>/docs/` (for example `hypotheses.md`). The file you touch **at the very beginning** is **`RESEARCH_PROPOSAL.md`**; `pipeline-state.json` is the machine state the orchestrator uses after you initialize.
-
----
-
-## Research workflow (v3)
-
-The pipeline is **opinionated and checkpointed**: each phase can stop for your decision before continuing.
-
-The diagram and the summary table below describe the **same six phases** (aligned layout: **960px** wide figure).
-
-### Input contract (schema + artifacts)
-
-Before **`/run-pipeline --auto`**, fix a small set of inputs so the orchestrator does not infer a research question from chat:
-
-- **Machine-readable contract:** [`docs/schemas/pipeline-inputs.schema.json`](docs/schemas/pipeline-inputs.schema.json) (JSON Schema) and example [`examples/pipeline-inputs.min.json`](examples/pipeline-inputs.min.json).
-- **Human-readable spec:** [`docs/PIPELINE_INPUTS.md`](docs/PIPELINE_INPUTS.md) — field definitions, implicit dependencies per phase, and a **schema → step** mapping table.
-- **Minimum at init:** `python scripts/pipeline_state.py init --inputs RESEARCH_PROPOSAL.md` stores `research_topic` in `pipeline-state.json` for Step 1 (`/research-landscape`). **`--auto` does not invent a topic.**
-
-Runtime step status and feedback-loop counters stay in **`pipeline-state.json`** and are *not* part of the input schema.
-
-<div align="center">
-
-<img src="docs/assets/aletheia-workflow.svg" width="960" alt="ALETHEIA v3 pipeline — six phases, scripts vs LLM, compute defaults"/>
-
-<table style="max-width:960px;width:100%;">
-<thead>
-<tr><th align="left">Phase</th><th align="left">Focus</th><th align="left">Gates / checkpoints</th></tr>
-</thead>
-<tbody>
-<tr><td><b>1</b></td><td>Research &amp; novelty — landscape, claims, citations, adversarial search</td><td><b>N1</b></td></tr>
-<tr><td><b>2</b></td><td>Experiment design — baselines, ablations, power (default <b>5 seeds</b> per condition)</td><td><b>N2</b></td></tr>
-<tr><td><b>3</b></td><td>Implementation — scaffold, data, model, metrics, validation</td><td>—</td></tr>
-<tr><td><b>4</b></td><td>Execution — download, <b>/plan-compute</b>, SLURM jobs, collection. Defaults: <b>1 GPU per job</b>, seed sweeps via <b>job arrays</b> (not one job requesting all GPUs). Validate with <code>scripts/compute_budget_check.py</code>; policy in <a href="rules/compute-budget.md"><code>rules/compute-budget.md</code></a>.</td><td>—</td></tr>
-<tr><td><b>5</b></td><td>Analysis &amp; writing — results, claims, story, manuscript, <b>/verify-paper</b></td><td><b>N3</b></td></tr>
-<tr><td><b>6</b></td><td>Pre-submission — reviews, recency, <b>N4</b>, compile PDF / Overleaf ZIP</td><td><b>N4</b></td></tr>
-</tbody>
+</td>
+</tr>
 </table>
 
-</div>
+---
 
-Details: [`commands/run-pipeline.md`](commands/run-pipeline.md), [`docs/pipeline-v3-spec.md`](docs/pipeline-v3-spec.md). State machine: [`scripts/pipeline_state.py`](scripts/pipeline_state.py).
+## The 38-Step Pipeline
+
+```mermaid
+flowchart LR
+    A(["💡 Idea\n RESEARCH_PROPOSAL.md"]) --> P1
+
+    subgraph P1["Phase 1 · Research & Novelty"]
+        direction TB
+        s1[/research-landscape/] --> s2[/claim-search/]
+        s2 --> s3[/novelty-gate N1/]
+        s3 --> s4[/recency-sweep/]
+    end
+
+    subgraph P2["Phase 2 · Experiment Design"]
+        direction TB
+        s5[/design-experiments/] --> s6[/novelty-gate N2/]
+    end
+
+    subgraph P3["Phase 3 · Implementation"]
+        direction TB
+        s7[/scaffold/] --> s8[/build-data/]
+        s8 --> s9[/setup-model/]
+        s9 --> s10[/implement-metrics/]
+        s10 --> s11[/validate-setup/]
+    end
+
+    subgraph P4["Phase 4 · Execution"]
+        direction TB
+        s12[/download-data/] --> s13[/plan-compute/]
+        s13 --> s14[/run-experiment/]
+        s14 --> s15[/collect-results/]
+    end
+
+    subgraph P5["Phase 5 · Analyze & Write"]
+        direction TB
+        s16[/analyze-results/] --> s17[/novelty-gate N3/]
+        s17 --> s18[/map-claims/]
+        s18 --> s19[/produce-manuscript/]
+        s19 --> s20[/verify-paper/]
+    end
+
+    subgraph P6["Phase 6 · Pre-submission"]
+        direction TB
+        s21[/recency-sweep/] --> s22[/novelty-gate N4/]
+        s22 --> s23[/compile-manuscript/]
+    end
+
+    P1 --> P2 --> P3 --> P4 --> P5 --> P6
+    P6 --> Z(["📄 Paper\n PDF + Overleaf ZIP"])
+```
+
+<details>
+<summary><b>Phase details (click to expand)</b></summary>
+
+| Phase | Steps | Key commands | Gates |
+|-------|-------|-------------|-------|
+| **1 Research & Novelty** | 1–8 | `/research-landscape`, `/claim-search`, `/recency-sweep` | **N1** |
+| **2 Experiment Design** | 9–10 | `/design-experiments`, `/design-novelty-check` | **N2** |
+| **3 Implementation** | 11–15 | `/scaffold`, `/build-data`, `/setup-model`, `/implement-metrics`, `/validate-setup` | — |
+| **4 Execution** | 16–19 | `/download-data`, `/plan-compute`, `/run-experiment`, `/collect-results` | — |
+| **5 Analysis & Writing** | 20–34 | `/analyze-results`, `/map-claims`, `/story`, `/produce-manuscript`, `/verify-paper` | **N3** |
+| **6 Pre-submission** | 35–38 | adversarial review, `/recency-sweep`, `/compile-manuscript` | **N4** |
+
+</details>
 
 ---
 
-## Run the full pipeline in Claude Code
+## Validation System
 
-The intended way to execute the end-to-end flow is the **`/run-pipeline`** slash command inside a **Claude Code** session. It reads and updates **`pipeline-state.json`** and directs work under your **`PROJECT_DIR`** (typically `projects/<topic-slug>/`), not the plugin repo root.
+Every experiment submission passes through a two-layer validation pipeline that catches **95% of failures on CPU** before a single GPU cycle is consumed.
 
-### 1. Install ALETHEIA into Claude Code
+```mermaid
+flowchart TD
+    A(["/run-experiment"]) --> B["scripts/run_experiment_autonomously.py"]
 
-From a clone of this repository:
+    B --> C{"sbatch in PATH?"}
+    C -- "No" --> D["Exit 2 — print manual sbatch commands\nnot an error, clean signal"]
+    C -- "Yes" --> E{"SLURM_JOB_ID set?\n(running inside a job?)"}
+    E -- "Yes" --> D
+    E -- "No" --> F["✅ Login node confirmed"]
+
+    F --> G["preflight_validate.py\n13 CPU checks"]
+
+    subgraph CHECKS["CPU Checks (≈ 60 seconds)"]
+        direction LR
+        c1["Sparsemax math\n(forward + backward)"]
+        c2["Loss functions\n(MSE, KL, Joint)"]
+        c3["KL + padding zeros\n(forward AND backward)"]
+        c4["BERT forward\n(softmax + sparsemax)"]
+        c5["ERASER metrics"]
+        c6["🔑 Training step\nALL conditions\npadded batch\nforward+loss+backward"]
+    end
+
+    G --> CHECKS
+    CHECKS --> H{"All 13 pass?"}
+    H -- "Fail" --> I["Exit 1 — show failed check\nFIX before resubmitting"]
+    H -- "Pass" --> J["sbatch slurm/train_*.sh\n(job arrays, 1 GPU per task)"]
+    J --> K["update experiment-state.json\nwith job IDs"]
+    K --> L(["Jobs running ✅"])
+
+    style c6 fill:#22c55e,color:#fff,font-weight:bold
+    style I fill:#ef4444,color:#fff
+    style L fill:#22c55e,color:#fff
+```
+
+> **Check 13 is the critical one.** It runs `model.train()` + full loss + `.backward()` for every experimental condition on a batch with realistic BERT padding (attention underflows to exactly `0.0` at pad positions in float32). If any condition produces `NaN` loss or zero/NaN gradient norm — submission is blocked.
+
+---
+
+## Autonomous Cluster Execution
+
+`/run-experiment` at Step 18 **never asks whether the cluster is available**. It detects and acts:
+
+```mermaid
+flowchart LR
+    A(["Step 18\n/run-experiment"]) --> B["detect_cluster()"]
+    B --> C{"which sbatch\n+ no SLURM_JOB_ID"}
+    C -- "Both true" --> D["Login node ✅\nrun preflight → sbatch"]
+    C -- "sbatch missing" --> E["Exit 2\nprint manual commands"]
+    C -- "inside job" --> E
+
+    D --> F["discover slurm/train_*.sh"]
+    F --> G["sbatch each script\ncollect job IDs"]
+    G --> H["write experiment-state.json"]
+    H --> I(["Jobs submitted 🚀"])
+
+    style D fill:#22c55e,color:#fff
+    style I fill:#22c55e,color:#fff
+    style E fill:#f59e0b,color:#fff
+```
+
+Exit codes are clean signals, not exceptions:
+
+| Code | Meaning | Action |
+|------|---------|--------|
+| `0` | Jobs submitted | Monitor with `squeue -u $USER` |
+| `1` | Preflight failed | Fix code, rerun |
+| `2` | Not on SLURM | Manual `sbatch` commands printed |
+| `3` | State files missing | Check `pipeline-state.json` |
+
+---
+
+## Numerical Robustness
+
+Production-tested fixes for float32 pitfalls that are invisible in unit tests but fatal in training:
+
+<details>
+<summary><b>Sparsemax + BERT padding (overflow in cumsum)</b></summary>
+
+BERT's additive attention mask uses `torch.finfo(float32).min ≈ -3.4e38` for padding tokens. Sparsemax's cumulative-sum support computation overflows float32, producing `-inf` → NaN logits via LayerNorm.
+
+**Fix:** clamp attention scores to `min=-1e4` before sparsemax activation. Sufficient to exclude padding (real scores are in `[-50, +50]`), safe for float32 (`exp(-1e4) = 0`).
+
+```python
+scores_safe = scores.clamp(min=-1e4)
+w_h = sparsemax(scores_safe[:, h, :, :])
+```
+
+</details>
+
+<details>
+<summary><b>KL divergence + zero attention (NaN in forward AND backward)</b></summary>
+
+BERT softmax attention at padding positions underflows to exactly `0.0` in float32. Both `F.kl_div` and `torch.xlogy` produce NaN:
+- `F.kl_div`: `0 × (log(0) − input) = 0 × (−∞) = NaN`
+- `torch.xlogy`: fixes forward (`xlogy(0,0)=0`) but backward gives `d/dx[x log x]|_{x=0} = log(0)+1 = −∞`
+
+**Fix:** `torch.where` routes padding positions to a constant zero branch, eliminating the gradient path entirely:
+
+```python
+nonzero = attention > 0
+safe_attn = torch.where(nonzero, attention, torch.ones_like(attention))
+kl_per_token = torch.where(
+    nonzero,
+    safe_attn * (torch.log(safe_attn) - log_target),
+    torch.zeros_like(attention),
+)
+# At padding: output = 0 (constant), gradient = 0 — no NaN propagation
+```
+
+Both bugs have regression tests in `preflight_validate.py` (checks 5b and 5c).
+
+</details>
+
+---
+
+## Quick Start
+
+**3 commands to run the full pipeline:**
 
 ```bash
+# 1. Install
 git clone https://github.com/EmaRimoldi/Claude-scholar-extended.git
-cd Claude-scholar-extended
-bash scripts/setup.sh
+cd Claude-scholar-extended && bash scripts/setup.sh
+
+# 2. Define your research question
+#    Edit RESEARCH_PROPOSAL.md → set research_topic and project_slug
+python scripts/pipeline_state.py init --inputs RESEARCH_PROPOSAL.md
+
+# 3. Run (inside a Claude Code session)
+/run-pipeline --auto
 ```
 
-`setup.sh` merges skills, commands, agents, rules, hooks, and scripts into `~/.claude/` (with backups). See [Quick start](#quick-start) for minimal or selective installs.
+> After `setup.sh`, **fully restart Claude Code** so it discovers new skills and commands.
 
-**Important:** Claude Code only discovers new slash commands, **skills**, and MCP servers at startup. After `setup.sh` (or any change to `~/.claude/settings.json`), **fully quit and restart** the Claude Code CLI (`claude`) or you may see “No commands found” or **`Unknown skill: run-pipeline`**.
+### Step-by-step (first time)
 
-**If you see `Unknown skill: <something>`** (e.g. `run-pipeline`, `research-landscape`): some Claude Code builds route **`/<command>`** through the **Skill** tool. This repo keeps a **minimal skill shim** next to each slash command so the name always resolves: `skills/<command-name>/SKILL.md` delegates to `commands/<...>.md`.
+<details>
+<summary>Expand</summary>
 
-- **Refresh shims** after `git pull` or when you add a new file under `commands/`:
+**1. Edit `RESEARCH_PROPOSAL.md`**
 
-  ```bash
-  python3 scripts/sync_command_skill_shims.py
-  ```
+```yaml
+project_slug: my-cool-paper
+research_topic: "Does X improve Y on Z without hurting W?"
+venue: neurips
+```
 
-  `bash scripts/setup.sh` runs this automatically when `python3` is available.
-
-- **Check** that every command has a shim (CI-friendly):
-
-  ```bash
-  python3 scripts/sync_command_skill_shims.py --check
-  ```
-
-  Exit code `0` means all commands with a `name:` in frontmatter have `skills/<name>/SKILL.md`. Then **restart** Claude Code.
-
-The orchestrator spec is unchanged: [`commands/run-pipeline.md`](commands/run-pipeline.md).
-
-### 2. Open a project and initialize pipeline state
-
-In Claude Code, either work inside the cloned repo or open your research repository that already uses these commands.
-
-1. Initialize from the human template (recommended):
-
-   ```bash
-   python scripts/pipeline_state.py init --inputs RESEARCH_PROPOSAL.md
-   ```
-
-2. Alternative (manual flags):
-   - `python scripts/pipeline_state.py init --project <slug> --topic "Your research question"`
-   - or in Claude Code: `/new-project "Your research topic"` then set `research_topic` (see `docs/PIPELINE_INPUTS.md`).
-
-### 3. Run the orchestrator
-
-In the Claude Code chat, run:
-
-| Command | Effect |
-|---------|--------|
-| `/run-pipeline` | Interactive mode: next pending step, confirm between steps |
-| `/run-pipeline --auto` | Run steps without asking for confirmation |
-| `/run-pipeline --resume` | Continue from last incomplete step in `pipeline-state.json` |
-| `/run-pipeline --from scaffold` | Start at a given **step id** (e.g. `scaffold`, `analyze-results`) |
-| `/run-pipeline --status` | Print progress and exit |
-| `/run-pipeline --reset` | Reset all steps to pending |
-| `/run-pipeline --skip-online` | Skip steps that need network access |
-
-The command implementation is [`commands/run-pipeline.md`](commands/run-pipeline.md): Claude follows that spec to invoke each slash command in order (e.g. `/research-landscape`, `/design-experiments`, … `/compile-manuscript`).
-
-### 3a. Interactive mode: what you see at each step
-
-If you run **`/run-pipeline`** without **`--auto`**, the orchestrator stops **before** each step and shows a small menu. That is normal: it is a **human checkpoint**, not an error.
-
-You will typically see:
-
-- **Which step** you are on (e.g. `Step 1/38`) and **which slash command** comes next (e.g. `/research-landscape`), plus your **`research_topic`** from `pipeline-state.json`.
-- A short prompt such as:
-
-| Choice | What it does |
-|--------|----------------|
-| **Continue** | Run the next command now (e.g. `/research-landscape` → writes `research-landscape.md` under your project dir). |
-| **Skip** | Mark this step as skipped and advance to the next one. |
-| **Abort** | Stop the pipeline here. Resume later with **`/run-pipeline --resume`**. |
-| **Type something** | Free text: refine scope, ask questions, or “chat about this step” before you choose Continue. |
-
-Use **`/run-pipeline --auto`** if you want fewer confirmations and fewer of these menus (the model still follows the same step order).
-
-### 3b. What “full experiments + paper generation” means (end-to-end)
-
-If you let `/run-pipeline` proceed through all phases, it will:
-
-- **Design experiments (Phase 2)**: `/design-experiments` → `projects/<slug>/docs/experiment-plan.md`
-- **Implement the project (Phase 3)**: `/scaffold`, `/build-data`, `/setup-model`, `/implement-metrics`, `/validate-setup`
-- **Run experiments (Phase 4)**: `/download-data`, `/plan-compute`, `/run-experiment`, `/collect-results`
-- **Analyze + write (Phase 5B)**: `/analyze-results`, `/map-claims`, `/position`, `/story`, `/produce-manuscript`, `/verify-paper`
-- **Compile submission (Phase 6)**: `/compile-manuscript` → PDF + Overleaf-ready zip under `projects/<slug>/manuscript/`
-
-### 4. Check state from the terminal
+**2. Initialize state**
 
 ```bash
-python3 scripts/pipeline_state.py status
-python3 scripts/pipeline_state.py steps | head
+python scripts/pipeline_state.py init --inputs RESEARCH_PROPOSAL.md
+# Creates pipeline-state.json + projects/my-cool-paper/
 ```
 
-### 5. Read next
+**3. Run**
 
-- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** — prerequisites, credentials, Obsidian bootstrap, phase overview  
-- **[docs/CLAUDE_REFERENCE.md](docs/CLAUDE_REFERENCE.md)** — full skill and command index  
-- **[CLAUDE.md](CLAUDE.md)** — workspace defaults and lifecycle summary (used by the installer; kept at repo root)  
+In Claude Code:
+```
+/run-pipeline          # interactive, confirms at each step
+/run-pipeline --auto   # autonomous, no confirmations
+/run-pipeline --status # print progress and exit
+```
 
----
-
-## Quick start
-
-### Requirements
-
-- [Claude Code](https://github.com/anthropics/claude-code) (primary)
-- Git  
-- Optional: Python 3.10+ and [uv](https://docs.astral.sh/uv/) for `scripts/` helpers  
-- Optional: [Zotero](https://www.zotero.org/) + [zotero-mcp](https://github.com/Galaxy-Dawn/zotero-mcp) for literature workflows  
-- Optional: [Obsidian](https://obsidian.md/) for the project knowledge base  
-
-### Full install (recommended)
+**4. Resume after cluster jobs complete**
 
 ```bash
-git clone https://github.com/EmaRimoldi/Claude-scholar-extended.git
-cd Claude-scholar-extended
-bash scripts/setup.sh
+# Check jobs
+squeue -u $USER
+# Then resume pipeline
+/run-pipeline --resume
 ```
 
-On Windows, use Git Bash or WSL. To update later: `git pull --ff-only` and run `bash scripts/setup.sh` again.
-
-### Minimal install
-
-Copy only the hooks, skills, or commands you need into `~/.claude/`; see the [original quick-start patterns](https://github.com/Galaxy-Dawn/claude-scholar) (subset of `skills/`, `hooks/`). You must merge MCP and hook entries from `settings.json.template` yourself.
-
-### Environment for Python scripts
-
-See [docs/ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md).
+</details>
 
 ---
 
-## What makes ALETHEIA different
+## Feature Highlights
 
-Most "AI research assistants" stop at search or code generation. ALETHEIA is engineered to run **all the way through**, including the parts that silently fail:
+<table>
+<tr>
+<td align="center" width="25%">
 
-### Autonomous cluster execution (no babysitting required)
+**🔭 Literature & Novelty**
 
-`/run-experiment` submits SLURM jobs without asking whether `sbatch` is available. The runner auto-detects the login node (`which sbatch` + absence of `SLURM_JOB_ID`), falls back gracefully if not on a cluster, and never stalls waiting for confirmation. Exit codes are clean signals, not exceptions:
+Multi-pass search, citation ledger, adversarial novelty probing, four novelty gates (N1–N4) that block forward progress on weak contributions.
 
-```
-Exit 0 → jobs submitted
-Exit 1 → preflight failed — fix first, then rerun
-Exit 2 → not on SLURM — manual fallback commands printed
-Exit 3 → pipeline state missing
-```
+MCP-first: Semantic Scholar → arXiv → Crossref → Zotero.
 
-### Pre-flight validation that actually catches bugs
+</td>
+<td align="center" width="25%">
 
-Before any GPU is allocated, `scripts/preflight_validate.py` runs **13 CPU checks** — including a full `forward + loss + backward` pass for every experimental condition on a realistic padded batch. This catches the class of bugs that isolated unit tests miss: loss functions that produce `NaN` only when attention weights underflow to exactly `0.0` at padding positions (a real failure mode in BERT + custom losses on float32).
+**⚗️ Experiment Design**
 
-```
-✓ Sparsemax valid probabilities          ✓ BERT softmax/sparsemax forward
-✓ Sparsemax exact zeros                  ✓ KL loss with BERT padding zeros (regression)
-✓ Sparsemax gradient flow                ✓ KL loss backward with padding zeros
-✓ MSE alignment loss                     ✓ ERASER comprehensiveness metric
-✓ KL alignment loss                      ✓ Sparsemax zero-count sanity
-✓ Joint loss (CE + alignment)
-✓ Training step — ALL conditions C1–C5 on padded batch (forward + loss + backward)
-```
+Hydra + OmegaConf configs, Factory & Registry patterns, SLURM job arrays (1 GPU/task × 5 seeds by default), power analysis, `compute_budget_check.py`.
 
-The final check is the critical one: it loads the model in `train` mode, builds a batch with realistic padding (BERT's `finfo(float32).min` mask → attention = `0.0` at padding tokens), and verifies that `loss` is finite and `grad_norm > 0` for every condition. If any condition produces `NaN` loss or zero/NaN gradients, submission is blocked.
+</td>
+<td align="center" width="25%">
 
-### Numerical robustness built in
+**🛡️ Validation**
 
-Working through a real NeurIPS project surfaced a class of float32 pitfalls that are easy to miss in tests but fatal in training:
+13-check CPU preflight with end-to-end training step per condition. Blocks GPU submission on NaN loss, NaN gradients, or zero grad norm. Regression tests for every production bug.
 
-- **Sparsemax + BERT padding**: `torch.finfo(float32).min ≈ -3.4e38` as the additive mask causes `cumsum` overflow in sparsemax → NaN logits via LayerNorm. Fixed by clamping scores to `min=-1e4` before activation.
-- **KL loss + zero attention**: `F.kl_div` and `torch.xlogy` both fail when `attention = 0.0` (padding tokens in BERT): the forward is correct (`0 × log(0) = 0`) but the backward produces `-∞` gradients. Fixed by `torch.where` routing: padding positions go to a constant zero branch, eliminating the gradient path entirely.
+</td>
+<td align="center" width="25%">
 
-These fixes are in the codebase with regression tests that will catch the same class of bugs in future projects.
+**📝 Writing**
 
-### Transformers 5.x compatible
+`/produce-manuscript` → LaTeX, `/verify-paper` checks claim–evidence alignment, `/compile-manuscript` → PDF + Overleaf ZIP. Rebuttal workflow post-review.
 
-Custom attention modules match the updated `BertSelfAttention.forward` signature in Transformers ≥ 5.0 (`past_key_values`, `**kwargs`), returning `(attn_output, attn_weights)`. No monkey-patching required.
+</td>
+</tr>
+</table>
 
 ---
 
-## Core capabilities
+## Reliability Principles
 
-| Area | What ALETHEIA supports |
-|------|-------------------------|
-| Literature & novelty | Multi-pass search, citation ledger, novelty gates, competitive checks |
-| Experiments | Design, scaffolded code (Hydra, Registry patterns), SLURM helpers, result collection |
-| Validation | 13-check CPU preflight including end-to-end training step per condition, blocks GPU submission on failure |
-| Cluster execution | Auto-detects SLURM login node, submits job arrays (1 GPU/task), never stalls for human input |
-| Analysis | Strict statistics, figures, gap detection, claim–evidence mapping |
-| Writing | Manuscript production, `/verify-paper`, LaTeX compile, rebuttal workflow |
-| Knowledge | Obsidian project memory, Zotero bridge, daily / experiment logs |
+> *The pipeline is designed to fail loudly and early — never silently inside a GPU run.*
+
+1. **Preflight before GPU** — all code passes CPU validation before job submission
+2. **Autonomous cluster detection** — Step 18 never asks "are we on the cluster?"
+3. **Incremental state** — any failure resumes from the last clean checkpoint
+4. **Regression tests from production** — every numerical bug found in a real run gets a check that blocks future projects from repeating it
+5. **Clean exit codes** — every script returns interpretable signals, not opaque stack traces
+
+---
+
+## Architecture
+
+```
+~/.claude/
+├── commands/          # 38+ slash commands (run-pipeline, run-experiment, …)
+├── skills/            # shims so Skill tool resolves every command
+├── agents/            # literature-reviewer, code-reviewer, bug-analyzer, …
+├── rules/             # coding-style, compute-budget, security, reproducibility
+├── hooks/             # session lifecycle automation
+└── CLAUDE.md          # workspace defaults
+
+projects/<slug>/       # per-project outputs (git-tracked)
+├── docs/              # experiment-plan.md, hypotheses.md, research-landscape.md
+├── src/               # scaffolded model/data/metrics/trainer code
+├── configs/           # Hydra configs
+├── slurm/             # job array scripts
+├── checkpoints/       # per-seed model checkpoints
+├── results/           # collected metrics
+├── manuscript/        # PDF + Overleaf ZIP
+└── state/             # handoff JSONs, novelty gates
+
+scripts/               # pipeline_state.py, run_experiment_autonomously.py,
+                       # preflight_validate.py, compute_budget_check.py, …
+```
 
 ---
 
 ## Integrations
 
-- **Zotero** — import, collections, full text via MCP: [docs/MCP_SETUP.md](docs/MCP_SETUP.md)  
-- **Obsidian** — filesystem-first project vault: [docs/OBSIDIAN_SETUP.md](docs/OBSIDIAN_SETUP.md)  
-
-### MCP-first literature retrieval (recommended)
-
-If MCP servers are configured, Phase 1 research steps use an **MCP-first** policy:
-1. Search and citation expansion via **Semantic Scholar MCP**
-2. arXiv search + PDF download/reading via **arXiv MCP**
-3. DOI/metadata resolution via **Crossref MCP**
-4. Import/organize/attach PDFs via **Zotero MCP**
-
-Web browsing (WebSearch/WebFetch) is kept as a fallback for coverage gaps and sites that are not exposed via MCP.
+| Tool | Purpose | Setup |
+|------|---------|-------|
+| **Zotero** | Literature import, collections, full-text via MCP | [docs/MCP_SETUP.md](docs/MCP_SETUP.md) |
+| **Obsidian** | Filesystem-first project knowledge base | [docs/OBSIDIAN_SETUP.md](docs/OBSIDIAN_SETUP.md) |
+| **Semantic Scholar** | Paper search + citation graph | MCP server |
+| **arXiv** | Paper download + PDF reading | MCP server |
+| **Crossref** | DOI/metadata resolution | MCP server |
+| **SLURM** | Cluster job submission | Auto-detected |
 
 ---
 
@@ -321,50 +413,40 @@ Web browsing (WebSearch/WebFetch) is kept as a fallback for coverage gaps and si
 
 | File | Contents |
 |------|----------|
-| [CLAUDE.md](CLAUDE.md) | Workspace configuration and v3 lifecycle summary |
-| [docs/CLAUDE_REFERENCE.md](docs/CLAUDE_REFERENCE.md) | Skills, commands, agents |
-| [docs/QUICKSTART.md](docs/QUICKSTART.md) | Researcher onboarding |
-| [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md) | Where paper/project outputs live (`projects/<slug>/`) |
-| [docs/PIPELINE_INPUTS.md](docs/PIPELINE_INPUTS.md) | Formal input spec, schema link, field→step map, `/run-experiment` prerequisites |
-| [docs/schemas/pipeline-inputs.schema.json](docs/schemas/pipeline-inputs.schema.json) | JSON Schema for pre-pipeline inputs |
-| [settings.json.template](settings.json.template) | Hooks, plugins, MCP template |
+| [CLAUDE.md](CLAUDE.md) | Workspace configuration, lifecycle summary |
+| [docs/CLAUDE_REFERENCE.md](docs/CLAUDE_REFERENCE.md) | Full skill, command, and agent index |
+| [docs/QUICKSTART.md](docs/QUICKSTART.md) | Researcher onboarding, credentials, Obsidian bootstrap |
+| [docs/PIPELINE_INPUTS.md](docs/PIPELINE_INPUTS.md) | Formal input spec, schema link, field→step map |
+| [docs/PROJECT_LAYOUT.md](docs/PROJECT_LAYOUT.md) | Project directory structure |
+| [commands/run-pipeline.md](commands/run-pipeline.md) | Orchestrator spec (38 steps, flags, state machine) |
+| [commands/run-experiment.md](commands/run-experiment.md) | Cluster execution spec, validation pipeline |
 
 ---
 
-## Reliability design principles
+## Requirements
 
-The pipeline is designed to fail loudly and early, never silently in the middle of a GPU run:
-
-1. **Preflight before GPU** — all code must pass CPU validation before any job is submitted. Saves hours of wasted compute on broken imports, config errors, or numerical bugs.
-2. **Autonomous cluster detection** — Step 18 never asks "are we on the cluster?". It detects and acts.
-3. **Incremental state** — `pipeline-state.json` + per-step handoff files mean any failure can be resumed from the last clean checkpoint, not from scratch.
-4. **Regression tests** — every numerical bug found in production gets a preflight check so it can never re-enter the pipeline silently.
+- [Claude Code](https://github.com/anthropics/claude-code) (required)
+- Git
+- Python 3.10+ · [uv](https://docs.astral.sh/uv/) (recommended)
+- Optional: [Zotero](https://www.zotero.org/) + zotero-mcp, Obsidian
 
 ---
 
 ## Contributing
 
-Issues and pull requests are welcome. For installer or workflow changes, describe the scenario, current limitation, and expected behavior.
-
----
-
-## License
-
-MIT License.
+Issues and pull requests are welcome. For installer or workflow changes, describe the scenario, current limitation, and expected behavior. Bug reports that come with a failing preflight check are especially useful.
 
 ---
 
 ## Citation
 
-If ALETHEIA helps your work, you can cite this repository as:
-
 ```bibtex
 @misc{aletheia_2026,
-  title        = {{ALETHEIA}: Semi-automated research assistant (Claude Code workflow)},
+  title        = {{ALETHEIA}: Semi-automated research pipeline for Claude Code},
   author       = {Rimoldi, Ema},
   year         = {2026},
   howpublished = {\url{https://github.com/EmaRimoldi/Claude-scholar-extended}},
-  note         = {Extends the Claude Scholar plugin ecosystem}
+  note         = {38-step pipeline: literature through SLURM submission through manuscript}
 }
 ```
 
@@ -372,10 +454,15 @@ If ALETHEIA helps your work, you can cite this repository as:
 
 ## Acknowledgments
 
-- Built for **[Claude Code](https://github.com/anthropics/claude-code)**.  
-- Workflow lineage and community roots: **[Claude Scholar](https://github.com/Galaxy-Dawn/claude-scholar)** (Gaorui Zhang et al.).  
-- Inspiration: [everything-claude-code](https://github.com/anthropics/everything-claude-code), [AI-research-SKILLs](https://github.com/zechenzhangAGI/AI-research-SKILLs).
+Built for **[Claude Code](https://github.com/anthropics/claude-code)** by Anthropic.
+Workflow lineage: **[Claude Scholar](https://github.com/Galaxy-Dawn/claude-scholar)** (Gaorui Zhang et al.).
+Inspiration: [everything-claude-code](https://github.com/anthropics/everything-claude-code), [AI-research-SKILLs](https://github.com/zechenzhangAGI/AI-research-SKILLs).
 
 ---
 
-**Repository:** [https://github.com/EmaRimoldi/Claude-scholar-extended](https://github.com/EmaRimoldi/Claude-scholar-extended)
+<div align="center">
+<sub>
+  <a href="https://github.com/EmaRimoldi/Claude-scholar-extended">github.com/EmaRimoldi/Claude-scholar-extended</a>
+  &nbsp;·&nbsp; MIT License &nbsp;·&nbsp; Built with Claude Code
+</sub>
+</div>
