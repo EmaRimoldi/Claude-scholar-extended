@@ -153,7 +153,8 @@ def compute_plausibility(model, loader, device) -> dict:
             out = model(input_ids=iids, attention_mask=amask, token_type_ids=ttype)
             cls_attn = out.get("cls_attention")
             if cls_attn is None:
-                return {"plausibility_f1": None, "plausibility_iou": None}
+                # Match keys returned by compute_plausibility_metrics
+                return {"iou_f1": None, "token_precision": None, "token_recall": None, "token_f1": None}
             all_input_ids.append(iids.cpu())
             all_masks.append(amask.cpu())
             all_cls_attn.append(cls_attn.cpu())
@@ -249,7 +250,7 @@ def main():
 
             if eraser["comprehensiveness_aopc"] is not None:
                 cond_eraser.append(eraser)
-            if plaus.get("plausibility_f1") is not None:
+            if plaus.get("token_f1") is not None:
                 cond_plaus.append(plaus)
             if faith.get("adversarial_swap_delta") is not None:
                 cond_faith.append(faith)
@@ -271,16 +272,17 @@ def main():
             "comprehensiveness_aopc_std": std_or_none(cond_eraser, "comprehensiveness_aopc"),
             "sufficiency_aopc_mean": mean_or_none(cond_eraser, "sufficiency_aopc"),
             "sufficiency_aopc_std": std_or_none(cond_eraser, "sufficiency_aopc"),
-            "plausibility_f1_mean": mean_or_none(cond_plaus, "plausibility_f1"),
-            "plausibility_f1_std": std_or_none(cond_plaus, "plausibility_f1"),
+            "token_f1_mean": mean_or_none(cond_plaus, "token_f1"),
+            "token_f1_std": std_or_none(cond_plaus, "token_f1"),
             "adversarial_swap_delta_mean": mean_or_none(cond_faith, "adversarial_swap_delta"),
             "adversarial_swap_delta_std": std_or_none(cond_faith, "adversarial_swap_delta"),
         })
 
-    # Write CSVs
+    # Write CSVs — collect all keys first to handle variable keys across conditions
     if all_rows:
+        all_keys = list(dict.fromkeys(k for row in all_rows for k in row.keys()))
         with open(RESULTS_DIR / "interpretability_per_seed.csv", "w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=all_rows[0].keys())
+            w = csv.DictWriter(f, fieldnames=all_keys, extrasaction="ignore")
             w.writeheader(); w.writerows(all_rows)
         logger.info(f"Written: {RESULTS_DIR}/interpretability_per_seed.csv")
 
