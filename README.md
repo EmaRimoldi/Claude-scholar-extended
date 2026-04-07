@@ -20,6 +20,8 @@
 
 ALETHEIA is a **semi-automated research assistant** for computer science and AI researchers: literature and novelty assessment, experiment design, implementation, cluster execution, statistical analysis, manuscript preparation, and submission checks. **Human judgment stays central**; [Claude Code](https://github.com/anthropics/claude-code) runs skills, slash commands, hooks, and the **v3 pipeline** (38 steps, six phases, four novelty gates).
 
+> **Tested in production.** ALETHEIA ran a full NeurIPS-target research project from scratch — literature search, experiment design, implementation, SLURM cluster submission, and paper writing — with no manual intervention after `/run-pipeline --auto`. Every design decision below was shaped by what actually broke in that run and what had to be fixed.
+
 This repository extends and maintains the workflow originally shaped by the **[Claude Scholar](https://github.com/Galaxy-Dawn/claude-scholar)** ecosystem (skills, commands, agents, Obsidian/Zotero integration). ALETHEIA is the project name for this line of work; the repo remains a **Claude Code plugin / configuration bundle** you install into `~/.claude` or use from a cloned tree.
 
 ---
@@ -238,12 +240,60 @@ See [docs/ENVIRONMENT_SETUP.md](docs/ENVIRONMENT_SETUP.md).
 
 ---
 
+## What makes ALETHEIA different
+
+Most "AI research assistants" stop at search or code generation. ALETHEIA is engineered to run **all the way through**, including the parts that silently fail:
+
+### Autonomous cluster execution (no babysitting required)
+
+`/run-experiment` submits SLURM jobs without asking whether `sbatch` is available. The runner auto-detects the login node (`which sbatch` + absence of `SLURM_JOB_ID`), falls back gracefully if not on a cluster, and never stalls waiting for confirmation. Exit codes are clean signals, not exceptions:
+
+```
+Exit 0 → jobs submitted
+Exit 1 → preflight failed — fix first, then rerun
+Exit 2 → not on SLURM — manual fallback commands printed
+Exit 3 → pipeline state missing
+```
+
+### Pre-flight validation that actually catches bugs
+
+Before any GPU is allocated, `scripts/preflight_validate.py` runs **13 CPU checks** — including a full `forward + loss + backward` pass for every experimental condition on a realistic padded batch. This catches the class of bugs that isolated unit tests miss: loss functions that produce `NaN` only when attention weights underflow to exactly `0.0` at padding positions (a real failure mode in BERT + custom losses on float32).
+
+```
+✓ Sparsemax valid probabilities          ✓ BERT softmax/sparsemax forward
+✓ Sparsemax exact zeros                  ✓ KL loss with BERT padding zeros (regression)
+✓ Sparsemax gradient flow                ✓ KL loss backward with padding zeros
+✓ MSE alignment loss                     ✓ ERASER comprehensiveness metric
+✓ KL alignment loss                      ✓ Sparsemax zero-count sanity
+✓ Joint loss (CE + alignment)
+✓ Training step — ALL conditions C1–C5 on padded batch (forward + loss + backward)
+```
+
+The final check is the critical one: it loads the model in `train` mode, builds a batch with realistic padding (BERT's `finfo(float32).min` mask → attention = `0.0` at padding tokens), and verifies that `loss` is finite and `grad_norm > 0` for every condition. If any condition produces `NaN` loss or zero/NaN gradients, submission is blocked.
+
+### Numerical robustness built in
+
+Working through a real NeurIPS project surfaced a class of float32 pitfalls that are easy to miss in tests but fatal in training:
+
+- **Sparsemax + BERT padding**: `torch.finfo(float32).min ≈ -3.4e38` as the additive mask causes `cumsum` overflow in sparsemax → NaN logits via LayerNorm. Fixed by clamping scores to `min=-1e4` before activation.
+- **KL loss + zero attention**: `F.kl_div` and `torch.xlogy` both fail when `attention = 0.0` (padding tokens in BERT): the forward is correct (`0 × log(0) = 0`) but the backward produces `-∞` gradients. Fixed by `torch.where` routing: padding positions go to a constant zero branch, eliminating the gradient path entirely.
+
+These fixes are in the codebase with regression tests that will catch the same class of bugs in future projects.
+
+### Transformers 5.x compatible
+
+Custom attention modules match the updated `BertSelfAttention.forward` signature in Transformers ≥ 5.0 (`past_key_values`, `**kwargs`), returning `(attn_output, attn_weights)`. No monkey-patching required.
+
+---
+
 ## Core capabilities
 
 | Area | What ALETHEIA supports |
 |------|-------------------------|
 | Literature & novelty | Multi-pass search, citation ledger, novelty gates, competitive checks |
 | Experiments | Design, scaffolded code (Hydra, Registry patterns), SLURM helpers, result collection |
+| Validation | 13-check CPU preflight including end-to-end training step per condition, blocks GPU submission on failure |
+| Cluster execution | Auto-detects SLURM login node, submits job arrays (1 GPU/task), never stalls for human input |
 | Analysis | Strict statistics, figures, gap detection, claim–evidence mapping |
 | Writing | Manuscript production, `/verify-paper`, LaTeX compile, rebuttal workflow |
 | Knowledge | Obsidian project memory, Zotero bridge, daily / experiment logs |
@@ -278,6 +328,17 @@ Web browsing (WebSearch/WebFetch) is kept as a fallback for coverage gaps and si
 | [docs/PIPELINE_INPUTS.md](docs/PIPELINE_INPUTS.md) | Formal input spec, schema link, field→step map, `/run-experiment` prerequisites |
 | [docs/schemas/pipeline-inputs.schema.json](docs/schemas/pipeline-inputs.schema.json) | JSON Schema for pre-pipeline inputs |
 | [settings.json.template](settings.json.template) | Hooks, plugins, MCP template |
+
+---
+
+## Reliability design principles
+
+The pipeline is designed to fail loudly and early, never silently in the middle of a GPU run:
+
+1. **Preflight before GPU** — all code must pass CPU validation before any job is submitted. Saves hours of wasted compute on broken imports, config errors, or numerical bugs.
+2. **Autonomous cluster detection** — Step 18 never asks "are we on the cluster?". It detects and acts.
+3. **Incremental state** — `pipeline-state.json` + per-step handoff files mean any failure can be resumed from the last clean checkpoint, not from scratch.
+4. **Regression tests** — every numerical bug found in production gets a preflight check so it can never re-enter the pipeline silently.
 
 ---
 
