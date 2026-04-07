@@ -1,0 +1,61 @@
+\begin{thebibliography}{9}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Correia et~al.(2019)Correia, Niculae, and Martins]{correia2019adaptively}
+Gon{\c{c}}alo~M. Correia, Vlad Niculae, and Andr{\'e} F.~T. Martins.
+\newblock Adaptively sparse transformers.
+\newblock In \emph{Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP)}, 2019.
+\newblock arXiv:1909.00015.
+
+\bibitem[DeYoung et~al.(2020)DeYoung, Jain, Rajani, Lehman, Xiong, Socher, and Wallace]{deyoung2020eraser}
+Jay DeYoung, Sarthak Jain, Nazneen~Fatema Rajani, Eric Lehman, Caiming Xiong, Richard Socher, and Byron~C. Wallace.
+\newblock {ERASER}: A benchmark to evaluate rationalized {NLP} models.
+\newblock In \emph{Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL)}, 2020.
+\newblock arXiv:1911.03429.
+
+\bibitem[Eilertsen et~al.(2025)Eilertsen, Bj{\o}rgfinsd{\'o}ttir, Vargas, and Ramezani-Kebrya]{eilertsen2025aligning}
+Brage Eilertsen, R{\o}skva Bj{\o}rgfinsd{\'o}ttir, Francielle Vargas, and Ali Ramezani-Kebrya.
+\newblock Aligning attention with human rationales for self-explaining hate speech detection.
+\newblock In \emph{Proceedings of the AAAI Conference on Artificial Intelligence}, 2025.
+\newblock AAAI 2026; arXiv:2511.07065.
+
+\bibitem[Jacovi and Goldberg(2020)]{jacovi2020faithful}
+Alon Jacovi and Yoav Goldberg.
+\newblock Towards faithfully interpretable {NLP} systems: On the coherence of faithfulness.
+\newblock In \emph{Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL)}, 2020.
+
+\bibitem[Jain and Wallace(2019)]{jain2019attention}
+Sarthak Jain and Byron~C. Wallace.
+\newblock Attention is not explanation.
+\newblock In \emph{Proceedings of the 2019 Annual Conference of the North American Chapter of the Association for Computational Linguistics (NAACL)}, 2019.
+\newblock arXiv:1902.10186.
+
+\bibitem[Malaviya et~al.(2018)Malaviya, Ferreira, and Martins]{malaviya2018sparse}
+Chaitanya Malaviya, Pedro Ferreira, and Andr{\'e} F.~T. Martins.
+\newblock Sparse and constrained attention for neural machine translation.
+\newblock In \emph{Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (ACL)}, 2018.
+\newblock URL \url{https://aclanthology.org/P18-2059/}.
+
+\bibitem[Martins and Astudillo(2016)]{martins2016sparsemax}
+Andr{\'e} F.~T. Martins and Ram{\'o}n~Fernandez Astudillo.
+\newblock From softmax to sparsemax: A sparse model of attention and multi-label classification.
+\newblock In \emph{Proceedings of the 33rd International Conference on Machine Learning (ICML)}, 2016.
+\newblock arXiv:1602.02068.
+
+\bibitem[Mathew et~al.(2021)Mathew, Saha, Yimam, Biemann, Goyal, and Mukherjee]{mathew2021hatexplain}
+Binny Mathew, Punyajoy Saha, Seid~Muhie Yimam, Chris Biemann, Pawan Goyal, and Animesh Mukherjee.
+\newblock {HateXplain}: A benchmark dataset for explainable hate speech detection.
+\newblock In \emph{Proceedings of the AAAI Conference on Artificial Intelligence}, 2021.
+\newblock arXiv:2012.10289.
+
+\bibitem[Wiegreffe and Pinter(2019)]{wiegreffe2019attention}
+Sarah Wiegreffe and Yuval Pinter.
+\newblock Attention is not not explanation.
+\newblock In \emph{Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing (EMNLP)}, 2019.
+\newblock URL \url{https://aclanthology.org/D19-1002}.
+
+\end{thebibliography}
