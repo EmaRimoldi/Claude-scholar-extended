@@ -339,7 +339,24 @@ def main() -> None:
     parser.add_argument("--adversarial", default="", help="Path to adversarial-novelty-report.md")
     parser.add_argument("--concurrent", default="", help="Path to concurrent-work-report.md")
     parser.add_argument("--pipeline-state", default="", help="Path to pipeline-state.json")
-    parser.add_argument("--output", default="", help="Output path for kill-decision.json")
+    parser.add_argument("--output", default="", help="Output path for kill-decision.json (full verdict)")
+    parser.add_argument(
+        "--gate-output",
+        default="",
+        help="Output path for normalized gate decision artifact (gate-decision-v1 schema). "
+             "Intended for state/gates/<gate_id>.json. This is the PRIMARY routing source.",
+    )
+    parser.add_argument(
+        "--gate-id",
+        default="novelty-gate-n1",
+        help="Gate identifier embedded in the gate artifact (default: novelty-gate-n1).",
+    )
+    parser.add_argument(
+        "--generation",
+        type=int,
+        default=1,
+        help="Active generation number to embed in the gate artifact (default: 1).",
+    )
     parser.add_argument("--log-kill", action="store_true", help="Log a KILL decision and terminate pipeline (exit 1)")
     parser.add_argument("--override-kill", action="store_true", help="Override a KILL decision (human)")
     parser.add_argument("--human-override", action="store_true", help="Flag override as human-initiated (used with --override-kill for significance_collapse)")
@@ -396,8 +413,11 @@ def main() -> None:
         sys.exit(0)
 
     # Standard evaluation
-    if not args.output:
-        print("ERROR: --output required for evaluation mode", file=sys.stderr)
+    if not args.output and not args.gate_output:
+        print(
+            "ERROR: at least one of --output or --gate-output is required for evaluation mode",
+            file=sys.stderr,
+        )
         sys.exit(4)
 
     claim_overlap = parse_claim_overlap(Path(args.claim_overlap)) if args.claim_overlap else {}
@@ -410,16 +430,59 @@ def main() -> None:
             print(f"WARNING: {name}: {data['error']}", file=sys.stderr)
 
     verdict = evaluate_kill_criteria(claim_overlap, adversarial, concurrent, reposition_count)
-    verdict["inputs"] = {
-        "claim_overlap_summary": claim_overlap,
-        "adversarial_summary": adversarial,
-        "concurrent_summary": concurrent,
-        "reposition_count": reposition_count,
-    }
 
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(verdict, indent=2))
+    # Build inputs list for gate artifact
+    inputs_used = []
+    if args.claim_overlap:
+        inputs_used.append(args.claim_overlap)
+    if args.adversarial:
+        inputs_used.append(args.adversarial)
+    if args.concurrent:
+        inputs_used.append(args.concurrent)
+
+    # Build human-readable reason summary
+    if verdict["triggered_criteria"]:
+        reason_parts = [tc["description"] for tc in verdict["triggered_criteria"]]
+        reason = "; ".join(reason_parts)
+    elif verdict["warnings"]:
+        reason = "; ".join(verdict["warnings"])
+    else:
+        reason = "No kill criteria triggered. Novelty claim supported."
+
+    # Write full verdict to --output (human + downstream use)
+    if args.output:
+        verdict["inputs"] = {
+            "claim_overlap_summary": claim_overlap,
+            "adversarial_summary": adversarial,
+            "concurrent_summary": concurrent,
+            "reposition_count": reposition_count,
+        }
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(verdict, indent=2))
+        print(f"Full verdict written to {output_path}")
+
+    # Write normalized gate decision artifact to --gate-output (PRIMARY routing source)
+    if args.gate_output:
+        gate_artifact = {
+            "$schema": "gate-decision-v1",
+            "gate_id": args.gate_id,
+            "decision_type": "routing",
+            "decision": verdict["recommendation"],
+            "generation": args.generation,
+            "trigger_step": args.gate_id,
+            "reason": reason,
+            "inputs_used": inputs_used,
+            "validator_used": "kill_decision.py",
+            "kill_criteria_triggered": verdict["kill_criteria_triggered"],
+            "triggered_criteria": [tc["criterion"] for tc in verdict["triggered_criteria"]],
+            "warnings": verdict["warnings"],
+            "created_at": datetime.utcnow().isoformat() + "Z",
+        }
+        gate_path = Path(args.gate_output)
+        gate_path.parent.mkdir(parents=True, exist_ok=True)
+        gate_path.write_text(json.dumps(gate_artifact, indent=2))
+        print(f"Gate artifact written to {gate_path}")
 
     print(f"Kill decision: {verdict['recommendation']}")
     if verdict["triggered_criteria"]:
@@ -427,7 +490,6 @@ def main() -> None:
             print(f"  [TRIGGERED] {tc['criterion']}: {tc['description']}")
     for w in verdict["warnings"]:
         print(f"  [WARNING] {w}")
-    print(f"Output written to {output_path}")
 
     recommendation = verdict["recommendation"]
     if recommendation == "KILL":
@@ -437,6 +499,7 @@ def main() -> None:
     elif recommendation == "PIVOT":
         sys.exit(3)
     else:
+        # PROCEED or PROCEED_WITH_CAUTION
         sys.exit(0)
 
 

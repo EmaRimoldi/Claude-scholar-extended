@@ -38,17 +38,27 @@ If no flags are given, default to **interactive** mode starting from step 1 (or 
 
 2. **Resolve PROJECT_DIR**: Read `project_dir` from `pipeline-state.json`. This is the base directory for ALL research outputs. If `project_dir` is null (legacy state), ask the user for a project slug and run `python scripts/pipeline_state.py init --force --project <slug>` to set it.
 
+2a. **Load generation state**: Read the active generation from the generation manifest:
+    ```bash
+    GENERATION=$(python scripts/pipeline_state.py --dir $PROJECT_DIR get-generation 2>/dev/null || echo 1)
+    ```
+    Log: `[INIT] Active generation: $GENERATION`. If the generation manifest is absent
+    (`init` was run before Package 2), it will be created with generation 1 on the next `init`.
+
 3. **Create project folder structure** (if not already present):
    ```bash
    mkdir -p $PROJECT_DIR/{docs,configs,src,data,results/tables,results/figures,manuscript,logs,notebooks}
+   mkdir -p $PROJECT_DIR/state/step-results $PROJECT_DIR/state/gates
    ```
 
 4. If `--status` was passed:
    - Run `python scripts/pipeline_state.py status` and display the output.
+   - Also print active generation: `python scripts/pipeline_state.py --dir $PROJECT_DIR get-generation`.
    - Stop here.
 
 5. If `--reset` was passed:
    - Run `python scripts/pipeline_state.py reset`.
+   - **Note:** `reset` now also clears all loop counters (W5 fix). Generation manifest and decision log are preserved — use `new-generation` explicitly when intentionally starting a new generation context after reset.
    - Stop here.
 
 6. Create the logs directory for this run:
@@ -200,9 +210,26 @@ Use the AskUserQuestion tool for this confirmation.
 
 4. After the command completes:
    - If it succeeded (no errors, user is satisfied):
+
+     **For high-risk steps** (see Section 8), you MUST write a step-result artifact
+     BEFORE calling `complete`, or `complete` will fail closed and mark the step as
+     failed:
+     ```bash
+     python scripts/pipeline_state.py --dir $PROJECT_DIR write-step-result <step_id> \
+       '{"status":"completed","required_outputs":[...],"produced_outputs":[...],"validators_run":[...],"validator_status":"pass|not_run","decision":null,"notes":""}'
+     ```
+     Then:
+     ```bash
+     python scripts/pipeline_state.py --dir $PROJECT_DIR complete <step_id>
+     ```
+     If required output files or the step-result artifact are missing, `complete`
+     will exit 1, mark the step `failed`, and print the missing items.
+
+   - For non-high-risk steps, `complete` with no step-result is still accepted:
      ```bash
      python scripts/pipeline_state.py complete <step_id>
      ```
+
    - If it failed:
      ```bash
      python scripts/pipeline_state.py fail <step_id> --reason "<brief reason>"
@@ -223,6 +250,82 @@ After each step completes, display a brief status line:
      Next: <next_command> — <next_description>
 ```
 
+### 8. Completion Contracts for High-Risk Steps
+
+The following steps have **completion contracts**: required output files and a required
+step-result artifact. `pipeline_state.py complete` will fail closed (exit 1, mark step
+`failed`) if any contract is not met.
+
+The contracts are enforced automatically by `complete`. The orchestrator's responsibility
+is to (a) ensure the skill actually produced the outputs, and (b) write a step-result
+artifact before calling `complete`.
+
+| Step ID | Required Outputs | Validator Evidence | Step-Result Required |
+|---|---|---|---|
+| `formulate-hypotheses` | `docs/hypotheses.md` | none (structural) | Yes |
+| `novelty-gate-n1` | `docs/novelty-assessment.md`, `state/gates/novelty-gate-n1.json` | `kill_decision.py` → gate artifact | Yes |
+| `design-experiments` | `docs/experiment-plan.md` | none (structural) | Yes |
+| `analyze-results` | `state/execution-readiness.json` (ready_for_analysis=true), `docs/analysis-report.md`, `docs/hypothesis-outcomes.md` | `check_gates.py` → readiness artifact | Yes |
+| `map-claims` | `docs/claim-ledger.md` | none (structural) | Yes |
+| `produce-manuscript` | `manuscript/` (non-empty directory) | cross-section and claim-source validators run as separate inline steps | Yes |
+| `verify-paper` | `docs/paper-quality-report.md` | `/verify-paper` skill produces the report | Yes |
+
+#### Step-result templates for high-risk steps
+
+**`formulate-hypotheses`:**
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-step-result formulate-hypotheses \
+  '{"status":"completed","required_outputs":["docs/hypotheses.md"],"produced_outputs":["docs/hypotheses.md"],"validators_run":[],"validator_status":"not_run","decision":null,"notes":""}'
+```
+
+**`novelty-gate-n1`** (read `decision` from the gate artifact before writing):
+```bash
+GATE_DECISION=$(python3 -c "import json; print(json.load(open('$PROJECT_DIR/state/gates/novelty-gate-n1.json'))['decision'])")
+
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-step-result novelty-gate-n1 \
+  "{\"status\":\"completed\",\"required_outputs\":[\"docs/novelty-assessment.md\",\"state/gates/novelty-gate-n1.json\"],\"produced_outputs\":[\"docs/novelty-assessment.md\",\"docs/kill-decision.json\",\"state/gates/novelty-gate-n1.json\"],\"validators_run\":[\"kill_decision.py\"],\"validator_status\":\"pass\",\"decision\":\"$GATE_DECISION\",\"notes\":\"\"}"
+```
+
+**`design-experiments`:**
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-step-result design-experiments \
+  '{"status":"completed","required_outputs":["docs/experiment-plan.md"],"produced_outputs":["docs/experiment-plan.md"],"validators_run":[],"validator_status":"not_run","decision":null,"notes":""}'
+```
+
+**`analyze-results`:**
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-step-result analyze-results \
+  '{"status":"completed","required_outputs":["docs/analysis-report.md","docs/hypothesis-outcomes.md"],"produced_outputs":["docs/analysis-report.md","docs/hypothesis-outcomes.md"],"validators_run":[],"validator_status":"not_run","decision":null,"notes":""}'
+```
+
+**`map-claims`:**
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-step-result map-claims \
+  '{"status":"completed","required_outputs":["docs/claim-ledger.md"],"produced_outputs":["docs/claim-ledger.md"],"validators_run":[],"validator_status":"not_run","decision":null,"notes":""}'
+```
+
+**`produce-manuscript`:**
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-step-result produce-manuscript \
+  '{"status":"completed","required_outputs":["manuscript/"],"produced_outputs":["manuscript/"],"validators_run":[],"validator_status":"not_run","decision":null,"notes":"Validators (cross-section, claim-source) run as subsequent inline steps."}'
+```
+
+**`verify-paper`** (read decision from paper-quality-report.md before writing):
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-step-result verify-paper \
+  '{"status":"completed","required_outputs":["docs/paper-quality-report.md"],"produced_outputs":["docs/paper-quality-report.md"],"validators_run":["/verify-paper"],"validator_status":"pass","decision":"<PASS|REVISE — paste Overall Decision from paper-quality-report.md>","notes":""}'
+```
+
+**Fail-closed behavior:** If `complete` is called without the step-result artifact or with a
+missing required output, it will:
+1. Exit 1
+2. Mark the step as `failed` in `pipeline-state.json` with an explicit reason string
+3. Print `[FAIL-CLOSED]` with the list of missing items
+
+To diagnose: `python scripts/pipeline_state.py status` will show the step as `[!!]` with the failure reason.
+
+---
+
 ### 7. Gate Decision Reading and Loop Counter Management
 
 **This section defines how to handle all 7 feedback loops.** After every gate step, read the gate's structured output and route accordingly. Do not rely solely on exit codes — also read the recommendation field from the output file.
@@ -241,36 +344,197 @@ python scripts/pipeline_state.py increment-counter <field> --max <N>
 
 After Step 7 (`/novelty-gate gate=N1`) completes:
 
-1. Read `$PROJECT_DIR/docs/novelty-assessment.md` → look for `Decision: REPOSITION` or `Decision: PIVOT` or `Decision: KILL` or `Decision: PROCEED`.
-2. Also check the exit code of `scripts/kill_decision.py` (called inside `/novelty-gate`):
-   - Exit 0 → PROCEED
-   - Exit 1 → KILL (see Kill Decision below)
-   - Exit 2 → REPOSITION
-   - Exit 3 → PIVOT
+**Step 7a: Produce the authoritative gate artifact.**
 
-**If PROCEED:** Continue to Step 8.
+Read the active generation number, then invoke `kill_decision.py` explicitly to produce the structured gate artifact. This call is NOT optional — routing depends on it.
+
+```bash
+GENERATION=$(python scripts/pipeline_state.py --dir $PROJECT_DIR get-generation)
+
+python scripts/kill_decision.py \
+    --claim-overlap  $PROJECT_DIR/docs/claim-overlap-report.md \
+    --adversarial    $PROJECT_DIR/docs/adversarial-novelty-report.md \
+    --concurrent     $PROJECT_DIR/docs/concurrent-work-report.md \
+    --pipeline-state $PROJECT_DIR/pipeline-state.json \
+    --output         $PROJECT_DIR/docs/kill-decision.json \
+    --gate-output    $PROJECT_DIR/state/gates/novelty-gate-n1.json \
+    --gate-id        novelty-gate-n1 \
+    --generation     $GENERATION
+```
+
+The exit code is informational only. **Do not route from the exit code alone.**
+
+**Step 7b: Read the structured gate artifact (PRIMARY routing source).**
+
+Read `$PROJECT_DIR/state/gates/novelty-gate-n1.json` and parse the `decision` field.
+
+**If `state/gates/novelty-gate-n1.json` is absent or unparseable:**
+```
+[ERROR] Gate N1: state/gates/novelty-gate-n1.json is missing or malformed.
+        Do NOT proceed. Do NOT fall back to novelty-assessment.md prose matching.
+        Diagnose why kill_decision.py failed to write the gate artifact, then re-run Step 7a.
+```
+Halt in both interactive and auto modes.
+
+`docs/novelty-assessment.md` is preserved for **human inspection only**. It is not a routing source.
+
+**Step 7c: Route from `decision` field.**
+
+Valid values: `PROCEED`, `PROCEED_WITH_CAUTION`, `REPOSITION`, `PIVOT`, `KILL`.
+Any other value → treat as a malformed artifact: fail loud (same as absent artifact above).
+
+**If PROCEED or PROCEED_WITH_CAUTION:**
+
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR append-decision \
+  '{"step_id":"novelty-gate-n1","decision_type":"routing","decision":"PROCEED","reason":"No kill criteria triggered","inputs_used":["docs/claim-overlap-report.md","docs/adversarial-novelty-report.md","docs/concurrent-work-report.md"],"validator_used":"kill_decision.py","effect":"continue"}'
+```
+Continue to Step 8.
 
 **If REPOSITION:**
 ```bash
-python scripts/pipeline_state.py increment-counter reposition_count --max 2
+python scripts/pipeline_state.py --dir $PROJECT_DIR increment-counter reposition_count --max 2
 ```
-- Exit 0 (counter now 1 or 2, still within limit): Route back to Step 3. Re-execute Steps 3–7. Log: `[LOOP] Novelty gate N1: REPOSITION #N — routing to formulate-hypotheses.`
-- Exit 1 (counter reached max = 2): Do NOT loop again. Run:
+
+- **Exit 0** (counter within limit — loop allowed):
+
+  **Step R1: Create a new generation (generation transition).**
   ```bash
+  OLD_GEN=$(python scripts/pipeline_state.py --dir $PROJECT_DIR get-generation)
+
+  python scripts/pipeline_state.py --dir $PROJECT_DIR new-generation \
+    --trigger-reason "N1 REPOSITION #<current reposition_count value>" \
+    --rerun-from formulate-hypotheses \
+    --rerun-to   novelty-gate-n1
+
+  NEW_GEN=$(python scripts/pipeline_state.py --dir $PROJECT_DIR get-generation)
+  ```
+  Log: `[GEN] Generation $OLD_GEN → $NEW_GEN (N1 REPOSITION).`
+
+  **Step R2: Archive superseded docs from generation $OLD_GEN.**
+  Copy the docs produced in Steps 3–7 of generation $OLD_GEN to `archive/gen-$OLD_GEN/`.
+  Nothing is deleted; originals remain in place.
+  ```bash
+  ARCHIVE_DIR=$PROJECT_DIR/archive/gen-$OLD_GEN
+  mkdir -p $ARCHIVE_DIR/docs $ARCHIVE_DIR/state/gates
+
+  for f in hypotheses.md claim-overlap-report.md adversarial-novelty-report.md \
+            concurrent-work-report.md cross-field-report.md novelty-assessment.md \
+            kill-decision.json; do
+    [ -f "$PROJECT_DIR/docs/$f" ] && cp "$PROJECT_DIR/docs/$f" "$ARCHIVE_DIR/docs/$f"
+  done
+  [ -f "$PROJECT_DIR/state/gates/novelty-gate-n1.json" ] && \
+    cp "$PROJECT_DIR/state/gates/novelty-gate-n1.json" "$ARCHIVE_DIR/state/gates/novelty-gate-n1.json"
+
+  python scripts/pipeline_state.py --dir $PROJECT_DIR add-archive-path \
+    --generation $OLD_GEN "archive/gen-$OLD_GEN"
+  ```
+  Log: `[ARCHIVE] Generation $OLD_GEN docs archived to archive/gen-$OLD_GEN.`
+
+  **Step R3: Reset the rerun step range.**
+  ```bash
+  python scripts/pipeline_state.py --dir $PROJECT_DIR reset-range \
+    formulate-hypotheses novelty-gate-n1
+  ```
+  This marks Steps 3–7 as `pending` so `find_next_step()` will schedule them next.
+  Loop counters are NOT reset (generation handles lineage).
+
+  **Step R4: Log the loop decision with full lineage.**
+  ```bash
+  python scripts/pipeline_state.py --dir $PROJECT_DIR append-decision \
+    "{\"step_id\":\"novelty-gate-n1\",\"decision_type\":\"loop_increment\",\"decision\":\"REPOSITION\",\"generation\":$NEW_GEN,\"parent_generation\":$OLD_GEN,\"reason\":\"<paste reason from state/gates/novelty-gate-n1.json>\",\"inputs_used\":[\"docs/claim-overlap-report.md\",\"docs/adversarial-novelty-report.md\"],\"validator_used\":\"kill_decision.py\",\"effect\":{\"type\":\"rerun_range\",\"from_step\":\"formulate-hypotheses\",\"to_step\":\"novelty-gate-n1\",\"new_generation\":$NEW_GEN,\"archived\":\"archive/gen-$OLD_GEN\"}}"
+  ```
+  Log: `[LOOP] Novelty gate N1: REPOSITION — generation $OLD_GEN → $NEW_GEN, routing to formulate-hypotheses.`
+
+  Resume the pipeline loop. The next `find_next_step()` call will return `formulate-hypotheses`.
+
+- **Exit 1** (counter reached max = 2): Do NOT loop again. Run:
+  ```bash
+  python scripts/pipeline_state.py --dir $PROJECT_DIR append-decision \
+    '{"step_id":"novelty-gate-n1","decision_type":"kill","decision":"KILL","reason":"Gate N1 failed after 2 repositioning attempts","validator_used":"kill_decision.py","effect":"terminate"}'
+
   python scripts/kill_decision.py --log-kill --criterion failed_reposition \
     --project $PROJECT_DIR \
     --reason "Gate N1 failed after 2 repositioning attempts. No viable novel angle found."
   ```
-  Pipeline terminates (exit 1 from kill_decision.py). Log: `[KILL] Novelty gate N1: failed after 2 repositioning attempts.`
+  Log: `[KILL] Novelty gate N1: failed after 2 repositioning attempts.`
+  Pipeline terminates.
 
 **If PIVOT:**
 ```bash
-python scripts/pipeline_state.py increment-counter pivot_count --max 1
+python scripts/pipeline_state.py --dir $PROJECT_DIR increment-counter pivot_count --max 1
 ```
-- Exit 0 (first pivot): Route back to Step 1. Re-execute Steps 1–7. Log: `[LOOP] Novelty gate N1: PIVOT #1 — routing to research-landscape.`
-- Exit 1 (already pivoted once): Run `--log-kill --criterion failed_reposition`. Pipeline terminates.
 
-**If KILL:** Run `kill_decision.py --log-kill` and terminate immediately.
+- **Exit 0** (first pivot — loop allowed):
+
+  **Step P1: Create a new generation (generation transition).**
+  ```bash
+  OLD_GEN=$(python scripts/pipeline_state.py --dir $PROJECT_DIR get-generation)
+
+  python scripts/pipeline_state.py --dir $PROJECT_DIR new-generation \
+    --trigger-reason "N1 PIVOT #1" \
+    --rerun-from research-landscape \
+    --rerun-to   novelty-gate-n1
+
+  NEW_GEN=$(python scripts/pipeline_state.py --dir $PROJECT_DIR get-generation)
+  ```
+  Log: `[GEN] Generation $OLD_GEN → $NEW_GEN (N1 PIVOT).`
+
+  **Step P2: Archive superseded docs from generation $OLD_GEN.**
+  A pivot covers all of Phase 1 (Steps 1–7), so archive the full Phase 1 output:
+  ```bash
+  ARCHIVE_DIR=$PROJECT_DIR/archive/gen-$OLD_GEN
+  mkdir -p $ARCHIVE_DIR/docs $ARCHIVE_DIR/state/gates
+
+  for f in research-landscape.md cross-field-report.md hypotheses.md \
+            claim-overlap-report.md adversarial-novelty-report.md \
+            concurrent-work-report.md novelty-assessment.md kill-decision.json; do
+    [ -f "$PROJECT_DIR/docs/$f" ] && cp "$PROJECT_DIR/docs/$f" "$ARCHIVE_DIR/docs/$f"
+  done
+  [ -f "$PROJECT_DIR/state/gates/novelty-gate-n1.json" ] && \
+    cp "$PROJECT_DIR/state/gates/novelty-gate-n1.json" "$ARCHIVE_DIR/state/gates/novelty-gate-n1.json"
+
+  python scripts/pipeline_state.py --dir $PROJECT_DIR add-archive-path \
+    --generation $OLD_GEN "archive/gen-$OLD_GEN"
+  ```
+  Log: `[ARCHIVE] Generation $OLD_GEN docs archived to archive/gen-$OLD_GEN.`
+
+  **Step P3: Reset the rerun step range.**
+  ```bash
+  python scripts/pipeline_state.py --dir $PROJECT_DIR reset-range \
+    research-landscape novelty-gate-n1
+  ```
+
+  **Step P4: Log the loop decision with full lineage.**
+  ```bash
+  python scripts/pipeline_state.py --dir $PROJECT_DIR append-decision \
+    "{\"step_id\":\"novelty-gate-n1\",\"decision_type\":\"loop_increment\",\"decision\":\"PIVOT\",\"generation\":$NEW_GEN,\"parent_generation\":$OLD_GEN,\"reason\":\"<paste reason from state/gates/novelty-gate-n1.json>\",\"inputs_used\":[\"docs/claim-overlap-report.md\",\"docs/adversarial-novelty-report.md\"],\"validator_used\":\"kill_decision.py\",\"effect\":{\"type\":\"rerun_range\",\"from_step\":\"research-landscape\",\"to_step\":\"novelty-gate-n1\",\"new_generation\":$NEW_GEN,\"archived\":\"archive/gen-$OLD_GEN\"}}"
+  ```
+  Log: `[LOOP] Novelty gate N1: PIVOT — generation $OLD_GEN → $NEW_GEN, routing to research-landscape.`
+
+  Resume the pipeline loop. The next `find_next_step()` call will return `research-landscape`.
+
+- **Exit 1** (already pivoted once): Run:
+  ```bash
+  python scripts/pipeline_state.py --dir $PROJECT_DIR append-decision \
+    '{"step_id":"novelty-gate-n1","decision_type":"kill","decision":"KILL","reason":"Pivot limit reached after 1 pivot attempt","validator_used":"kill_decision.py","effect":"terminate"}'
+
+  python scripts/kill_decision.py --log-kill --criterion failed_reposition \
+    --project $PROJECT_DIR \
+    --reason "Gate N1 pivot limit reached. No viable novel angle after full pivot."
+  ```
+  Pipeline terminates.
+
+**If KILL:**
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR append-decision \
+  '{"step_id":"novelty-gate-n1","decision_type":"kill","decision":"KILL","reason":"<paste reason from gate artifact>","inputs_used":["docs/kill-decision.json"],"validator_used":"kill_decision.py","effect":"terminate"}'
+
+python scripts/kill_decision.py --log-kill \
+    --project $PROJECT_DIR \
+    --reason "<paste reason from state/gates/novelty-gate-n1.json reason field>"
+```
+Pipeline terminates immediately.
 
 ---
 
@@ -291,19 +555,89 @@ python scripts/pipeline_state.py increment-counter design_novelty_loops --max 2
 
 ---
 
+#### Execution Readiness Boundary (Step 19 → Step 20)
+
+This is a hard gate — not a loop. It prevents `analyze-results` from starting unless
+all execution runs completed cleanly. The boundary has two parts: produce the readiness
+artifact at the end of Step 19, then check it before Step 20 begins.
+
+**At the end of Step 19 (`collect-results`):**
+
+After the `/collect-results` skill completes, run the execution gate checker and emit the
+durable readiness artifact:
+
+```bash
+GENERATION=$(python scripts/pipeline_state.py --dir $PROJECT_DIR get-generation)
+
+python scripts/check_gates.py \
+    --experiment-state  $PROJECT_DIR/experiment-state.json \
+    --results-dir       $PROJECT_DIR/results/ \
+    --output-json       $PROJECT_DIR/state/execution-readiness.json \
+    --generation        $GENERATION
+# Exit code is informational. The readiness artifact is the authoritative source.
+```
+
+Then write the step-result and mark Step 19 complete normally:
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR write-step-result collect-results \
+  '{"status":"completed","required_outputs":[],"produced_outputs":["state/execution-readiness.json"],"validators_run":["check_gates.py"],"validator_status":"pass","decision":null,"notes":""}'
+
+python scripts/pipeline_state.py --dir $PROJECT_DIR complete collect-results
+```
+
+**Before Step 20 (`analyze-results`) starts:**
+
+Check readiness before invoking `/analyze-results`. This is a hard block in both
+interactive and auto modes:
+
+```bash
+python scripts/pipeline_state.py --dir $PROJECT_DIR check-readiness
+```
+
+- **Exit 0** (`[READY]`): Proceed to invoke `/analyze-results`.
+- **Exit 1** (`[BLOCK]`): Do NOT start Step 20.
+  - The artifact at `$PROJECT_DIR/state/execution-readiness.json` contains the exact
+    blocking reason and counts.
+  - In **interactive** mode: display the blocking reason and ask the user:
+    **Retry collection**, **Force-proceed** (exceptional override), or **Abort**.
+    Force-proceed requires explicit user confirmation and logs a warning.
+  - In **auto** mode: log `[BLOCK] analyze-results blocked — execution not ready.
+    See state/execution-readiness.json.` and stop the pipeline.
+  - **Do NOT fall back to running analysis on partial results.**
+
+If `state/execution-readiness.json` is absent entirely (e.g., `check_gates.py` was not
+called at the end of Step 19), `check-readiness` will also exit 1 with a clear message.
+This satisfies the `REQUIRED_OUTPUTS` contract for `analyze-results` (the artifact must
+exist for `complete` to succeed anyway).
+
+---
+
 #### Loop 1: Gap Detection (Step 21 → Step 9)
+
+> **Status [P] — prose routing, generation lineage deferred.** This loop routes from a Markdown
+> field (`critical_gaps_found: true` in `gap-detection-report.md`). It does not yet create a new
+> generation or archive superseded state when looping back. Upgrade to structured lineage is deferred.
 
 Step 21 is an inline orchestrator sub-task. After running it:
 
-1. Check `$PROJECT_DIR/gap-detection-report.md` for `critical_gaps_found: true` or presence of any CRITICAL severity gap entries.
+1. Check `$PROJECT_DIR/docs/gap-detection-report.md` for `critical_gaps_found: true` or presence of any CRITICAL severity gap entries.
 
 **If no critical gaps:** Continue to Step 22.
 
 **If critical gaps found:**
 ```bash
-python scripts/pipeline_state.py increment-counter gap_detection_loops --max 2
+python scripts/pipeline_state.py --dir $PROJECT_DIR increment-counter gap_detection_loops --max 2
 ```
-- Exit 0: Route back to Step 9. Re-execute Steps 9–21. Log: `[LOOP] Gap detection: critical gaps found, loop #N — routing to design-experiments.`
+- Exit 0: Log the loop decision:
+  ```bash
+  python scripts/pipeline_state.py --dir $PROJECT_DIR append-decision \
+    '{"step_id":"gap-detection","decision_type":"loop_increment","decision":"LOOP","reason":"Critical gaps found","validator_used":"prose","effect":"rerun_range: design-experiments -> gap-detection"}'
+  ```
+  Route back to Step 9. Reset the range and re-execute Steps 9–21:
+  ```bash
+  python scripts/pipeline_state.py --dir $PROJECT_DIR reset-range design-experiments gap-detection
+  ```
+  Log: `[LOOP] Gap detection: critical gaps found, loop #N — routing to design-experiments.`
 - Exit 1: Do NOT loop. Continue forward with gaps noted as limitations. Log: `[WARN] Gap detection triggered 2 loops. Proceeding with current evidence; remaining gaps documented as limitations.`
 
 ---
@@ -362,27 +696,42 @@ python scripts/pipeline_state.py increment-counter adversarial_review_cycles --m
 
 ---
 
-**Kill decision (any gate, any loop):** If `kill_decision.py` exits 1 (KILL) at any point:
-1. Print: `[KILL] Project terminated at step N. Reason: <reason>. Artifacts preserved in $PROJECT_DIR.`
-2. Run `python scripts/pipeline_state.py status` and display.
-3. Print: `Human override: python scripts/kill_decision.py --override-kill --human-override --project $PROJECT_DIR --justification "..."`
-4. Stop pipeline execution.
+**Kill decision (any gate, any loop):**
+
+For the N1 gate, the kill is signalled by `decision: "KILL"` in `state/gates/novelty-gate-n1.json`
+(the authoritative source — see Section 7 Loop 0). For other gates that have not yet been
+upgraded to structured routing, a `kill_decision.py` exit 1 serves as the signal.
+
+When a KILL is reached:
+1. Append a kill decision record to the decision log:
+   ```bash
+   python scripts/pipeline_state.py --dir $PROJECT_DIR append-decision \
+     '{"step_id":"<gate_step>","decision_type":"kill","decision":"KILL","reason":"<reason>","validator_used":"kill_decision.py","effect":"terminate"}'
+   ```
+2. Print: `[KILL] Project terminated at step N. Reason: <reason>. Artifacts preserved in $PROJECT_DIR.`
+3. Run `python scripts/pipeline_state.py status` and display.
+4. Print: `Human override: python scripts/kill_decision.py --override-kill --human-override --project $PROJECT_DIR --justification "..."`
+5. Stop pipeline execution.
 
 ## Feedback Loop Routing Reference
 
 Summary table for quick reference. For full logic, see "Gate Decision Reading" section above.
 
-| Loop | Counter field | Trigger step | Target | Max | Termination on exceed |
-|------|--------------|-------------|--------|-----|----------------------|
-| N1 REPOSITION | `reposition_count` | Step 7 | Step 3 | 2 | `kill_decision.py --criterion failed_reposition` |
-| N1 PIVOT | `pivot_count` | Step 7 | Step 1 | 1 | `kill_decision.py --criterion failed_reposition` |
-| N2 Design-Novelty | `design_novelty_loops` | Step 10 | Step 9 | 2 | Halt, human review required |
-| Gap Detection | `gap_detection_loops` | Step 21 | Step 9 | 2 | Continue with gaps as limitations |
-| Narrative Gap | `narrative_gap_loops` | Step 29 | Step 20 or 9 | 2 | Continue with gaps as limitations |
-| Phase 5B Revision | `verify_paper_cycle` | Step 34 | Steps 26–33 | 3 | CRITICAL→escalate; MAJOR→cover letter |
-| Adversarial Review | `adversarial_review_cycles` | Step 35 | varies | 2 | Continue with weaknesses documented |
+**Upgrade status:**
+- **[S]** = Structured routing: routes from `state/gates/<gate>.json` (Package 3); loop-back creates new generation, archives superseded docs, calls `reset-range` (Package 4); decision logged (Package 2).
+- **[P]** = Prose routing: routes from LLM-interpreted Markdown. Fragility risk. Upgrade deferred.
 
-**Kill decision:** If `kill_decision.py` exits 1 (KILL) at any point, the pipeline terminates. Human override: `python scripts/kill_decision.py --override-kill --human-override --project $PROJECT_DIR --justification "..."`
+| Loop | Counter field | Trigger step | Target | Max | Termination on exceed | Status |
+|------|--------------|-------------|--------|-----|----------------------|--------|
+| N1 REPOSITION | `reposition_count` | Step 7 | Step 3 | 2 | `kill_decision.py --criterion failed_reposition` | **[S]** |
+| N1 PIVOT | `pivot_count` | Step 7 | Step 1 | 1 | `kill_decision.py --criterion failed_reposition` | **[S]** |
+| N2 Design-Novelty | `design_novelty_loops` | Step 10 | Step 9 | 2 | Halt, human review required | **[P]** deferred |
+| Gap Detection | `gap_detection_loops` | Step 21 | Step 9 | 2 | Continue with gaps as limitations | **[P]** deferred |
+| Narrative Gap | `narrative_gap_loops` | Step 29 | Step 20 or 9 | 2 | Continue with gaps as limitations | **[P]** deferred |
+| Phase 5B Revision | `verify_paper_cycle` | Step 34 | Steps 26–33 | 3 | CRITICAL→escalate; MAJOR→cover letter | **[P]** deferred |
+| Adversarial Review | `adversarial_review_cycles` | Step 35 | varies | 2 | Continue with weaknesses documented | **[P]** deferred |
+
+**Kill decision:** See "Kill decision" section above. N1 kill is routed from `state/gates/novelty-gate-n1.json`; other gate kills are routed from `kill_decision.py` exit codes until upgraded.
 
 ## Pipeline Completion
 

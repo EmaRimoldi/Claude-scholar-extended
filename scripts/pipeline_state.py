@@ -14,6 +14,14 @@ Usage:
     python pipeline_state.py fail <step_id> [--reason REASON]
     python pipeline_state.py next
     python pipeline_state.py reset
+    python pipeline_state.py reset-range <from_step_id> <to_step_id>
+    python pipeline_state.py get-generation
+    python pipeline_state.py set-generation <N>
+    python pipeline_state.py new-generation --trigger-reason REASON [--rerun-from STEP] [--rerun-to STEP]
+    python pipeline_state.py write-step-result <step_id> <json_string_or_@file>
+    python pipeline_state.py append-decision <json_string_or_@file>
+    python pipeline_state.py add-archive-path <path> [--generation N]
+    python pipeline_state.py check-readiness
 """
 
 import sys
@@ -30,6 +38,7 @@ from pathlib import Path
 from typing import Optional
 
 STATE_FILE = "pipeline-state.json"
+STATE_DIR = "state"
 DEFAULT_INPUTS_FILE = "RESEARCH_PROPOSAL.md"
 
 # Default project directory structure created for each project.
@@ -316,6 +325,88 @@ PIPELINE_STEPS = [
     ),
 ]
 
+# ---------------------------------------------------------------------------
+# Package 5: Completion contracts for high-risk steps
+# ---------------------------------------------------------------------------
+#
+# REQUIRED_OUTPUTS: files that MUST exist (relative to --dir / project_dir)
+# before a step can be marked `completed`.  Paths ending with "/" are treated
+# as directory-existence + non-empty checks.
+#
+# STEP_RESULT_REQUIRED: steps that additionally require a written step-result
+# artifact (state/step-results/<step_id>.json) before completion is valid.
+# ---------------------------------------------------------------------------
+
+REQUIRED_OUTPUTS: dict = {
+    "formulate-hypotheses": [
+        "docs/hypotheses.md",
+    ],
+    "novelty-gate-n1": [
+        "docs/novelty-assessment.md",
+        "state/gates/novelty-gate-n1.json",
+    ],
+    "design-experiments": [
+        "docs/experiment-plan.md",
+    ],
+    "analyze-results": [
+        "state/execution-readiness.json",   # Package 6: readiness gate (ready_for_analysis must be true)
+        "docs/analysis-report.md",
+        "docs/hypothesis-outcomes.md",
+    ],
+    "map-claims": [
+        "docs/claim-ledger.md",
+    ],
+    "produce-manuscript": [
+        "manuscript/",            # directory must exist and be non-empty
+    ],
+    "verify-paper": [
+        "docs/paper-quality-report.md",
+    ],
+}
+
+# Steps that require a step-result artifact written by the orchestrator before
+# `complete` will succeed.  All high-risk steps require this.
+STEP_RESULT_REQUIRED: frozenset = frozenset(REQUIRED_OUTPUTS.keys())
+
+
+def _check_required_output(project_dir: str, rel_path: str) -> bool:
+    """
+    Return True if the required output exists and (for directories) is non-empty.
+    Paths ending with '/' are treated as directory checks.
+    """
+    full = os.path.join(project_dir, rel_path.rstrip("/"))
+    if rel_path.endswith("/"):
+        return os.path.isdir(full) and bool(os.listdir(full))
+    return os.path.isfile(full)
+
+
+def check_completion_contracts(
+    project_dir: str,
+    step_id: str,
+) -> list:
+    """
+    Validate completion contracts for a high-risk step.
+    Returns a list of failure reason strings.  Empty list means all clear.
+    """
+    failures: list = []
+
+    # 1. Required output files
+    for req in REQUIRED_OUTPUTS.get(step_id, []):
+        if not _check_required_output(project_dir, req):
+            failures.append(f"required output missing: {req}")
+
+    # 2. Step-result artifact
+    if step_id in STEP_RESULT_REQUIRED:
+        result_path = _step_result_path(project_dir, step_id)
+        if not os.path.exists(result_path):
+            failures.append(
+                f"step-result artifact missing: state/step-results/{step_id}.json "
+                f"(write it first with: python scripts/pipeline_state.py write-step-result {step_id} '{{...}}')"
+            )
+
+    return failures
+
+
 # Loop counter fields tracked in pipeline-state.json.
 # These are incremented by the orchestrator when a feedback loop fires.
 LOOP_COUNTERS = {
@@ -331,6 +422,197 @@ LOOP_COUNTERS = {
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+# ---------------------------------------------------------------------------
+# Package 2: State directory helpers
+# ---------------------------------------------------------------------------
+
+def get_state_dir(project_dir: str) -> str:
+    """Return the absolute path of the state/ subdirectory."""
+    return os.path.join(project_dir, STATE_DIR)
+
+
+def _ensure_state_dir(project_dir: str) -> str:
+    """Create state/ and state/step-results/ if needed; return state dir path."""
+    state_dir = get_state_dir(project_dir)
+    os.makedirs(os.path.join(state_dir, "step-results"), exist_ok=True)
+    return state_dir
+
+
+# --- Generation manifest ---
+
+def _generation_manifest_path(project_dir: str) -> str:
+    return os.path.join(get_state_dir(project_dir), "generation-manifest.json")
+
+
+def load_generation_manifest(project_dir: str) -> dict:
+    """Load state/generation-manifest.json; return {} if absent."""
+    path = _generation_manifest_path(project_dir)
+    if not os.path.exists(path):
+        return {}
+    with open(path, "r") as f:
+        return json.load(f)
+
+
+def save_generation_manifest(project_dir: str, manifest: dict) -> None:
+    _ensure_state_dir(project_dir)
+    path = _generation_manifest_path(project_dir)
+    with open(path, "w") as f:
+        json.dump(manifest, f, indent=2)
+
+
+def init_generation_manifest(project_dir: str) -> dict:
+    """Create generation-manifest.json with generation 1 as the active entry."""
+    manifest = {
+        "$schema": "generation-manifest-v1",
+        "active_generation": 1,
+        "generations": [
+            {
+                "generation_id": 1,
+                "parent_generation": None,
+                "trigger_reason": "initial run",
+                "created_at": now_iso(),
+                "active": True,
+                "rerun_range": None,
+                "archived_paths": [],
+            }
+        ],
+    }
+    save_generation_manifest(project_dir, manifest)
+    return manifest
+
+
+def get_active_generation(project_dir: str) -> int:
+    """Return active_generation from the manifest; return 1 if manifest is absent."""
+    manifest = load_generation_manifest(project_dir)
+    return int(manifest.get("active_generation", 1))
+
+
+def set_active_generation(project_dir: str, generation: int) -> None:
+    """Write active_generation to the manifest (creating it if absent)."""
+    manifest = load_generation_manifest(project_dir)
+    if not manifest:
+        manifest = init_generation_manifest(project_dir)
+    manifest["active_generation"] = generation
+    # Mark all generations active/inactive based on new active id
+    for entry in manifest.get("generations", []):
+        entry["active"] = (entry["generation_id"] == generation)
+    save_generation_manifest(project_dir, manifest)
+
+
+def new_generation(
+    project_dir: str,
+    trigger_reason: str,
+    rerun_from: Optional[str] = None,
+    rerun_to: Optional[str] = None,
+) -> int:
+    """
+    Append a new generation entry to the manifest and activate it.
+    Returns the new generation_id.
+    """
+    manifest = load_generation_manifest(project_dir)
+    if not manifest:
+        manifest = init_generation_manifest(project_dir)
+
+    current_gen = int(manifest.get("active_generation", 1))
+    new_gen_id = current_gen + 1
+
+    rerun_range = None
+    if rerun_from or rerun_to:
+        rerun_range = {
+            "from_step": rerun_from,
+            "to_step": rerun_to,
+        }
+
+    new_entry = {
+        "generation_id": new_gen_id,
+        "parent_generation": current_gen,
+        "trigger_reason": trigger_reason,
+        "created_at": now_iso(),
+        "active": True,
+        "rerun_range": rerun_range,
+        "archived_paths": [],
+    }
+
+    # Mark all previous generations inactive
+    for entry in manifest.get("generations", []):
+        entry["active"] = False
+
+    manifest["active_generation"] = new_gen_id
+    manifest["generations"].append(new_entry)
+    save_generation_manifest(project_dir, manifest)
+    return new_gen_id
+
+
+# --- Decision log ---
+
+def _decision_log_path(project_dir: str) -> str:
+    return os.path.join(get_state_dir(project_dir), "decision-log.jsonl")
+
+
+def append_decision_record(project_dir: str, record: dict) -> None:
+    """Append one JSON line to state/decision-log.jsonl."""
+    _ensure_state_dir(project_dir)
+    path = _decision_log_path(project_dir)
+    with open(path, "a") as f:
+        f.write(json.dumps(record) + "\n")
+
+
+# --- Step results ---
+
+def _step_result_path(project_dir: str, step_id: str) -> str:
+    return os.path.join(get_state_dir(project_dir), "step-results", f"{step_id}.json")
+
+
+def write_step_result(project_dir: str, step_id: str, result: dict) -> None:
+    """Write (overwrite) state/step-results/<step_id>.json."""
+    _ensure_state_dir(project_dir)
+    path = _step_result_path(project_dir, step_id)
+    with open(path, "w") as f:
+        json.dump(result, f, indent=2)
+
+
+def load_step_result(project_dir: str, step_id: str) -> dict:
+    """Load state/step-results/<step_id>.json; return {} if absent."""
+    path = _step_result_path(project_dir, step_id)
+    if not os.path.exists(path):
+        return {}
+    with open(path, "r") as f:
+        return json.load(f)
+
+
+def add_archive_path(project_dir: str, archive_path: str, generation: Optional[int] = None) -> None:
+    """
+    Append archive_path to the archived_paths list of a generation entry.
+    If generation is None, uses the active generation.
+    """
+    manifest = load_generation_manifest(project_dir)
+    if not manifest:
+        raise RuntimeError("No generation manifest found. Run 'init' first.")
+
+    target_gen = generation if generation is not None else int(manifest.get("active_generation", 1))
+
+    for entry in manifest.get("generations", []):
+        if entry["generation_id"] == target_gen:
+            if archive_path not in entry.get("archived_paths", []):
+                entry.setdefault("archived_paths", []).append(archive_path)
+            save_generation_manifest(project_dir, manifest)
+            return
+
+    raise ValueError(f"Generation {target_gen} not found in manifest.")
+
+
+def _parse_json_arg(value: str) -> dict:
+    """
+    Parse a JSON argument that is either an inline JSON string or a @filepath
+    pointing to a JSON file. Raises ValueError on parse failure.
+    """
+    if value.startswith("@"):
+        file_path = value[1:]
+        with open(file_path, "r") as f:
+            return json.load(f)
+    return json.loads(value)
 
 
 def load_state(project_dir: str) -> dict:
@@ -544,6 +826,16 @@ def init_state(base_dir: str, force: bool = False,
     print(f"Pipeline state initialized: {state_path}")
     if project_dir_rel:
         print(f"Project directory: {project_dir_rel}")
+
+    # Package 2: initialize state/ directory and generation manifest
+    _ensure_state_dir(base_dir)
+    manifest_path = _generation_manifest_path(base_dir)
+    if not os.path.exists(manifest_path):
+        init_generation_manifest(base_dir)
+        print(f"Generation manifest initialized: {manifest_path}")
+    else:
+        print(f"Generation manifest already exists: {manifest_path}")
+
     return state
 
 
@@ -728,6 +1020,92 @@ def main():
     )
     p_get.add_argument("field", help="Field name to read")
 
+    # --- Package 2: new subcommands ---
+
+    p_reset_range = sub.add_parser(
+        "reset-range",
+        help="Reset step statuses to pending for an inclusive step range only. "
+             "Does not clear loop counters (use 'reset' for a full reset).",
+    )
+    p_reset_range.add_argument("from_step_id", help="First step in range (inclusive)")
+    p_reset_range.add_argument("to_step_id", help="Last step in range (inclusive)")
+
+    sub.add_parser(
+        "get-generation",
+        help="Print the active generation number from state/generation-manifest.json.",
+    )
+
+    p_set_gen = sub.add_parser(
+        "set-generation",
+        help="Set active_generation in state/generation-manifest.json.",
+    )
+    p_set_gen.add_argument("generation", type=int, help="Generation number to activate")
+
+    p_new_gen = sub.add_parser(
+        "new-generation",
+        help="Append a new generation entry to state/generation-manifest.json and activate it. "
+             "Returns the new generation ID on stdout.",
+    )
+    p_new_gen.add_argument(
+        "--trigger-reason",
+        required=True,
+        help="Human-readable reason this generation was created (e.g. 'N1 REPOSITION #1').",
+    )
+    p_new_gen.add_argument(
+        "--rerun-from",
+        default=None,
+        help="First step in the rerun range for this generation (optional).",
+    )
+    p_new_gen.add_argument(
+        "--rerun-to",
+        default=None,
+        help="Last step in the rerun range for this generation (optional).",
+    )
+
+    p_write_result = sub.add_parser(
+        "write-step-result",
+        help="Write (overwrite) state/step-results/<step_id>.json. "
+             "Accepts inline JSON or @filepath.",
+    )
+    p_write_result.add_argument("step_id", help="Step ID")
+    p_write_result.add_argument(
+        "json_data",
+        help="JSON object as a string, or @path/to/file.json to read from a file.",
+    )
+
+    p_append_decision = sub.add_parser(
+        "append-decision",
+        help="Append one JSON record to state/decision-log.jsonl. "
+             "Accepts inline JSON or @filepath.",
+    )
+    p_append_decision.add_argument(
+        "json_data",
+        help="JSON object as a string, or @path/to/file.json to read from a file.",
+    )
+
+    sub.add_parser(
+        "check-readiness",
+        help="Read state/execution-readiness.json and exit 0 if ready_for_analysis is true, "
+             "exit 1 if absent, malformed, or ready_for_analysis is false. "
+             "Use as a hard pre-start block before analyze-results.",
+    )
+
+    p_add_archive = sub.add_parser(
+        "add-archive-path",
+        help="Append a path string to the archived_paths list of a generation entry "
+             "in state/generation-manifest.json. Defaults to the active generation.",
+    )
+    p_add_archive.add_argument(
+        "archive_path",
+        help="Path to record (relative to project_dir, e.g. 'archive/gen-1/docs').",
+    )
+    p_add_archive.add_argument(
+        "--generation",
+        type=int,
+        default=None,
+        help="Generation ID to update (default: active generation).",
+    )
+
     args = parser.parse_args()
 
     if args.action == "init":
@@ -755,9 +1133,22 @@ def main():
         print(f"Started: {args.step_id}")
 
     elif args.action == "complete":
-        state = mark_complete(state, args.step_id)
+        step_id = args.step_id
+        failures = check_completion_contracts(args.dir, step_id)
+        if failures:
+            reason = "; ".join(failures)
+            state = mark_fail(state, step_id, reason=reason)
+            save_state(args.dir, state)
+            print(
+                f"[FAIL-CLOSED] Step '{step_id}' cannot be marked complete.\n"
+                + "\n".join(f"  • {f}" for f in failures),
+                file=sys.stderr,
+            )
+            print(f"Step '{step_id}' marked as FAILED. Resolve the above issues, then retry.")
+            sys.exit(1)
+        state = mark_complete(state, step_id)
         save_state(args.dir, state)
-        print(f"Completed: {args.step_id}")
+        print(f"Completed: {step_id}")
 
     elif args.action == "skip":
         state = mark_skip(state, args.step_id)
@@ -791,9 +1182,20 @@ def main():
             state["steps"][step_id]["skipped"] = False
             state["steps"][step_id]["failure_reason"] = None
             state["steps"][step_id]["slurm_job_id"] = None
+        # W5 fix: clear all loop counters so a reset pipeline starts with
+        # fresh loop budgets instead of inheriting exhausted counters.
+        cleared_counters = []
+        for field in list(LOOP_COUNTERS.keys()):
+            if field in state:
+                del state[field]
+                cleared_counters.append(field)
         state["updated_at"] = now_iso()
         save_state(args.dir, state)
         print("All steps reset to pending.")
+        if cleared_counters:
+            print(f"Loop counters cleared: {', '.join(cleared_counters)}")
+        else:
+            print("Loop counters cleared: none were set.")
 
     elif args.action == "set-slurm-job":
         if args.step_id not in state["steps"]:
@@ -844,6 +1246,136 @@ def main():
             sys.exit(1)
         value = state[field]
         print(json.dumps(value) if not isinstance(value, str) else value)
+
+    # --- Package 2: new action handlers ---
+
+    elif args.action == "reset-range":
+        order = get_step_order()
+        from_step = args.from_step_id
+        to_step = args.to_step_id
+        if from_step not in state["steps"]:
+            print(f"Unknown step: {from_step}", file=sys.stderr)
+            sys.exit(1)
+        if to_step not in state["steps"]:
+            print(f"Unknown step: {to_step}", file=sys.stderr)
+            sys.exit(1)
+        try:
+            from_idx = order.index(from_step)
+            to_idx = order.index(to_step)
+        except ValueError as exc:
+            print(f"Step not in canonical order: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if from_idx > to_idx:
+            print(
+                f"from_step '{from_step}' (position {from_idx + 1}) must come before "
+                f"to_step '{to_step}' (position {to_idx + 1})",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        reset_ids = order[from_idx : to_idx + 1]
+        for step_id in reset_ids:
+            state["steps"][step_id]["status"] = "pending"
+            state["steps"][step_id]["started_at"] = None
+            state["steps"][step_id]["completed_at"] = None
+            state["steps"][step_id]["skipped"] = False
+            state["steps"][step_id]["failure_reason"] = None
+            state["steps"][step_id]["slurm_job_id"] = None
+        state["updated_at"] = now_iso()
+        save_state(args.dir, state)
+        print(f"Reset {len(reset_ids)} steps to pending: {from_step} → {to_step}")
+
+    elif args.action == "get-generation":
+        gen = get_active_generation(args.dir)
+        print(gen)
+
+    elif args.action == "set-generation":
+        set_active_generation(args.dir, args.generation)
+        print(f"Active generation set to {args.generation}")
+
+    elif args.action == "new-generation":
+        gen_id = new_generation(
+            args.dir,
+            trigger_reason=args.trigger_reason,
+            rerun_from=args.rerun_from,
+            rerun_to=args.rerun_to,
+        )
+        print(f"New generation created: {gen_id}")
+
+    elif args.action == "write-step-result":
+        try:
+            result = _parse_json_arg(args.json_data)
+        except (json.JSONDecodeError, FileNotFoundError) as exc:
+            print(f"Error parsing step result JSON: {exc}", file=sys.stderr)
+            sys.exit(1)
+        # Inject required fields if caller omitted them
+        result.setdefault("step_id", args.step_id)
+        result.setdefault("generation", get_active_generation(args.dir))
+        result.setdefault("created_at", now_iso())
+        result.setdefault("$schema", "step-result-v1")
+        write_step_result(args.dir, args.step_id, result)
+        path = _step_result_path(args.dir, args.step_id)
+        print(f"Step result written: {path}")
+
+    elif args.action == "append-decision":
+        try:
+            record = _parse_json_arg(args.json_data)
+        except (json.JSONDecodeError, FileNotFoundError) as exc:
+            print(f"Error parsing decision JSON: {exc}", file=sys.stderr)
+            sys.exit(1)
+        # Inject required fields if caller omitted them
+        record.setdefault("timestamp", now_iso())
+        record.setdefault("generation", get_active_generation(args.dir))
+        record.setdefault("$schema", "decision-v1")
+        append_decision_record(args.dir, record)
+        path = _decision_log_path(args.dir)
+        print(f"Decision appended to: {path}")
+
+    elif args.action == "check-readiness":
+        readiness_path = os.path.join(args.dir, STATE_DIR, "execution-readiness.json")
+        if not os.path.exists(readiness_path):
+            print(
+                f"[BLOCK] state/execution-readiness.json not found at {readiness_path}.\n"
+                "        Run check_gates.py --output-json first.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        try:
+            with open(readiness_path) as f:
+                readiness = json.load(f)
+        except (json.JSONDecodeError, OSError) as exc:
+            print(
+                f"[BLOCK] state/execution-readiness.json is unreadable: {exc}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        if not readiness.get("ready_for_analysis"):
+            reason = readiness.get("blocking_reason") or "ready_for_analysis is false"
+            print(
+                f"[BLOCK] Execution not ready for analysis: {reason}\n"
+                f"        Completion: {readiness.get('observed_runs')}/{readiness.get('expected_runs')} "
+                f"({readiness.get('completion_ratio', 0):.1%})",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        # Ready
+        gen = readiness.get("generation", "?")
+        ratio = readiness.get("completion_ratio", 0)
+        obs = readiness.get("observed_runs")
+        exp = readiness.get("expected_runs")
+        print(
+            f"[READY] Execution ready for analysis "
+            f"(gen {gen}: {obs}/{exp} runs = {ratio:.1%})"
+        )
+
+    elif args.action == "add-archive-path":
+        target_gen = getattr(args, "generation", None)
+        try:
+            add_archive_path(args.dir, args.archive_path, generation=target_gen)
+        except (RuntimeError, ValueError) as exc:
+            print(f"Error updating archive paths: {exc}", file=sys.stderr)
+            sys.exit(1)
+        resolved_gen = target_gen if target_gen is not None else get_active_generation(args.dir)
+        print(f"Archive path '{args.archive_path}' recorded for generation {resolved_gen}")
 
 
 if __name__ == "__main__":
