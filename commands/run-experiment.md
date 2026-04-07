@@ -80,7 +80,12 @@ Execute the experiment sweep on the cluster.
 
 ## Goal
 
-Activates the `experiment-runner` skill to submit SLURM jobs, monitor progress, handle failures (OOM/NaN/timeout/preemption), evaluate phase gates, and update experiment-state.json.
+Activates the `experiment-runner` skill to autonomously:
+1. Run pre-flight validation (10-15 seconds) — catches import/config errors
+2. Run CPU smoke test (1-5 minutes) — catches training loop errors
+3. Submit SLURM jobs (if both validation steps pass)
+4. Monitor progress and evaluate phase gates
+5. Handle failures gracefully (display errors, suggest fixes, abort before GPU waste)
 
 ## Usage
 
@@ -93,14 +98,71 @@ There is **no** required string in quotes. The only optional argument is **`phas
 
 ## Workflow
 
-1. Read compute-plan.md and SLURM scripts from cluster/
-2. Activate `experiment-runner` skill
-3. Submit jobs, monitor, handle failures
-4. After phase completion: evaluate gate, update experiment-state.json
-5. Report: completed/failed/remaining runs, gate decision
+**Autonomous Execution** (no manual intervention required after `/run-experiment`):
+
+1. Read experiment-state.json (current phase, conditions, seeds)
+2. Run `make pre-flight-validate` (10-15s)
+   - If fails → abort, display error, suggest fix
+   - If passes → continue
+3. Run `make cpu-smoke-test` (1-5min)
+   - If fails → abort, display error, suggest fix
+   - If passes → continue
+4. Submit SLURM jobs via `sbatch`
+5. Update experiment-state.json (job IDs, timestamps)
+6. Return control to user with job IDs and monitoring info
+7. (Optional) Monitor jobs and auto-trigger next wave when complete
+
+**Example Output**:
+```
+EXPERIMENT RUNNER: Phase 2
+
+[1/3] PRE-FLIGHT VALIDATION
+  ✓ Config files exist
+  ✓ Hydra syntax correct
+  ... (all 7 checks pass)
+  Result: PASS (7/7)
+
+[2/3] CPU SMOKE TEST (max_steps=2)
+  Train dataset: 15383 samples
+  Step 1/2: loss=0.8641
+  Step 2/2: loss=0.7234
+  Result: PASS
+
+[3/3] SLURM SUBMISSION
+  Job 11483264: M0 + M1 (SBATCH ACCEPTED)
+  Job 11483265: M3 + M4b (SBATCH ACCEPTED)
+  Result: SUCCESS
+
+Jobs submitted. Monitoring status.
+```
+
+## Implementation
+
+The `experiment-runner` skill is implemented as:
+
+```bash
+python scripts/run_experiment_autonomously.py --phase 2 --project-dir projects/my-project
+```
+
+**What this script does**:
+1. Reads `experiment-state.json` (project config, phase number, conditions)
+2. Runs `make pre-flight-validate` in the project directory
+3. If that passes, runs `make cpu-smoke-test`
+4. If both pass, submits SLURM jobs with correct `--conditions` flags
+5. Updates `experiment-state.json` with new job IDs and submission timestamps
+6. Returns structured JSON report and CLI output
+
+**Key benefits**:
+- ✅ No manual validation steps between code changes and job submission
+- ✅ Failures caught in <10 minutes on CPU (not 2-5 hours on GPU)
+- ✅ Clear error messages with actionable suggestions for fixes
+- ✅ Full audit trail in experiment-state.json (job IDs, timestamps, phase status)
+- ✅ Can be integrated into CI/CD pipelines for fully autonomous runs
 
 ## Integration
 
-- **Primary skill**: `experiment-runner`
-- **Prerequisite**: `compute-planner` output (SLURM scripts), validated pipeline
-- **Feeds into**: `result-collector` (outputs/ directory), `failure-diagnosis` (if gate fails)
+- **Primary skill**: `experiment-runner` (located in `skills/experiment-runner/SKILL.md`)
+- **Implementation**: `scripts/run_experiment_autonomously.py`
+- **Prerequisite**: `compute-plan.md` (SLURM scripts), validated pipeline, `experiment-state.json`
+- **Feeds into**: Job monitoring, `result-collector` (outputs/ directory), `failure-diagnosis` (if gate fails)
+- **Related documentation**: `docs/VALIDATION_PIPELINE.md` (two-layer validation system)
