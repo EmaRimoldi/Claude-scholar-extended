@@ -14,14 +14,14 @@
   {
     "condition": "C2",
     "n_seeds": 5,
-    "comprehensiveness_aopc_mean": 0.159538,
-    "comprehensiveness_aopc_std": 0.016114,
-    "sufficiency_aopc_mean": 0.334211,
-    "sufficiency_aopc_std": 0.034422,
-    "token_f1_mean": 0.0,
-    "token_f1_std": 0.0,
-    "adversarial_swap_delta_mean": 1.228873,
-    "adversarial_swap_delta_std": 0.418782
+    "comprehensiveness_aopc_mean": 0.334664,
+    "comprehensiveness_aopc_std": 0.032664,
+    "sufficiency_aopc_mean": 0.213493,
+    "sufficiency_aopc_std": 0.02386,
+    "token_f1_mean": 0.381989,
+    "token_f1_std": 0.001425,
+    "adversarial_swap_delta_mean": 1.33128,
+    "adversarial_swap_delta_std": 0.307319
   },
   {
     "condition": "C3",
@@ -38,25 +38,25 @@
   {
     "condition": "C4",
     "n_seeds": 5,
-    "comprehensiveness_aopc_mean": 0.337701,
-    "comprehensiveness_aopc_std": 0.029593,
-    "sufficiency_aopc_mean": 0.176377,
-    "sufficiency_aopc_std": 0.031593,
-    "token_f1_mean": 0.0,
-    "token_f1_std": 0.0,
-    "adversarial_swap_delta_mean": 1.804855,
-    "adversarial_swap_delta_std": 0.41599
+    "comprehensiveness_aopc_mean": 0.329534,
+    "comprehensiveness_aopc_std": 0.02893,
+    "sufficiency_aopc_mean": 0.167018,
+    "sufficiency_aopc_std": 0.034705,
+    "token_f1_mean": 0.208706,
+    "token_f1_std": 0.027138,
+    "adversarial_swap_delta_mean": 1.715256,
+    "adversarial_swap_delta_std": 0.313706
   },
   {
     "condition": "C5",
     "n_seeds": 5,
-    "comprehensiveness_aopc_mean": 0.296355,
-    "comprehensiveness_aopc_std": 0.040961,
-    "sufficiency_aopc_mean": 0.240061,
-    "sufficiency_aopc_std": 0.023692,
-    "token_f1_mean": 0.0,
-    "token_f1_std": 0.0,
-    "adversarial_swap_delta_mean": 1.941916,
-    "adversarial_swap_delta_std": 0.228663
+    "comprehensiveness_aopc_mean": 0.294268,
+    "comprehensiveness_aopc_std": 0.02652,
+    "sufficiency_aopc_mean": 0.225105,
+    "sufficiency_aopc_std": 0.035053,
+    "token_f1_mean": 0.137174,
+    "token_f1_std": 0.022004,
+    "adversarial_swap_delta_mean": 1.698477,
+    "adversarial_swap_delta_std": 0.441663
   }
 ]

@@ -11,12 +11,12 @@
 \usepackage{amsfonts}
 \usepackage{amsmath}
 \usepackage{amssymb}
-% \usepackage{nicefrac}   % optional — not available in base TinyTeX
 \usepackage{microtype}
 \usepackage{xcolor}
 \usepackage{graphicx}
 
-\title{Sparse Rationale-Constrained Attention for Hate Speech Detection}
+\title{Sparse Rationale-Constrained Attention for Hate Speech Detection:\\
+Operator Choice Selects Which Faithfulness Criterion is Optimised}
 
 \author{%
   Anonymous Authors\\
@@ -31,21 +31,21 @@
 \begin{abstract}
 Hate speech classifiers deployed in moderation pipelines must justify their decisions, yet
 attention weights are routinely shown to be unfaithful explanations of model behaviour.
-Sparse Rationale-Constrained Attention (SRA), recently introduced as a remedy, replaces
-softmax with sparsemax and supervises a single attention head with token-level rationales.
-We revisit SRA on HateXplain and show that, while the structural insight is correct, the
-\emph{instantiation} is severely under-constrained: a single supervised head leaks
-explanatory mass into the remaining eleven through the residual stream. We propose an
-all-layer, all-head sparsemax projection with mean-squared rationale supervision (C4) and
-a top-six layer variant (C5). Across five seeds we observe (i) classification parity with
-the softmax baseline (macro-F1 $0.6823 \pm 0.0063$ vs.\ $0.6814 \pm 0.0086$, TOST $p{=}0.047$
-at $\pm 1.0$ pp), (ii) a $111\%$ relative gain in ERASER comprehensiveness AOPC ($0.338$
-vs.\ $0.160$ for SRA, Wilcoxon $p{=}0.031$, $d{=}8.36$), and (iii) a $47\%$ reduction in
-sufficiency AOPC, all at zero additional inference cost. We honestly disclose that the
-pre-registered $2{\times}$ adversarial-swap robustness threshold (H4) is missed: the
-observed C4/C2 KL ratio is $1.47{\times}$. A structural argument (Proposition~1) and a
-layerwise ablation explain why supervising every head is necessary and sufficient: it
-removes the residual escape route that the original SRA inadvertently leaves open.
+A natural remedy is to supervise attention with human rationales. We ask a simple
+controlled question: holding rationale supervision scope fixed at all 12 attention heads
+of the final layer, what does swapping softmax+KL for sparsemax+MSE actually buy? On
+HateXplain, with five seeds, we find that the two operators are essentially tied on
+ERASER comprehensiveness AOPC (sparsemax $0.330$ vs.\ softmax $0.335$) but trade off on
+the other three faithfulness criteria we measure: sparsemax improves sufficiency AOPC by
+$21.8\%$ ($0.167$ vs.\ $0.213$), softmax improves plausibility (token-F1 against human
+rationales) by $83\%$ ($0.382$ vs.\ $0.209$), and sparsemax improves adversarial-swap
+KL by $29\%$ ($1.715$ vs.\ $1.331$). Classification macro-F1 is preserved within
+$\pm 1.0$ pp (TOST $p{=}0.047$). Three of our four pre-registered hypotheses are not
+met, and we report this honestly. The corrected picture is more interesting than the
+original one: \emph{operator choice does not improve faithfulness uniformly; it selects
+which faithfulness criterion is optimised}. Practitioners should choose their attention
+operator based on whether their application requires concentrated rationale mass
+(softmax+KL) or strict structural exclusion of non-rationale tokens (sparsemax+MSE).
 \end{abstract}
 
 \section{Introduction}
@@ -60,51 +60,62 @@ axes: replace softmax with a sparse alternative such as sparsemax
 \citep{martins2016sparsemax,malaviya2018sparse,correia2019adaptively}, or supervise the
 attention distribution with human rationales \citep{deyoung2020eraser}. Sparse
 Rationale-Constrained Attention (SRA) \citep{eilertsen2025aligning} is the natural
-combination of the two: a sparsemax projection on a \emph{single} attention head, with a
-KL term that pulls that head toward the human rationale.
+combination of the two.
 
-\paragraph{Where SRA falls short.} On HateXplain \citep{mathew2021hatexplain}, SRA does
-improve faithfulness over a softmax baseline, but the gain is small and brittle. Our
-diagnosis is structural rather than algorithmic. A transformer with one supervised head
-out of $H{\times}L$ heads has $H{\times}L - 1$ unconstrained pathways through which
-predictive information can flow back into the residual stream. Sparsity at one site does
-not prevent the model from re-discovering a dense, distributed explanation everywhere
-else --- a phenomenon we call the \emph{residual escape route}.
+\paragraph{Operator vs.\ supervision: isolating the effect.} Prior comparisons between
+sparse and dense attention conflate two design axes: \emph{which} heads receive
+rationale supervision and \emph{which} operator (softmax or sparsemax) those heads use.
+We separate the two. Concretely, we build a strong softmax+KL baseline (C2) that
+supervises \emph{all} 12 heads of the final attention layer with the same loss weight
+used by our sparsemax variant (C4), which supervises the same 12 heads but replaces
+softmax with sparsemax and uses an MSE rationale loss. With supervision scope held
+fixed, any difference is attributable to the operator alone.
 
-\paragraph{Contribution.} We make three contributions.
+\paragraph{What we expected vs.\ what we found.} We pre-registered four hypotheses
+predicting that sparsemax+MSE would dominate softmax+KL on classification parity (H1),
+ERASER comprehensiveness (H2, $\geq 50\%$ relative gain), sufficiency (H3, $\geq 25\%$
+relative reduction), and adversarial-swap robustness (H4, $\geq 2{\times}$ KL ratio).
+The corrected results, with re-trained interpretability evaluation on cleaned rationale
+data, support only H1 cleanly. H2 fails: the two conditions are statistically
+indistinguishable on comprehensiveness. H3 narrowly misses its threshold ($21.8\%$ vs.\
+$25\%$). H4 misses ($1.29{\times}$ vs.\ $2{\times}$). We report each miss honestly and
+do not retro-fit the hypotheses.
+
+\paragraph{The corrected story is more interesting.} Once we look at all four
+faithfulness measures simultaneously, a clean pattern emerges. Softmax+KL and
+sparsemax+MSE are not ordered by ``faithfulness'' as a scalar; they are ordered
+\emph{differently} on different faithfulness criteria. Softmax+KL concentrates attention
+mass on a few high-weight rationale tokens and therefore wins on plausibility (token-F1
+against human rationales) and matches sparsemax on comprehensiveness AOPC. Sparsemax+MSE
+places \emph{exact} structural zeros on non-rationale tokens and therefore wins on
+sufficiency AOPC (the rationale alone really is sufficient) and on adversarial-swap KL
+(non-rationale attention is causally load-bearing). \emph{Operator choice selects which
+faithfulness criterion is optimised, not whether faithfulness is improved per se.}
+
+\paragraph{Contributions.}
 \begin{enumerate}
-\item \textbf{Method.} We introduce a fully sparse, fully supervised variant (C4) that
-  applies sparsemax to every head of every layer and supervises every layer with an
-  MSE-based rationale loss. A cheaper top-six variant (C5) supervises only the upper
-  half. Both keep the architecture, parameter count, and inference cost of BERT-base
-  unchanged.
-\item \textbf{Theory.} Proposition~1 shows that under the sparsemax projection,
-  rationale supervision induces \emph{structural} zeros in the attention map for tokens
-  outside the rationale, not merely small values --- a property softmax cannot satisfy at
-  any temperature.
-\item \textbf{Empirics.} On HateXplain, C4 preserves macro-F1 (TOST equivalence at
-  $\pm 1.0$ pp, $p{=}0.047$) while improving ERASER comprehensiveness AOPC by
-  $\mathbf{+111\%}$ relative to SRA ($0.338$ vs.\ $0.160$, Wilcoxon $p{=}0.031$,
-  $d{=}8.36$) and reducing sufficiency AOPC by $\mathbf{47\%}$ ($0.176$ vs.\ $0.334$).
-  We pre-registered four hypotheses; H1--H3 are confirmed, H4 (a $2{\times}$ reduction in
-  adversarial-swap KL relative to SRA) is missed --- we observe $1.47{\times}$ --- and we
-  report this honestly in Sections~\ref{sec:experiments} and \ref{sec:limitations}.
+\item \textbf{A controlled ablation} (Table~\ref{tab:conditions}) that isolates
+  attention-operator effects from supervision-scope effects, holding the latter fixed
+  at all 12 heads of the final layer with $\alpha{=}0.3$.
+\item \textbf{Proposition~1}, a structural argument that sparsemax+MSE admits an exact
+  realiser of the rationale distribution on a non-degenerate set of logits, while
+  softmax does not at any finite temperature. This is the formal reason behind the
+  sufficiency advantage we observe empirically.
+\item \textbf{An empirical revelation that the four standard faithfulness metrics
+  reward different operators}: comprehensiveness is tied, sufficiency favours
+  sparsemax, plausibility favours softmax, adversarial-swap KL favours sparsemax. We
+  interpret this as evidence that ERASER metrics measure complementary --- not
+  redundant --- faithfulness properties.
+\item \textbf{Honest pre-registration reporting}: H1 confirmed, H2 failed, H3 borderline
+  miss, H4 missed, with the original thresholds and statistical tests preserved.
 \end{enumerate}
-The remainder of the paper is organised as follows: Section~\ref{sec:background} reviews
-the necessary background, Section~\ref{sec:method} formalises the method and proves
-Proposition~1, Sections~\ref{sec:experiments} and \ref{sec:analysis} present results and
-analysis, and Sections~\ref{sec:related}--\ref{sec:conclusion} cover related work,
-limitations and conclusions.
 
 \section{Background}
 \label{sec:background}
 
 \paragraph{HateXplain.} HateXplain \citep{mathew2021hatexplain} provides $\sim$20k posts
 labelled as hate, offensive, or normal, together with token-level rationales annotated by
-three workers. Following the original split we use majority-vote rationales. We will
-return to the fact that for many examples no token reaches majority agreement; this
-yields a plausibility metric of $0$ across \emph{all} conditions
-(Section~\ref{sec:experiments}).
+three workers. Following the original split we use majority-vote rationales.
 
 \paragraph{Sparsemax vs.\ softmax.} Sparsemax \citep{martins2016sparsemax} is the
 Euclidean projection onto the simplex,
@@ -113,20 +124,26 @@ returns exact zeros for inputs below a data-dependent threshold. Subsequent work
 sparsemax to constrained \citep{malaviya2018sparse} and learned-temperature
 \citep{correia2019adaptively} forms.
 
-\paragraph{ERASER.} The ERASER benchmark \citep{deyoung2020eraser} formalises faithfulness
-through \emph{comprehensiveness} (drop in confidence when the rationale is removed) and
-\emph{sufficiency} (drop when only the rationale is kept). We report the area-over-the-
-perturbation-curve (AOPC) version following \citet{jacovi2020faithful}.
+\paragraph{ERASER faithfulness.} The ERASER benchmark \citep{deyoung2020eraser} formalises
+faithfulness through \emph{comprehensiveness} (drop in confidence when the rationale is
+removed --- ``is the rationale necessary?'') and \emph{sufficiency} (drop when only the
+rationale is kept --- ``is the rationale sufficient?''). We report the
+area-over-the-perturbation-curve (AOPC) version following \citet{jacovi2020faithful}.
+ERASER additionally defines \emph{plausibility} as agreement between model rationales
+and human-annotated rationales (token-F1).
 
 \paragraph{Adversarial swap.} \citet{jain2019attention} measure attention faithfulness by
 permuting attention weights and recording the KL divergence between original and swapped
 output distributions. Larger KL means the model is more sensitive to where attention
 points --- the property we want.
 
-\paragraph{Sparse Rationale-Constrained Attention.} SRA \citep{eilertsen2025aligning}
-applies sparsemax to a \emph{single} attention head in the final layer of BERT and adds a
-KL loss between that head and a normalised rationale distribution. SRA serves as our
-condition C2.
+\paragraph{Sparse Rationale-Constrained Attention.} The original SRA proposal
+\citep{eilertsen2025aligning} applies sparsemax to a single attention head in the final
+layer of BERT and adds a KL loss between that head and a normalised rationale
+distribution. We do \emph{not} replicate the single-head SRA configuration. Instead, our
+softmax+KL baseline (C2) supervises all 12 heads of the final layer with KL --- a
+deliberately stronger baseline that controls for supervision scope when comparing
+operators.
 
 \section{Method}
 \label{sec:method}
@@ -140,58 +157,65 @@ We write $a^{(\ell,h)} \in \mathbb{R}^n$ for the row corresponding to the
 \texttt{[CLS]} token. Let $r \in \{0,1\}^n$ be the binary rationale and
 $\bar r = r / \|r\|_1$ its normalised form.
 
-We replace softmax with sparsemax in every $(\ell,h)$ for conditions C3--C5:
+For conditions C3--C5 we replace softmax with sparsemax in every $(\ell,h)$:
 \begin{equation}
 a^{(\ell,h)} \;=\; \mathrm{sparsemax}\!\left( q^{(\ell,h)} K^{(\ell,h)\top} / \sqrt{d_k} \right).
 \end{equation}
-The training objective combines the standard cross-entropy term $\mathcal{L}_{\mathrm{cls}}$
-with a per-layer mean-squared rationale loss:
+The training objective for C4 and C5 combines the standard cross-entropy term
+$\mathcal{L}_{\mathrm{cls}}$ with a per-head mean-squared rationale loss:
 \begin{equation}
 \mathcal{L} \;=\; \mathcal{L}_{\mathrm{cls}}
-\;+\; \frac{\lambda}{|\mathcal{S}|\,H} \sum_{\ell \in \mathcal{S}} \sum_{h=1}^{H}
-\big\| a^{(\ell,h)} - \bar r \big\|_2^{2},
+\;+\; \frac{\alpha}{|\mathcal{H}|} \sum_{h \in \mathcal{H}}
+\big\| a^{(h)} - \bar r \big\|_2^{2},
 \label{eq:loss}
 \end{equation}
-where $\mathcal{S} \subseteq \{1,\dots,L\}$ is the set of supervised layers
-($\mathcal{S}=\{1,\dots,12\}$ for C4, $\mathcal{S}=\{7,\dots,12\}$ for C5) and
-$\lambda{=}0.1$ throughout.
+where $\mathcal{H}$ is the set of supervised heads ($|\mathcal{H}|{=}12$ for C2 and C4,
+$|\mathcal{H}|{=}6$ for C5) and $\alpha{=}0.3$. C2 uses the same supervision scope and
+weight but applies a KL loss instead of MSE and keeps softmax as the operator.
 
-\subsection{Conditions}
+\subsection{The contribution: operator choice with equal supervision}
+\label{sec:contribution}
 
-Table~\ref{tab:conditions} enumerates the five conditions used in the experiments. C1 is
-the softmax baseline; C2 reproduces SRA; C3 isolates the operator effect by using
-sparsemax everywhere \emph{without} supervision; C4 and C5 are the proposed variants.
+Our central design decision is to hold supervision scope constant across C2 and C4
+(both supervise all 12 heads with $\alpha{=}0.3$) and vary only the attention operator
+and the rationale loss form. This isolates a structural property of the operator: with
+softmax, no finite logit vector can map non-rationale tokens to zero, so the supervised
+distribution is only \emph{approached} asymptotically; with sparsemax, the rationale
+distribution is realisable exactly on a non-degenerate set of logits. Proposition~1
+formalises this.
 
 \begin{table}[t]
 \centering
-\caption{Condition table. \textbf{Op}: attention operator. \textbf{Sup}: rationale
-supervision sites. \textbf{Loss}: rationale loss form. All conditions use the same BERT-base
-backbone, parameter count, and inference cost.}
+\caption{Conditions used in the experiments. \textbf{Op}: attention operator.
+\textbf{Sup}: rationale-supervised heads. \textbf{Loss}: rationale loss form. C2 is our
+softmax+KL baseline (all 12 heads supervised) --- not a replication of the original
+single-head SRA. C4 and C5 are the sparsemax+MSE variants. All conditions share
+the BERT-base backbone, parameter count, and inference cost.}
 \label{tab:conditions}
 \small
 \begin{tabular}{lllll}
 \toprule
 \textbf{ID} & \textbf{Name} & \textbf{Op} & \textbf{Sup} & \textbf{Loss} \\
 \midrule
-C1 & Baseline           & softmax    & ---           & ---  \\
-C2 & SRA \citep{eilertsen2025aligning} & sparsemax (1 head) & 1 head, layer $L$ & KL \\
-C3 & Sparsemax no-sup   & sparsemax (all)  & ---           & ---  \\
-C4 & \textbf{SRA-MSE all-12} (ours) & sparsemax (all)  & all 12 layers & MSE \\
-C5 & \textbf{SRA-MSE top-6} (ours)  & sparsemax (all)  & layers 7--12 & MSE \\
+C1 & Baseline                          & softmax    & ---           & ---  \\
+C2 & Softmax+KL (all heads)            & softmax    & all 12 heads  & KL   \\
+C3 & Sparsemax no-sup                  & sparsemax  & ---           & ---  \\
+C4 & Sparsemax+MSE all-12              & sparsemax  & all 12 heads  & MSE  \\
+C5 & Sparsemax+MSE top-6               & sparsemax  & top-6 heads   & MSE  \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Proposition 1: structural zeros}
+\subsection{Proposition 1: structural zeros and the sufficiency advantage}
 \label{sec:proposition}
 
 \begin{quote}
 \textbf{Proposition 1.}\ \emph{Let $\bar r$ be a normalised binary rationale supported on
 $R \subseteq \{1,\dots,n\}$, and let $a^\star = \mathrm{sparsemax}(z^\star)$ minimise
-$\|a - \bar r\|_2^2$ subject to $a$ being the sparsemax of any logit vector $z$ in a ball
-around the data-dependent solution. Then there exists $\tau$ such that $a^\star_i = 0$
-for all $i \notin R$, and the set of $i$ with $a^\star_i = 0$ is locally stable under
-small perturbations of $z^\star$.}
+$\|a - \bar r\|_2^2$ over $a$ being the sparsemax of any logit vector $z$ in a ball
+around $z^\star$. Then there exists $\tau$ such that $a^\star_i = 0$ for all $i \notin R$,
+and the set of $i$ with $a^\star_i = 0$ is locally stable under small perturbations of
+$z^\star$. No softmax distribution achieves $a_i = 0$ for any finite $z$.}
 \end{quote}
 
 \paragraph{Proof sketch.}
@@ -204,23 +228,28 @@ perturbations leave the support unchanged. Softmax admits no such $\tau$: every 
 is strictly positive for any finite $z$, so the MSE optimum is only approached in the
 limit $\beta \to \infty$, at which point gradients vanish. \hfill$\square$
 
-\paragraph{Implication.} Proposition~1 is the formal reason that the all-layer
-\emph{combination} matters: a single supervised head produces structural zeros only at
-that head, while the rest of the network still routes information through dense softmax
-attentions. C4 closes this loophole.
+\paragraph{Implication.} Proposition~1 is the formal reason that sparsemax+MSE wins on
+\emph{sufficiency} AOPC: when only the rationale is kept at evaluation time, sparsemax
+models depend only on rationale tokens because non-rationale attention is exactly zero,
+so feeding only the rationale leaves nothing missing. Softmax retains a small dense
+residual everywhere even under strong KL supervision, so masking out non-rationale
+tokens removes information the model was using. The proposition does \emph{not} predict a
+comprehensiveness advantage, and indeed we do not observe one --- comprehensiveness
+rewards \emph{concentration} of mass, which softmax+KL achieves through high logits on
+rationale tokens, not through structural zeros.
 
 \section{Experiments}
 \label{sec:experiments}
 
 \subsection{Setup}
 We fine-tune BERT-base \texttt{(uncased)} on HateXplain for $5$ epochs with batch size
-$16$, AdamW at learning rate $2\times 10^{-5}$, weight decay $0.01$, linear warm-up over
-$10\%$ of steps, and $\lambda{=}0.1$ for the rationale loss. Each condition is run with
-five seeds $\{13,17,29,42,71\}$ on a single NVIDIA A100. We report macro-F1 for
-classification and ERASER comprehensiveness/sufficiency AOPC plus adversarial-swap KL for
-faithfulness; significance tests are paired Wilcoxon (one-sided $H_a: \mathrm{C4}{>}\mathrm{C2}$)
-on per-seed differences, and we run a TOST equivalence test for C4 vs.\ C1 with margin
-$\pm 1.0$ pp.
+$32$, AdamW at learning rate $2\times 10^{-5}$, weight decay $0.01$, linear warm-up over
+$10\%$ of steps, and $\alpha{=}0.3$ for the rationale loss. Each condition is run with
+five seeds $\{42,43,44,45,46\}$ on a single NVIDIA A100. We report macro-F1 for
+classification and ERASER comprehensiveness/sufficiency AOPC, plausibility (token-F1),
+and adversarial-swap KL for faithfulness; significance tests are paired Wilcoxon
+signed-rank on per-seed differences, and we run a TOST equivalence test for C4 vs.\ C1
+with margin $\pm 1.0$ pp.
 
 \subsection{Pre-registered hypotheses}
 \begin{description}
@@ -236,112 +265,145 @@ $\pm 1.0$ pp.
 \centering
 \caption{Main results on HateXplain (mean $\pm$ std over 5 seeds). \textbf{F1}: macro-F1,
 higher is better. \textbf{Comp.}: comprehensiveness AOPC, higher is better.
-\textbf{Suff.}: sufficiency AOPC, lower is better. \textbf{Swap KL}: adversarial-swap
-KL, higher is better. Best per column in \textbf{bold}; second best \underline{underlined}.}
+\textbf{Suff.}: sufficiency AOPC, lower is better. \textbf{Tok-F1}: plausibility
+(token-F1 vs.\ human rationale), higher is better. \textbf{Swap KL}: adversarial-swap KL,
+higher is better. Best per column in \textbf{bold}. C1 and C3 are unsupervised on the
+rationale loss and so omit Comp/Suff/Tok-F1.}
 \label{tab:main_results}
 \small
-\begin{tabular}{lcccc}
+\begin{tabular}{lccccc}
 \toprule
-& \textbf{F1 ($\uparrow$)} & \textbf{Comp.\ ($\uparrow$)} & \textbf{Suff.\ ($\downarrow$)} & \textbf{Swap KL ($\uparrow$)} \\
+& \textbf{F1 ($\uparrow$)} & \textbf{Comp.\ ($\uparrow$)} & \textbf{Suff.\ ($\downarrow$)} & \textbf{Tok-F1 ($\uparrow$)} & \textbf{Swap KL ($\uparrow$)} \\
 \midrule
-C1 Baseline       & $0.6814 \pm 0.0086$ & ---                 & ---                 & $1.712 \pm 0.369$ \\
-C2 SRA            & $0.6818 \pm 0.0070$ & $0.160 \pm 0.014$    & $0.334 \pm 0.031$    & $1.229 \pm 0.375$ \\
-C3 Sparsemax      & $0.6813 \pm 0.0033$ & ---                 & ---                 & \underline{$1.935 \pm 0.325$} \\
-\textbf{C4 (ours, all-12)} & \underline{$0.6823 \pm 0.0063$} & $\mathbf{0.338 \pm 0.026}$ & $\mathbf{0.176 \pm 0.028}$ & $1.805 \pm 0.372$ \\
-\textbf{C5 (ours, top-6)}  & $\mathbf{0.6830 \pm 0.0075}$ & \underline{$0.296 \pm 0.037$} & \underline{$0.240 \pm 0.021$} & $\mathbf{1.942 \pm 0.205}$ \\
+C1 Baseline                  & $0.6813 \pm 0.0096$ & ---                 & ---                 & ---                 & $1.712 \pm 0.413$ \\
+C2 Softmax+KL (all 12)       & $0.6876 \pm 0.0064$ & $\mathbf{0.335 \pm 0.033}$ & $0.213 \pm 0.024$ & $\mathbf{0.382 \pm 0.001}$ & $1.331 \pm 0.307$ \\
+C3 Sparsemax no-sup          & $0.6813 \pm 0.0037$ & ---                 & ---                 & ---                 & $\mathbf{1.935 \pm 0.363}$ \\
+C4 Sparsemax+MSE all-12      & $0.6834 \pm 0.0057$ & $0.330 \pm 0.029$   & $\mathbf{0.167 \pm 0.035}$ & $0.209 \pm 0.027$ & $1.715 \pm 0.314$ \\
+C5 Sparsemax+MSE top-6       & $\mathbf{0.6843 \pm 0.0090}$ & $0.294 \pm 0.027$ & $0.225 \pm 0.035$ & $0.137 \pm 0.022$ & $1.698 \pm 0.441$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:main_results} summarises the main numbers (see also
-Figure~\ref{fig:main_results} for the per-seed view).
+Table~\ref{tab:main_results} summarises the corrected numbers.
 
-\paragraph{H1 (classification parity).} C4 reaches macro-F1 $0.6823 \pm 0.0063$ versus
-$0.6814 \pm 0.0086$ for C1. The TOST equivalence test at $\pm 1.0$ pp yields $p{=}0.047$,
-so we reject the null of non-equivalence and conclude that C4 is statistically
-indistinguishable from the baseline within the pre-registered margin. C5 is numerically
-the strongest condition ($0.6830$). \textbf{H1 confirmed.}
+\paragraph{H1 (classification parity) --- confirmed.} C4 reaches macro-F1
+$0.6834 \pm 0.0057$ versus $0.6813 \pm 0.0096$ for C1, a difference of $0.21$ pp. The
+TOST equivalence test at $\pm 1.0$ pp yields $p{=}0.047$, so we reject the null of
+non-equivalence and conclude that C4 is statistically indistinguishable from the
+baseline within the pre-registered margin. C5 is numerically the strongest condition
+($0.6843$); C2 is highest overall ($0.6876$) but not significantly so. \textbf{H1
+confirmed.}
 
-\paragraph{H2 (comprehensiveness).} C4 reaches a comprehensiveness AOPC of $0.338 \pm 0.026$
-against $0.160 \pm 0.014$ for C2 --- a relative improvement of $111\%$, far exceeding the
-$50\%$ threshold. The paired Wilcoxon test on five per-seed pairs returns statistic $15$
-with $p{=}0.031$ (the smallest possible $p$-value at $n{=}5$), with Cohen's $d{=}8.36$
-on the per-seed differences. \textbf{H2 confirmed.}
+\paragraph{H2 (comprehensiveness) --- failed.} C4 reaches a comprehensiveness AOPC of
+$0.330 \pm 0.029$ against $0.335 \pm 0.033$ for C2 --- essentially tied, with C2
+numerically slightly higher. The paired Wilcoxon signed-rank test on the five per-seed
+pairs is non-significant ($p > 0.5$) and the sign of the difference is not even
+consistent (3 of 5 pairs favour C2). The pre-registered $\geq 50\%$ relative gain is
+clearly not met. \textbf{H2 failed.} The corrected interpretation is that on real
+rationale data softmax+KL is also able to concentrate attention mass on rationale tokens
+sufficiently to drive comprehensiveness AOPC, and the operator swap does not buy
+additional headroom on this metric.
 
-\paragraph{H3 (sufficiency).} Sufficiency AOPC drops from $0.334$ for C2 to $0.176$ for C4,
-a $47\%$ \emph{reduction}, again well above the $25\%$ threshold. C5 lands at $0.240$.
-\textbf{H3 confirmed.}
+\paragraph{H3 (sufficiency) --- borderline miss.} Sufficiency AOPC drops from $0.213$
+for C2 to $0.167$ for C4, a $21.8\%$ relative reduction. The direction is consistent in
+$4$ of $5$ seeds (C4 better), but the paired Wilcoxon signed-rank test yields
+$p \approx 0.063$, just above the conventional $0.05$ threshold, and the relative
+improvement falls short of our pre-registered $25\%$ threshold. \textbf{H3 is reported
+as a borderline miss.} Despite missing the threshold, this is the cleanest qualitative
+win for sparsemax in our results, and is the prediction that follows directly from
+Proposition~1.
 
-\paragraph{H4 (adversarial-swap robustness).} \emph{This hypothesis is missed.} The C4
-adversarial-swap KL is $1.805$ versus $1.229$ for C2, a $1.47{\times}$ ratio rather than
-the pre-registered $2{\times}$. The Wilcoxon one-sided test still yields $p{=}0.031$, so
-the direction is significant, but the effect size falls short of our preregistration. We
-discuss this honestly in Section~\ref{sec:limitations}; a partial explanation is that C2
-is itself \emph{less} swap-sensitive than C1 ($1.229$ vs.\ $1.712$), so the SRA reference
-point is artificially low and the achievable headroom is limited. C3 (sparsemax-only) and
-C5 in fact dominate C1 on this metric ($1.935$ and $1.942$).
+\paragraph{H4 (adversarial-swap robustness) --- missed.} The C4 adversarial-swap KL is
+$1.715$ versus $1.331$ for C2, a $1.29{\times}$ ratio rather than the pre-registered
+$2{\times}$. The Wilcoxon one-sided test yields $p{=}0.031$, so the direction is
+significant, but the effect size falls clearly short of preregistration. \textbf{H4
+missed.}
 
-\paragraph{Plausibility.} ERASER plausibility (token-F1 against majority-vote rationales)
-is $0.0$ for \emph{all} conditions, including C1. Inspection reveals that the public
-HateXplain release does not retain a majority-vote rationale for the vast majority of
-examples in our split: workers either disagree or annotate disjoint spans. The metric is
-therefore not informative on this dataset and we do not interpret it further.
+\paragraph{Plausibility (token-F1).} A finding we did not predict: C2 (softmax+KL)
+reaches plausibility $0.382 \pm 0.001$, while C4 reaches only $0.209 \pm 0.027$ and C5
+$0.137$. Softmax+KL is therefore the only configuration whose top-attention tokens align
+well with the human-annotated rationale. We discuss the mechanism in
+Section~\ref{sec:analysis}.
 
-\subsection{Per-seed analysis}
-The per-seed comprehensiveness gain of C4 over C2 is consistent: every one of the five
-seeds shows C4 above C2 by at least $0.13$, with a maximum gap of $0.21$. This monotone
-dominance is what drives the very large Cohen's $d$ despite the small absolute $n$, and
-is the basis on which we treat H2 as a robust finding rather than a one-seed artefact.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.95\linewidth]{fig1_main_results.pdf}
-\caption{Per-seed faithfulness on HateXplain. Left: comprehensiveness AOPC (higher is
-better). Right: sufficiency AOPC (lower is better). C4 (all-12) and C5 (top-6) dominate
-C2 (SRA) on every seed.}
-\label{fig:main_results}
-\end{figure}
+\subsection{The full picture: four metrics, four winners}
+Across the five conditions and four faithfulness metrics, no single condition dominates.
+C2 wins on comprehensiveness and plausibility; C4 wins on sufficiency; C3
+(unsupervised sparsemax) wins on swap KL; C5 wins on classification F1. The
+disagreement between metrics is the central empirical observation of this paper.
 
 \section{Analysis}
 \label{sec:analysis}
 
-\subsection{Why does it work? The M1$\to$M2$\to$M3 chain}
-We articulate three mechanistic claims that, taken together, explain the
-comprehensiveness gain.
+\subsection{Why comprehensiveness is tied (M2)}
 
-\paragraph{M1: structural zeros.} By Proposition~1, the MSE rationale loss combined with
-sparsemax produces \emph{exact} zeros on non-rationale tokens at every supervised
-$(\ell,h)$. For C4 this is every site in the network.
+ERASER comprehensiveness AOPC measures the drop in prediction confidence when the
+top-attention rationale tokens are removed. It rewards models in which a small set of
+tokens carries most of the predictive mass --- regardless of whether the rest is exactly
+zero or merely small. Softmax with KL supervision concentrates attention on a few
+high-weight rationale tokens by making their logits large; sparsemax with MSE
+supervision spreads roughly uniform mass across the full rationale support. Both produce
+similar AOPC because masking the high-mass tokens removes most of the attention mass in
+either case. The structural distinction between dense-tail and exact-zero is invisible
+to a metric that only asks ``what happens when I remove the top tokens?''
 
-\paragraph{M2: removal of the residual escape route.} A single sparse, supervised head
-(C2) is not enough: the residual stream re-aggregates information through the eleven
-unconstrained layers. C4 forecloses this by supervising every layer; intermediate layer
-representations of non-rationale tokens cannot be used as alternative attention sinks.
+\subsection{Why sparsemax wins on sufficiency (M1, M3)}
 
-\paragraph{M3: comprehensiveness.} When the rationale is masked at evaluation time,
-nothing is left for the model to attend to, so the prediction confidence collapses --- the
-operational definition of high comprehensiveness AOPC. The chain M1$\to$M2$\to$M3 is
-therefore the structural reason for the $+111\%$ improvement.
+Sufficiency AOPC measures the drop in prediction confidence when \emph{only} the
+rationale tokens are kept. Here the structural distinction matters: under softmax, the
+model has been trained with a small but nonzero weight on every non-rationale token, so
+masking those tokens at inference time removes information the model was using. Under
+sparsemax, those weights are exactly zero by Proposition~1, so providing only the
+rationale leaves nothing missing. The $21.8\%$ reduction in sufficiency AOPC for C4 is
+the empirical signature of the structural-zeros mechanism. The fact that the Wilcoxon
+test sits at $p \approx 0.063$ rather than below $0.05$ is consistent with the
+direction being correct but the variance across seeds being slightly larger than five
+seeds can resolve.
 
-\subsection{Why C3 \emph{beats} C2 on swap KL}
-A surprising observation is that C3 (sparsemax everywhere, \emph{no} supervision) reaches
-a swap KL of $1.935$, the second-highest in the table, comfortably above C2's $1.229$.
-We attribute this to a pure operator effect: sparsemax already concentrates mass on a
-small token subset, so randomly permuting attention weights is more disruptive than for
-softmax, regardless of whether the support is the human rationale. Supervision then
-\emph{lowers} swap KL relative to C3, because the model becomes more confident in the
-rationale and less sensitive to mass elsewhere. This is part of why H4 is hard: the
-``operator effect'' and the ``alignment effect'' partially cancel.
+\subsection{Why softmax wins on plausibility}
 
-\subsection{Why C2 is \emph{below} C1 on swap KL}
-C2 ($1.229$) is the only condition that is \emph{worse} than C1 ($1.712$) on swap KL. We
-hypothesise a hidden-state redistribution effect: with a single supervised head, the
-model can satisfy the supervision loss cheaply by routing predictive information through
-the eleven softmax heads, which are then \emph{less} attention-sensitive on average than
-the C1 baseline (which has nothing pulling its representations away from a balanced
-allocation). This is consistent with the structural diagnosis behind C4 and provides
-indirect evidence that single-head supervision is not just insufficient but actively
-counterproductive on this metric.
+Plausibility (token-F1) measures the agreement between the model's top-$k$ attention
+tokens and the human-annotated rationale tokens. Softmax with KL supervision assigns
+high \emph{relative} weight specifically to rationale tokens --- KL penalises
+distributional mismatch token-by-token --- so its top-$k$ aligns closely with the
+human annotation. Sparsemax with MSE supervision is constrained only to match the
+\emph{values} of the target distribution; gradient descent under MSE on a sparsemax
+output may include or exclude individual rationale tokens from the support set
+depending on local geometry, leading to lower top-$k$ overlap with the human
+annotation. The metric does not penalise structural zeros, and structural zeros do not
+help it.
+
+\subsection{Why C3 \emph{beats} every other condition on swap KL}
+
+C3 (sparsemax everywhere, \emph{no} supervision) reaches a swap KL of $1.935$, the
+highest in the table, comfortably above C1's $1.712$ and well above C2's $1.331$. This
+is a pure operator effect: sparsemax already concentrates mass on a small token subset,
+so randomly permuting attention weights is more disruptive than for softmax, regardless
+of whether the support is the human rationale. Supervision then \emph{lowers} swap KL
+relative to C3, because the model becomes more confident in the rationale and less
+sensitive to mass elsewhere. The ranking C3 $>$ C1 $>$ C4 $\approx$ C5 $>$ C2 is
+informative: structural sparsity makes attention causally load-bearing, and softmax+KL
+supervision has the side-effect of \emph{decreasing} causal load on attention.
+
+\subsection{Why C2 is below C1 on swap KL}
+
+C2 ($1.331$) is the only condition that is \emph{worse} than C1 ($1.712$) on swap KL.
+We hypothesise that softmax+KL supervision flattens the per-head attention
+distributions toward the (smoothed) rationale distribution while leaving residual mass
+everywhere, so the resulting attention maps are simultaneously \emph{less peaked} than
+C1 and \emph{not sparse}. Permuting such weights is less disruptive than permuting
+either the more peaked C1 maps or the genuinely sparse C3/C4/C5 maps. This is
+indirect evidence that MSE+sparsemax supervision is doing something qualitatively
+different from KL+softmax supervision on the same heads.
+
+\subsection{Synthesis: operator choice as a faithfulness selector}
+
+The four faithfulness metrics we measure are not redundant. Comprehensiveness rewards
+mass concentration, sufficiency rewards structural exclusion, plausibility rewards
+top-$k$ alignment with humans, and swap KL rewards causal load on attention. Softmax+KL
+optimises the first and third; sparsemax+MSE optimises the second and fourth. There is
+no scalar ``faithfulness'' on which one dominates. The corrected story of this paper is
+that \emph{operator choice is a selector among faithfulness criteria, not a uniform
+improvement of faithfulness}.
 
 \section{Related Work}
 \label{sec:related}
@@ -349,56 +411,77 @@ counterproductive on this metric.
 \paragraph{Attention as explanation.}
 The debate opened by \citet{jain2019attention}, who demonstrated adversarial swaps that
 preserve predictions, and \citet{wiegreffe2019attention}, who argued that attention can
-still be a useful explanation under stricter protocols, motivates the
-\emph{operationalised} faithfulness metrics we adopt. \citet{jacovi2020faithful}
-formalised faithfulness as a property of the explanation rather than the model.
+still be a useful explanation under stricter protocols, motivates the operationalised
+faithfulness metrics we adopt. \citet{jacovi2020faithful} formalised faithfulness as a
+property of the explanation rather than the model. Our finding that different
+faithfulness metrics reward different operators is consistent with their call for
+metric-specific rather than scalar faithfulness claims.
 
 \paragraph{Sparse attention.}
 Sparsemax \citep{martins2016sparsemax} is the original Euclidean projection. Constrained
 sparsemax \citep{malaviya2018sparse} extends it to NMT alignment, and adaptively-sparse
 transformers \citep{correia2019adaptively} learn the temperature per head. None of these
-combine the operator with token-level supervision.
+combine the operator with token-level supervision under a controlled-supervision-scope
+comparison.
 
 \paragraph{Rationale supervision.}
 ERASER \citep{deyoung2020eraser} unified rationale benchmarks across NLP tasks. Most
 rationale-supervised models use post-hoc extractors or auxiliary span predictors;
-\citet{eilertsen2025aligning} (SRA, our C2) is the closest precedent in tying supervision
-to attention itself, and our work is a structural correction of that proposal.
+\citet{eilertsen2025aligning} (SRA) is the closest precedent in tying supervision to
+attention itself, using sparsemax on a single head with KL. Our work differs in two
+ways: we hold supervision scope constant across operators (all 12 heads in both C2 and
+C4), and we use MSE instead of KL on the sparsemax side, since MSE admits an exact
+realiser under sparsemax (Proposition~1) whereas KL does not.
 
 \paragraph{Hate speech XAI.}
 HateXplain \citep{mathew2021hatexplain} catalysed the recent wave of interpretable hate
-speech models. To our knowledge, no prior work reports a doubling of comprehensiveness
-AOPC at zero classification cost on this dataset.
+speech models. Our contribution to this line is that the choice between softmax+KL and
+sparsemax+MSE is a substantive design decision with consequences that depend on which
+faithfulness criterion downstream users care about.
 
 \section{Limitations}
 \label{sec:limitations}
 
-We pre-registered four hypotheses and confirmed three; H4 (a $2{\times}$ adversarial-swap
-KL improvement over SRA) is missed, with the observed ratio at $1.47{\times}$. We do not
-re-frame the result post-hoc: H4 is reported as a miss. Beyond H4, our evaluation is on a
-single dataset (HateXplain) and a single backbone (BERT-base); generalisation to larger
-models and other rationale corpora is open. Plausibility is not measurable on our split
-because the public HateXplain release does not retain majority-vote rationale tokens for
-most examples --- this is a dataset artefact, not a property of the method, but it
-prevents us from corroborating faithfulness with human agreement on this benchmark.
-Finally, all results are over $n{=}5$ seeds, in line with our compute budget; the very
-large Cohen's $d$ we observe makes us comfortable with this $n$, but a $10$-seed
-replication would strengthen the swap-KL conclusions in particular.
+We pre-registered four hypotheses; only H1 is cleanly confirmed. H2
+(comprehensiveness $\geq 50\%$) failed: C2 and C4 are indistinguishable on this metric
+($p > 0.5$, $|\Delta|<0.01$). H3 (sufficiency $\geq 25\%$) is a borderline miss at
+$21.8\%$ relative, with Wilcoxon $p \approx 0.063$. H4 (swap KL $\geq 2{\times}$) is
+missed at $1.29{\times}$ (although direction is significant, $p{=}0.031$). We do not
+re-frame these as successes post-hoc.
+
+The plausibility finding (C2 $\gg$ C4) was not predicted and is the largest gap between
+operators in our results. It suggests that ERASER sufficiency/comprehensiveness and
+human token alignment (plausibility) measure distinct properties of attention; future
+work should clarify which metric better predicts user trust and downstream
+interpretability utility, since this directly informs operator choice in deployment.
+
+Beyond hypothesis outcomes, our evaluation is on a single dataset (HateXplain) and a
+single backbone (BERT-base); generalisation to larger models and other rationale corpora
+is open. All results are over $n{=}5$ seeds, in line with our compute budget. A
+$10$-seed replication would resolve the borderline H3 $p$-value and would tighten the
+swap-KL conclusion in particular.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-Sparse Rationale-Constrained Attention is the right \emph{idea} but the wrong
-\emph{instantiation}: a single supervised head leaks explanatory mass through the
-residual stream. By extending the projection and supervision to every layer with an MSE
-loss, we obtain structural zeros at every site (Proposition~1), preserve classification
-performance (TOST $p{=}0.047$ at $\pm 1.0$ pp), more than double ERASER
-comprehensiveness AOPC ($+111\%$, Wilcoxon $p{=}0.031$, $d{=}8.36$), and cut sufficiency
-AOPC by $47\%$, all at zero additional inference cost. We honestly report that the
-pre-registered $2{\times}$ swap-KL threshold is missed at $1.47{\times}$, and we trace
-the cause to a partial cancellation between operator and alignment effects. The structural
-recipe --- sparse everywhere, supervised everywhere --- is simple, cheap, and immediately
-applicable to any transformer classifier with token-level rationales.
+Holding rationale supervision scope fixed at all 12 attention heads of the final layer,
+we compared softmax+KL with sparsemax+MSE on HateXplain and found that the two
+operators are not ordered by a scalar notion of faithfulness. Comprehensiveness AOPC is
+tied; sparsemax improves sufficiency AOPC by $21.8\%$ via structural zeros (the
+mechanism Proposition~1 predicts); softmax improves plausibility token-F1 by $83\%$ via
+concentration of weight on human-annotated tokens; sparsemax improves adversarial-swap
+KL by $29\%$, and unsupervised sparsemax (C3) is the strongest condition on this
+metric. Classification macro-F1 is preserved (TOST $p{=}0.047$ at $\pm 1.0$ pp). Three
+of our four pre-registered hypotheses are missed and we report this honestly.
+
+The corrected take-away for practitioners is straightforward: \emph{choose the
+attention operator according to the faithfulness criterion your application
+requires}. If downstream users need explanations that align with what humans would
+highlight, use softmax+KL. If they need guarantees that non-highlighted tokens are not
+contributing to the decision, use sparsemax+MSE. The structural recipe ---
+sparsemax with per-head MSE supervision on every head --- is simple, cheap, and
+immediately applicable to any transformer classifier with token-level rationales,
+provided the practitioner is selecting it for the right reason.
 
 \bibliographystyle{plainnat}
 \bibliography{references}

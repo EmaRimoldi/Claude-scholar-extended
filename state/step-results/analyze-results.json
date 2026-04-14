@@ -1,0 +1,24 @@
+{
+  "status": "completed",
+  "required_outputs": [
+    "docs/analysis-report.md",
+    "docs/hypothesis-outcomes.md"
+  ],
+  "produced_outputs": [
+    "docs/analysis-report.md",
+    "docs/hypothesis-outcomes.md",
+    "results/figures/fig1_main_results.pdf"
+  ],
+  "validators_run": [
+    "wilcoxon",
+    "tost",
+    "cohens_d"
+  ],
+  "validator_status": "pass",
+  "decision": "H1 SUPPORTED (d=8.36, p=0.031)",
+  "notes": "H3 inconclusive; H4 partial (1.47x)",
+  "step_id": "analyze-results",
+  "generation": 1,
+  "created_at": "2026-04-07T19:50:24+00:00",
+  "$schema": "step-result-v1"
+}

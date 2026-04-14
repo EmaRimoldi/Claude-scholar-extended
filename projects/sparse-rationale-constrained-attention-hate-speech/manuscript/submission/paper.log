@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.7)  7 APR 2026 16:18
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.7)  7 APR 2026 18:12
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -464,64 +464,31 @@ Package microtype Info: Loading generic protrusion settings for font family
 
 
 {/home/erimoldi/.TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/home/erimoldi/.TinyTeX/texmf-dist/fonts/enc/dvips/base/8r.enc}] [2] [3]
-<fig1_main_results.pdf, id=181, 1004.26945pt x 356.37656pt>
-File: fig1_main_results.pdf Graphic file (type pdf)
-<use fig1_main_results.pdf>
-Package pdftex.def Info: fig1_main_results.pdf  used on input line 298.
-(pdftex.def)             Requested size: 377.60951pt x 133.99977pt.
+Overfull \hbox (79.45499pt too wide) in paragraph at lines 274--285
+ [][] 
+ []
 
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 308.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\to' on input line 308.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 308.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 308.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\to' on input line 308.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 308.
-
-
-Underfull \vbox (badness 1331) has occurred while \output is active []
-
- [4] [5 <./fig1_main_results.pdf>] (./paper.bbl [6]) [7] (./paper.aux)
+[4] [5] [6] (./paper.bbl [7]) [8] (./paper.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-03-20>
  ***********
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
 Package rerunfilecheck Info: File `paper.out' has not changed.
-(rerunfilecheck)             Checksum: 38C2CB40F7821FC4E2DEA46F9EB8BD00;2457.
+(rerunfilecheck)             Checksum: 775268814632BB03E9B7EDFB0F99910D;3981.
  ) 
 Here is how much of TeX's memory you used:
- 13466 strings out of 469339
- 207120 string characters out of 5466427
- 663361 words of memory out of 5000000
- 41825 multiletter control sequences out of 15000+600000
- 670487 words of font info for 226 fonts, out of 8000000 for 9000
+ 13514 strings out of 469339
+ 207378 string characters out of 5466427
+ 663630 words of memory out of 5000000
+ 41819 multiletter control sequences out of 15000+600000
+ 673344 words of font info for 260 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 75i,12n,79p,1002b,574s stack positions out of 10000i,1000n,20000p,200000b,200000s
- </home/erimoldi/.TinyTeX/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600pk></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on paper.pdf (7 pages, 284237 bytes).
+ 75i,11n,79p,1002b,574s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ </home/erimoldi/.TinyTeX/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600pk></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx9.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy5.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></home/erimoldi/.TinyTeX/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on paper.pdf (8 pages, 255084 bytes).
 PDF statistics:
- 472 PDF objects out of 1000 (max. 8388607)
- 300 compressed objects within 3 object streams
- 65 named destinations out of 1000 (max. 500000)
- 42646 words of extra memory for PDF output out of 42996 (max. 10000000)
+ 379 PDF objects out of 1000 (max. 8388607)
+ 289 compressed objects within 3 object streams
+ 68 named destinations out of 1000 (max. 500000)
+ 42665 words of extra memory for PDF output out of 42996 (max. 10000000)
 

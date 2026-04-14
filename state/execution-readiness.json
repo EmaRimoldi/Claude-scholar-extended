@@ -1,0 +1,1 @@
+{"step": "analyze-results", "ready": true, "outputs_verified": ["docs/analysis-report.md", "docs/hypothesis-outcomes.md", "results/figures/fig1_main_results.pdf", "results/figures/fig2_accuracy_interpretability_tradeoff.pdf", "results/figures/fig3_per_seed_comp.pdf"], "timestamp": "2026-04-07"}

@@ -1,0 +1,21 @@
+{
+  "status": "completed",
+  "required_outputs": [
+    "docs/claim-ledger.md",
+    "state/claim_graph.json"
+  ],
+  "produced_outputs": [
+    "docs/claim-ledger.md",
+    "state/claim_graph.json"
+  ],
+  "validators_run": [
+    "skeptic_agent"
+  ],
+  "validator_status": "pass",
+  "decision": "4 claims mapped; weakest=C-FAITHFUL (H4 1.47x); primary=C-MAIN (d=8.36)",
+  "notes": "",
+  "step_id": "map-claims",
+  "generation": 1,
+  "created_at": "2026-04-07T19:57:09+00:00",
+  "$schema": "step-result-v1"
+}

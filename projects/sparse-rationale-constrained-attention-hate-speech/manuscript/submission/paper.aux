@@ -6,11 +6,9 @@
 \citation{martins2016sparsemax,malaviya2018sparse,correia2019adaptively}
 \citation{deyoung2020eraser}
 \citation{eilertsen2025aligning}
-\citation{mathew2021hatexplain}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
 \newlabel{sec:intro}{{1}{1}{Introduction}{section.1}{}}
-\@writefile{toc}{\contentsline {paragraph}{Where SRA falls short.}{1}{section*.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Contribution.}{1}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Operator vs.\ supervision: isolating the effect.}{1}{section*.1}\protected@file@percent }
 \citation{mathew2021hatexplain}
 \citation{martins2016sparsemax}
 \citation{malaviya2018sparse}
@@ -19,76 +17,77 @@
 \citation{jacovi2020faithful}
 \citation{jain2019attention}
 \citation{eilertsen2025aligning}
+\@writefile{toc}{\contentsline {paragraph}{What we expected vs.\ what we found.}{2}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{The corrected story is more interesting.}{2}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Contributions.}{2}{section*.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {2}Background}{2}{section.2}\protected@file@percent }
 \newlabel{sec:background}{{2}{2}{Background}{section.2}{}}
-\@writefile{toc}{\contentsline {paragraph}{HateXplain.}{2}{section*.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Sparsemax vs.\ softmax.}{2}{section*.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{ERASER.}{2}{section*.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Adversarial swap.}{2}{section*.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Sparse Rationale-Constrained Attention.}{2}{section*.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}Method}{2}{section.3}\protected@file@percent }
-\newlabel{sec:method}{{3}{2}{Method}{section.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Architecture and loss}{2}{subsection.3.1}\protected@file@percent }
-\citation{eilertsen2025aligning}
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Condition table. \textbf  {Op}: attention operator. \textbf  {Sup}: rationale supervision sites. \textbf  {Loss}: rationale loss form. All conditions use the same BERT-base backbone, parameter count, and inference cost.}}{3}{table.1}\protected@file@percent }
-\newlabel{tab:conditions}{{1}{3}{Condition table. \textbf {Op}: attention operator. \textbf {Sup}: rationale supervision sites. \textbf {Loss}: rationale loss form. All conditions use the same BERT-base backbone, parameter count, and inference cost}{table.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{HateXplain.}{2}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Sparsemax vs.\ softmax.}{2}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{ERASER faithfulness.}{2}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Adversarial swap.}{2}{section*.8}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Conditions used in the experiments. \textbf  {Op}: attention operator. \textbf  {Sup}: rationale-supervised heads. \textbf  {Loss}: rationale loss form. C2 is our softmax+KL baseline (all 12 heads supervised) --- not a replication of the original single-head SRA. C4 and C5 are the sparsemax+MSE variants. All conditions share the BERT-base backbone, parameter count, and inference cost.}}{3}{table.1}\protected@file@percent }
+\newlabel{tab:conditions}{{1}{3}{Conditions used in the experiments. \textbf {Op}: attention operator. \textbf {Sup}: rationale-supervised heads. \textbf {Loss}: rationale loss form. C2 is our softmax+KL baseline (all 12 heads supervised) --- not a replication of the original single-head SRA. C4 and C5 are the sparsemax+MSE variants. All conditions share the BERT-base backbone, parameter count, and inference cost}{table.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Sparse Rationale-Constrained Attention.}{3}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Method}{3}{section.3}\protected@file@percent }
+\newlabel{sec:method}{{3}{3}{Method}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Architecture and loss}{3}{subsection.3.1}\protected@file@percent }
 \newlabel{eq:loss}{{2}{3}{Architecture and loss}{equation.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Conditions}{3}{subsection.3.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Proposition 1: structural zeros}{3}{subsection.3.3}\protected@file@percent }
-\newlabel{sec:proposition}{{3.3}{3}{Proposition 1: structural zeros}{subsection.3.3}{}}
-\@writefile{toc}{\contentsline {paragraph}{Proof sketch.}{3}{section*.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Implication.}{3}{section*.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{3}{section.4}\protected@file@percent }
-\newlabel{sec:experiments}{{4}{3}{Experiments}{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Setup}{3}{subsection.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Pre-registered hypotheses}{3}{subsection.4.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Main results on HateXplain (mean $\pm $ std over 5 seeds). \textbf  {F1}: macro-F1, higher is better. \textbf  {Comp.}: comprehensiveness AOPC, higher is better. \textbf  {Suff.}: sufficiency AOPC, lower is better. \textbf  {Swap KL}: adversarial-swap KL, higher is better. Best per column in \textbf  {bold}; second best \underline  {underlined}.}}{4}{table.2}\protected@file@percent }
-\newlabel{tab:main_results}{{2}{4}{Main results on HateXplain (mean $\pm $ std over 5 seeds). \textbf {F1}: macro-F1, higher is better. \textbf {Comp.}: comprehensiveness AOPC, higher is better. \textbf {Suff.}: sufficiency AOPC, lower is better. \textbf {Swap KL}: adversarial-swap KL, higher is better. Best per column in \textbf {bold}; second best \underline {underlined}}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}The contribution: operator choice with equal supervision}{3}{subsection.3.2}\protected@file@percent }
+\newlabel{sec:contribution}{{3.2}{3}{The contribution: operator choice with equal supervision}{subsection.3.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Proposition 1: structural zeros and the sufficiency advantage}{3}{subsection.3.3}\protected@file@percent }
+\newlabel{sec:proposition}{{3.3}{3}{Proposition 1: structural zeros and the sufficiency advantage}{subsection.3.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Main results on HateXplain (mean $\pm $ std over 5 seeds). \textbf  {F1}: macro-F1, higher is better. \textbf  {Comp.}: comprehensiveness AOPC, higher is better. \textbf  {Suff.}: sufficiency AOPC, lower is better. \textbf  {Tok-F1}: plausibility (token-F1 vs.\ human rationale), higher is better. \textbf  {Swap KL}: adversarial-swap KL, higher is better. Best per column in \textbf  {bold}. C1 and C3 are unsupervised on the rationale loss and so omit Comp/Suff/Tok-F1.}}{4}{table.2}\protected@file@percent }
+\newlabel{tab:main_results}{{2}{4}{Main results on HateXplain (mean $\pm $ std over 5 seeds). \textbf {F1}: macro-F1, higher is better. \textbf {Comp.}: comprehensiveness AOPC, higher is better. \textbf {Suff.}: sufficiency AOPC, lower is better. \textbf {Tok-F1}: plausibility (token-F1 vs.\ human rationale), higher is better. \textbf {Swap KL}: adversarial-swap KL, higher is better. Best per column in \textbf {bold}. C1 and C3 are unsupervised on the rationale loss and so omit Comp/Suff/Tok-F1}{table.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Proof sketch.}{4}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Implication.}{4}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{4}{section.4}\protected@file@percent }
+\newlabel{sec:experiments}{{4}{4}{Experiments}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Setup}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Pre-registered hypotheses}{4}{subsection.4.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Main results}{4}{subsection.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{H1 (classification parity).}{4}{section*.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{H2 (comprehensiveness).}{4}{section*.11}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{H3 (sufficiency).}{4}{section*.12}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{H4 (adversarial-swap robustness).}{4}{section*.13}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Plausibility.}{4}{section*.14}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Per-seed analysis}{4}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{H1 (classification parity) --- confirmed.}{4}{section*.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{H2 (comprehensiveness) --- failed.}{5}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{H3 (sufficiency) --- borderline miss.}{5}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{H4 (adversarial-swap robustness) --- missed.}{5}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Plausibility (token-F1).}{5}{section*.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}The full picture: four metrics, four winners}{5}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Analysis}{5}{section.5}\protected@file@percent }
+\newlabel{sec:analysis}{{5}{5}{Analysis}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Why comprehensiveness is tied (M2)}{5}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Why sparsemax wins on sufficiency (M1, M3)}{5}{subsection.5.2}\protected@file@percent }
 \citation{jain2019attention}
 \citation{wiegreffe2019attention}
 \citation{jacovi2020faithful}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Per-seed faithfulness on HateXplain. Left: comprehensiveness AOPC (higher is better). Right: sufficiency AOPC (lower is better). C4 (all-12) and C5 (top-6) dominate C2 (SRA) on every seed.}}{5}{figure.1}\protected@file@percent }
-\newlabel{fig:main_results}{{1}{5}{Per-seed faithfulness on HateXplain. Left: comprehensiveness AOPC (higher is better). Right: sufficiency AOPC (lower is better). C4 (all-12) and C5 (top-6) dominate C2 (SRA) on every seed}{figure.1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Analysis}{5}{section.5}\protected@file@percent }
-\newlabel{sec:analysis}{{5}{5}{Analysis}{section.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Why does it work? The M1$\to $M2$\to $M3 chain}{5}{subsection.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{M1: structural zeros.}{5}{section*.15}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{M2: removal of the residual escape route.}{5}{section*.16}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{M3: comprehensiveness.}{5}{section*.17}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Why C3 \emph  {beats} C2 on swap KL}{5}{subsection.5.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Why C2 is \emph  {below} C1 on swap KL}{5}{subsection.5.3}\protected@file@percent }
 \citation{martins2016sparsemax}
 \citation{malaviya2018sparse}
 \citation{correia2019adaptively}
 \citation{deyoung2020eraser}
 \citation{eilertsen2025aligning}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Why softmax wins on plausibility}{6}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Why C3 \emph  {beats} every other condition on swap KL}{6}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Why C2 is below C1 on swap KL}{6}{subsection.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Synthesis: operator choice as a faithfulness selector}{6}{subsection.5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Related Work}{6}{section.6}\protected@file@percent }
+\newlabel{sec:related}{{6}{6}{Related Work}{section.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Attention as explanation.}{6}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Sparse attention.}{6}{section*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Rationale supervision.}{6}{section*.19}\protected@file@percent }
 \citation{mathew2021hatexplain}
 \bibstyle{plainnat}
 \bibdata{references}
 \bibcite{correia2019adaptively}{{1}{2019}{{Correia et~al.}}{{Correia, Niculae, and Martins}}}
 \bibcite{deyoung2020eraser}{{2}{2020}{{DeYoung et~al.}}{{DeYoung, Jain, Rajani, Lehman, Xiong, Socher, and Wallace}}}
 \bibcite{eilertsen2025aligning}{{3}{2025}{{Eilertsen et~al.}}{{Eilertsen, Bj{\o }rgfinsd{\'o}ttir, Vargas, and Ramezani-Kebrya}}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Related Work}{6}{section.6}\protected@file@percent }
-\newlabel{sec:related}{{6}{6}{Related Work}{section.6}{}}
-\@writefile{toc}{\contentsline {paragraph}{Attention as explanation.}{6}{section*.18}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Sparse attention.}{6}{section*.19}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Rationale supervision.}{6}{section*.20}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Hate speech XAI.}{6}{section*.21}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7}Limitations}{6}{section.7}\protected@file@percent }
-\newlabel{sec:limitations}{{7}{6}{Limitations}{section.7}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{6}{section.8}\protected@file@percent }
-\newlabel{sec:conclusion}{{8}{6}{Conclusion}{section.8}{}}
+\@writefile{toc}{\contentsline {paragraph}{Hate speech XAI.}{7}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Limitations}{7}{section.7}\protected@file@percent }
+\newlabel{sec:limitations}{{7}{7}{Limitations}{section.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion}{7}{section.8}\protected@file@percent }
+\newlabel{sec:conclusion}{{8}{7}{Conclusion}{section.8}{}}
 \bibcite{jacovi2020faithful}{{4}{2020}{{Jacovi and Goldberg}}{{}}}
 \bibcite{jain2019attention}{{5}{2019}{{Jain and Wallace}}{{}}}
 \bibcite{malaviya2018sparse}{{6}{2018}{{Malaviya et~al.}}{{Malaviya, Ferreira, and Martins}}}
 \bibcite{martins2016sparsemax}{{7}{2016}{{Martins and Astudillo}}{{}}}
 \bibcite{mathew2021hatexplain}{{8}{2021}{{Mathew et~al.}}{{Mathew, Saha, Yimam, Biemann, Goyal, and Mukherjee}}}
 \bibcite{wiegreffe2019attention}{{9}{2019}{{Wiegreffe and Pinter}}{{}}}
-\gdef \@abspage@last{7}
+\gdef \@abspage@last{8}
